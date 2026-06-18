@@ -85,8 +85,9 @@ Rules for AI generation:
 - `mode` and `order` must be written as top-level edge fields and, when possible, mirrored inside `data`.
 - Node IDs must be unique within the graph.
 - Edge `source` and `target` values must reference existing node IDs.
-- Node positions must use a readable layered layout and must not overlap. Use at least 280px vertical spacing for linear flows and at least 420px horizontal spacing for sibling fan-out nodes.
-- For HA fan-out graphs, place the trigger and shared context on the center axis, distribute provision/wait branches symmetrically across the X axis, then converge back to the center axis for bootstrap, health, and end nodes.
+- Node positions must use a readable layered layout and must not overlap. Use type-aware spacing because editor nodes such as `provisionNode` and `serverNode` are much larger than compact command nodes.
+- Use the manual editor layout scale from the examples: entry nodes near `x: 45-105`, fan-out columns spaced by about `705px`, and large vertical bands for provision, wait, server/bootstrap, health, and end stages.
+- For HA fan-out graphs, place trigger/context at the top-left, distribute provision/server branches left-to-right across the X axis, then converge to a lower central branch for bootstrap, health, and end nodes.
 
 ## 2. Runtime Execution Model
 

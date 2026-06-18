@@ -11,8 +11,8 @@
           "id": "node_trigger",
           "type": "triggerNode",
           "position": {
-            "x": 80,
-            "y": 80
+            "x": 45,
+            "y": 75
           },
           "data": {
             "label": "Rancher RKE2 HA provisioned",
@@ -42,8 +42,8 @@
           "id": "node_context",
           "type": "proxmoxConfigNode",
           "position": {
-            "x": 80,
-            "y": 360
+            "x": 105,
+            "y": 465
           },
           "data": {
             "label": "Cluster Context",
@@ -54,8 +54,8 @@
           "id": "node_provision_rke2_server_01",
           "type": "provisionNode",
           "position": {
-            "x": -760,
-            "y": 640
+            "x": 855,
+            "y": 405
           },
           "data": {
             "label": "Provision rke2-server-01",
@@ -119,8 +119,8 @@
           "id": "node_wait_rke2_server_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -760,
-            "y": 920
+            "x": 855,
+            "y": 3600
           },
           "data": {
             "label": "Wait rke2-server-01",
@@ -141,8 +141,8 @@
           "id": "node_provision_rke2_server_02",
           "type": "provisionNode",
           "position": {
-            "x": -340,
-            "y": 640
+            "x": 1560,
+            "y": 405
           },
           "data": {
             "label": "Provision rke2-server-02",
@@ -206,8 +206,8 @@
           "id": "node_wait_rke2_server_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -340,
-            "y": 920
+            "x": 1560,
+            "y": 3600
           },
           "data": {
             "label": "Wait rke2-server-02",
@@ -228,8 +228,8 @@
           "id": "node_provision_rke2_server_03",
           "type": "provisionNode",
           "position": {
-            "x": 80,
-            "y": 640
+            "x": 2265,
+            "y": 405
           },
           "data": {
             "label": "Provision rke2-server-03",
@@ -293,8 +293,8 @@
           "id": "node_wait_rke2_server_03",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 80,
-            "y": 920
+            "x": 2265,
+            "y": 3600
           },
           "data": {
             "label": "Wait rke2-server-03",
@@ -315,8 +315,8 @@
           "id": "node_provision_rke2_agent_01",
           "type": "provisionNode",
           "position": {
-            "x": 500,
-            "y": 640
+            "x": 2970,
+            "y": 405
           },
           "data": {
             "label": "Provision rke2-agent-01",
@@ -380,8 +380,8 @@
           "id": "node_wait_rke2_agent_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 500,
-            "y": 920
+            "x": 2970,
+            "y": 3600
           },
           "data": {
             "label": "Wait rke2-agent-01",
@@ -402,8 +402,8 @@
           "id": "node_provision_rke2_agent_02",
           "type": "provisionNode",
           "position": {
-            "x": 920,
-            "y": 640
+            "x": 3675,
+            "y": 405
           },
           "data": {
             "label": "Provision rke2-agent-02",
@@ -467,8 +467,8 @@
           "id": "node_wait_rke2_agent_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 920,
-            "y": 920
+            "x": 3675,
+            "y": 3600
           },
           "data": {
             "label": "Wait rke2-agent-02",
@@ -489,8 +489,8 @@
           "id": "node_bootstrap",
           "type": "customNode",
           "position": {
-            "x": 80,
-            "y": 1200
+            "x": 2265,
+            "y": 5000
           },
           "data": {
             "label": "Bootstrap Rancher RKE2 HA",
@@ -507,8 +507,8 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 80,
-            "y": 1480
+            "x": 2445,
+            "y": 6200
           },
           "data": {
             "label": "Rancher RKE2 HA health check",
@@ -520,8 +520,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 80,
-            "y": 1760
+            "x": 2495,
+            "y": 6605
           },
           "data": {
             "label": "End"

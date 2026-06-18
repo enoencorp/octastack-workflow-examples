@@ -11,8 +11,8 @@
           "id": "node_trigger",
           "type": "triggerNode",
           "position": {
-            "x": 80,
-            "y": 80
+            "x": 45,
+            "y": 75
           },
           "data": {
             "label": "Kafka KRaft HA provisioned",
@@ -42,8 +42,8 @@
           "id": "node_context",
           "type": "proxmoxConfigNode",
           "position": {
-            "x": 80,
-            "y": 360
+            "x": 105,
+            "y": 465
           },
           "data": {
             "label": "Cluster Context",
@@ -54,8 +54,8 @@
           "id": "node_provision_kafka_01",
           "type": "provisionNode",
           "position": {
-            "x": -340,
-            "y": 640
+            "x": 855,
+            "y": 405
           },
           "data": {
             "label": "Provision kafka-01",
@@ -119,8 +119,8 @@
           "id": "node_wait_kafka_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -340,
-            "y": 920
+            "x": 855,
+            "y": 3600
           },
           "data": {
             "label": "Wait kafka-01",
@@ -141,8 +141,8 @@
           "id": "node_provision_kafka_02",
           "type": "provisionNode",
           "position": {
-            "x": 80,
-            "y": 640
+            "x": 1560,
+            "y": 405
           },
           "data": {
             "label": "Provision kafka-02",
@@ -206,8 +206,8 @@
           "id": "node_wait_kafka_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 80,
-            "y": 920
+            "x": 1560,
+            "y": 3600
           },
           "data": {
             "label": "Wait kafka-02",
@@ -228,8 +228,8 @@
           "id": "node_provision_kafka_03",
           "type": "provisionNode",
           "position": {
-            "x": 500,
-            "y": 640
+            "x": 2265,
+            "y": 405
           },
           "data": {
             "label": "Provision kafka-03",
@@ -293,8 +293,8 @@
           "id": "node_wait_kafka_03",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 500,
-            "y": 920
+            "x": 2265,
+            "y": 3600
           },
           "data": {
             "label": "Wait kafka-03",
@@ -315,8 +315,8 @@
           "id": "node_bootstrap",
           "type": "customNode",
           "position": {
-            "x": 80,
-            "y": 1200
+            "x": 1560,
+            "y": 5000
           },
           "data": {
             "label": "Bootstrap Kafka KRaft HA",
@@ -333,8 +333,8 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 80,
-            "y": 1480
+            "x": 1740,
+            "y": 6200
           },
           "data": {
             "label": "Kafka KRaft HA health check",
@@ -346,8 +346,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 80,
-            "y": 1760
+            "x": 1790,
+            "y": 6605
           },
           "data": {
             "label": "End"

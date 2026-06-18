@@ -11,8 +11,8 @@
           "id": "node_trigger",
           "type": "triggerNode",
           "position": {
-            "x": 80,
-            "y": 80
+            "x": 45,
+            "y": 75
           },
           "data": {
             "label": "RabbitMQ Quorum HA existing",
@@ -42,8 +42,8 @@
           "id": "node_runner",
           "type": "serverNode",
           "position": {
-            "x": 80,
-            "y": 360
+            "x": 0,
+            "y": 885
           },
           "data": {
             "label": "Automation Runner",
@@ -68,8 +68,8 @@
           "id": "node_wait_runner",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 80,
-            "y": 640
+            "x": 885,
+            "y": 885
           },
           "data": {
             "label": "Wait for automation runner",
@@ -90,8 +90,8 @@
           "id": "node_bootstrap",
           "type": "customNode",
           "position": {
-            "x": 80,
-            "y": 920
+            "x": 180,
+            "y": 2300
           },
           "data": {
             "label": "Bootstrap RabbitMQ Quorum HA",
@@ -108,8 +108,8 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 80,
-            "y": 1200
+            "x": 180,
+            "y": 5000
           },
           "data": {
             "label": "RabbitMQ Quorum HA health check",
@@ -121,8 +121,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 80,
-            "y": 1480
+            "x": 230,
+            "y": 5405
           },
           "data": {
             "label": "End"

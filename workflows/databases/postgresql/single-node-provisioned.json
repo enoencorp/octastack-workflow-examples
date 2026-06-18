@@ -11,8 +11,8 @@
           "id": "node_trigger",
           "type": "triggerNode",
           "position": {
-            "x": 80,
-            "y": 80
+            "x": 45,
+            "y": 75
           },
           "data": {
             "label": "PostgreSQL single-node provisioned",
@@ -42,8 +42,8 @@
           "id": "node_context",
           "type": "proxmoxConfigNode",
           "position": {
-            "x": 80,
-            "y": 360
+            "x": 105,
+            "y": 465
           },
           "data": {
             "label": "Cluster Context",
@@ -54,8 +54,8 @@
           "id": "node_provision",
           "type": "provisionNode",
           "position": {
-            "x": 80,
-            "y": 640
+            "x": 855,
+            "y": 405
           },
           "data": {
             "label": "Provision postgres-single-01",
@@ -119,8 +119,8 @@
           "id": "node_wait",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 80,
-            "y": 920
+            "x": 1545,
+            "y": 2985
           },
           "data": {
             "label": "Wait for provisioned host",
@@ -141,8 +141,8 @@
           "id": "node_install",
           "type": "customNode",
           "position": {
-            "x": 80,
-            "y": 1200
+            "x": 855,
+            "y": 4290
           },
           "data": {
             "label": "Install PostgreSQL",
@@ -159,8 +159,8 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 80,
-            "y": 1480
+            "x": 1035,
+            "y": 5475
           },
           "data": {
             "label": "PostgreSQL health check",
@@ -172,8 +172,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 80,
-            "y": 1760
+            "x": 1085,
+            "y": 5880
           },
           "data": {
             "label": "End"

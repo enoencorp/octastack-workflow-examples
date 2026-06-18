@@ -5,8 +5,17 @@ const ROOT = process.cwd();
 const WORKFLOW_ROOT = path.join(ROOT, "workflows");
 const WORKFLOW_PACKAGE_KIND = "octastack.workflow.package";
 const WORKFLOW_PACKAGE_VERSION = 1;
-const NODE_WIDTH_BUDGET = 320;
-const NODE_HEIGHT_BUDGET = 220;
+const NODE_FOOTPRINTS = {
+  triggerNode: { width: 520, height: 380 },
+  proxmoxConfigNode: { width: 320, height: 260 },
+  provisionNode: { width: 640, height: 3000 },
+  waitUntilUpNode: { width: 420, height: 700 },
+  serverNode: { width: 680, height: 1250 },
+  customNode: { width: 640, height: 900 },
+  configCommandNode: { width: 320, height: 300 },
+  endNode: { width: 220, height: 200 },
+  default: { width: 420, height: 320 }
+};
 
 function walkJsonFiles(dir) {
   if (!fs.existsSync(dir)) {
@@ -29,6 +38,24 @@ function hasNumericPosition(node) {
   return Number.isFinite(node?.position?.x) && Number.isFinite(node?.position?.y);
 }
 
+function nodeFootprint(node) {
+  return NODE_FOOTPRINTS[node.type] ?? NODE_FOOTPRINTS.default;
+}
+
+function nodeRect(node) {
+  const footprint = nodeFootprint(node);
+  return {
+    left: node.position.x,
+    top: node.position.y,
+    right: node.position.x + footprint.width,
+    bottom: node.position.y + footprint.height
+  };
+}
+
+function rectanglesOverlap(a, b) {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
 function validateNodeLayout(nodes, fileName) {
   const errors = [];
   const positioned = nodes.filter(hasNumericPosition);
@@ -36,9 +63,7 @@ function validateNodeLayout(nodes, fileName) {
     for (let j = i + 1; j < positioned.length; j += 1) {
       const a = positioned[i];
       const b = positioned[j];
-      const dx = Math.abs(a.position.x - b.position.x);
-      const dy = Math.abs(a.position.y - b.position.y);
-      if (dx < NODE_WIDTH_BUDGET && dy < NODE_HEIGHT_BUDGET) {
+      if (rectanglesOverlap(nodeRect(a), nodeRect(b))) {
         errors.push(`${fileName}: nodes ${a.id} and ${b.id} are too close at (${a.position.x}, ${a.position.y}) and (${b.position.x}, ${b.position.y})`);
       }
     }

@@ -1,0 +1,358 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Keycloak single-node provisioned",
+    "description": "Provision a single Keycloak node on Proxmox, wait for reachability, then install and validate the stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "Keycloak single-node provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "keycloak"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 105,
+            "y": 465
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
+          }
+        },
+        {
+          "id": "node_provision",
+          "type": "provisionNode",
+          "position": {
+            "x": 855,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision keycloak-single-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "keycloak-single-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "IDENTITY",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.31.111.50/24",
+                "gw": "10.31.111.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.31.111.50/24",
+            "gw": "10.31.111.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1545,
+            "y": 2985
+          },
+          "data": {
+            "label": "Wait for provisioned host",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 4290
+          },
+          "data": {
+            "label": "Prepare Keycloak runtime",
+            "command": "set -euo pipefail\nif command -v docker >/dev/null 2>&1; then\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 4695
+          },
+          "data": {
+            "label": "Create Keycloak directories",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/keycloak\ninstall -d -m 0750 /var/lib/octastack/keycloak\ncat >/opt/octastack/keycloak/.env <<'EOF'\nKEYCLOAK_ADMIN=admin\nKEYCLOAK_ADMIN_PASSWORD=change-me\nEOF\nchmod 0600 /opt/octastack/keycloak/.env\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5100
+          },
+          "data": {
+            "label": "Render Keycloak compose",
+            "command": "set -euo pipefail\ncat >/opt/octastack/keycloak/compose.yml <<'COMPOSE'\nservices:\n  keycloak:\n    image: quay.io/keycloak/keycloak:25.0\n    container_name: octastack-keycloak\n    restart: unless-stopped\n    command: \"start-dev\"\n    environment:\n      KEYCLOAK_ADMIN: \"admin\"\n      KEYCLOAK_ADMIN_PASSWORD: \"change-me\"\n    ports:\n      - \"8080:8080\"\n    volumes:\n      - data:/opt/keycloak/data\nvolumes:\n  data: {}\nCOMPOSE\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5505
+          },
+          "data": {
+            "label": "Deploy Keycloak",
+            "command": "set -euo pipefail\ndocker compose -f /opt/octastack/keycloak/compose.yml pull\ndocker compose -f /opt/octastack/keycloak/compose.yml up -d\ndocker compose -f /opt/octastack/keycloak/compose.yml ps\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5910
+          },
+          "data": {
+            "label": "Inspect Keycloak",
+            "command": "set -euo pipefail\ndocker ps --filter name=octastack-keycloak\ndocker logs octastack-keycloak --tail=80 || true\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 6315
+          },
+          "data": {
+            "label": "Keycloak health check",
+            "command": "curl -fsS http://127.0.0.1:8080/realms/master",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 1085,
+            "y": 6720
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_provision",
+          "source": "node_context",
+          "target": "node_provision",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_provision_wait",
+          "source": "node_provision",
+          "target": "node_wait",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_1",
+          "source": "node_wait",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_install_health",
+          "source": "node_step_5",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

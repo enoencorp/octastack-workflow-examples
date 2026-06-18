@@ -87,21 +87,55 @@
           }
         },
         {
-          "id": "node_bootstrap",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
             "x": 180,
             "y": 2300
           },
           "data": {
-            "label": "Bootstrap Redis Sentinel HA",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/redis-sentinel.ini <<'INVENTORY'\n[redis]\n10.30.20.11 node_name=redis-01\n10.30.20.12 node_name=redis-02\n10.30.20.13 node_name=redis-03\nINVENTORY\ncat >/tmp/redis-sentinel.yml <<'PLAYBOOK'\n- hosts: redis\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: redis-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /etc/redis/redis.conf\n        mode: \"0644\"\n        content: |\n          bind 0.0.0.0\n          protected-mode no\n          port 6379\n          appendonly yes\n          dir /var/lib/redis\n    - ansible.builtin.lineinfile:\n        path: /etc/redis/redis.conf\n        line: \"replicaof 10.30.20.11 6379\"\n      when: inventory_hostname != \"10.30.20.11\"\n    - ansible.builtin.copy:\n        dest: /etc/redis/sentinel.conf\n        mode: \"0644\"\n        content: |\n          port 26379\n          sentinel monitor redis-ha 10.30.20.11 6379 2\n          sentinel down-after-milliseconds redis-ha 5000\n          sentinel failover-timeout redis-ha 60000\n          sentinel parallel-syncs redis-ha 1\n    - ansible.builtin.service:\n        name: redis-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: redis-server /etc/redis/sentinel.conf --sentinel\n      async: 45\n      poll: 0\nPLAYBOOK\nansible-playbook -i /tmp/redis-sentinel.ini /tmp/redis-sentinel.yml\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Redis Sentinel HA installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/redis_sentinel_ha\ncat >/opt/octastack/redis_sentinel_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/redis-sentinel.ini <<'INVENTORY'\n[redis]\n10.30.20.11 node_name=redis-01\n10.30.20.12 node_name=redis-02\n10.30.20.13 node_name=redis-03\nINVENTORY\ncat >/tmp/redis-sentinel.yml <<'PLAYBOOK'\n- hosts: redis\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: redis-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /etc/redis/redis.conf\n        mode: \"0644\"\n        content: |\n          bind 0.0.0.0\n          protected-mode no\n          port 6379\n          appendonly yes\n          dir /var/lib/redis\n    - ansible.builtin.lineinfile:\n        path: /etc/redis/redis.conf\n        line: \"replicaof 10.30.20.11 6379\"\n      when: inventory_hostname != \"10.30.20.11\"\n    - ansible.builtin.copy:\n        dest: /etc/redis/sentinel.conf\n        mode: \"0644\"\n        content: |\n          port 26379\n          sentinel monitor redis-ha 10.30.20.11 6379 2\n          sentinel down-after-milliseconds redis-ha 5000\n          sentinel failover-timeout redis-ha 60000\n          sentinel parallel-syncs redis-ha 1\n    - ansible.builtin.service:\n        name: redis-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: redis-server /etc/redis/sentinel.conf --sentinel\n      async: 45\n      poll: 0\nPLAYBOOK\nansible-playbook -i /tmp/redis-sentinel.ini /tmp/redis-sentinel.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/redis_sentinel_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Review Redis Sentinel HA installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/redis_sentinel_ha/install.sh\nwc -l /opt/octastack/redis_sentinel_ha/install.sh\nsed -n '1,120p' /opt/octastack/redis_sentinel_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Execute Redis Sentinel HA installer",
+            "command": "set -euo pipefail\n/opt/octastack/redis_sentinel_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Collect Redis Sentinel HA runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -155,9 +189,45 @@
           }
         },
         {
-          "id": "edge_wait_bootstrap",
+          "id": "edge_step_1",
           "source": "node_wait_runner",
-          "target": "node_bootstrap",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -168,7 +238,7 @@
         },
         {
           "id": "edge_bootstrap_health",
-          "source": "node_bootstrap",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

@@ -138,21 +138,55 @@
           }
         },
         {
-          "id": "node_install",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
-            "x": 855,
+            "x": 1035,
             "y": 4290
           },
           "data": {
-            "label": "Install Vanilla Kubernetes",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y apt-transport-https ca-certificates curl gpg\nsudo swapoff -a\nsudo modprobe br_netfilter\nsudo sysctl -w net.bridge.bridge-nf-call-iptables=1\nsudo apt-get install -y containerd\nsudo systemctl enable --now containerd\ncurl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\necho \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" | sudo tee /etc/apt/sources.list.d/kubernetes.list\nsudo apt-get update\nsudo apt-get install -y kubelet kubeadm kubectl\nsudo kubeadm init --pod-network-cidr=192.168.0.0/16\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/kubernetes/admin.conf \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nkubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Vanilla Kubernetes single-node installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/vanilla_kubernetes_single_node\ncat >/opt/octastack/vanilla_kubernetes_single_node/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y apt-transport-https ca-certificates curl gpg\nsudo swapoff -a\nsudo modprobe br_netfilter\nsudo sysctl -w net.bridge.bridge-nf-call-iptables=1\nsudo apt-get install -y containerd\nsudo systemctl enable --now containerd\ncurl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\necho \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" | sudo tee /etc/apt/sources.list.d/kubernetes.list\nsudo apt-get update\nsudo apt-get install -y kubelet kubeadm kubectl\nsudo kubeadm init --pod-network-cidr=192.168.0.0/16\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/kubernetes/admin.conf \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nkubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/vanilla_kubernetes_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 4695
+          },
+          "data": {
+            "label": "Review Vanilla Kubernetes single-node installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/vanilla_kubernetes_single_node/install.sh\nwc -l /opt/octastack/vanilla_kubernetes_single_node/install.sh\nsed -n '1,120p' /opt/octastack/vanilla_kubernetes_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5100
+          },
+          "data": {
+            "label": "Execute Vanilla Kubernetes single-node installer",
+            "command": "set -euo pipefail\n/opt/octastack/vanilla_kubernetes_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5505
+          },
+          "data": {
+            "label": "Collect Vanilla Kubernetes single-node runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -160,7 +194,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 1035,
-            "y": 5475
+            "y": 5910
           },
           "data": {
             "label": "Vanilla Kubernetes health check",
@@ -173,7 +207,7 @@
           "type": "endNode",
           "position": {
             "x": 1085,
-            "y": 5880
+            "y": 6315
           },
           "data": {
             "label": "End"
@@ -218,9 +252,45 @@
           }
         },
         {
-          "id": "edge_wait_install",
+          "id": "edge_step_1",
           "source": "node_wait",
-          "target": "node_install",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -231,7 +301,7 @@
         },
         {
           "id": "edge_install_health",
-          "source": "node_install",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

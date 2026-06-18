@@ -138,21 +138,55 @@
           }
         },
         {
-          "id": "node_install",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
-            "x": 855,
+            "x": 1035,
             "y": 4290
           },
           "data": {
-            "label": "Install Rancher RKE2",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\ncurl -sfL https://get.rke2.io | sudo INSTALL_RKE2_TYPE=server sh -\nsudo systemctl enable --now rke2-server\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/rancher/rke2/rke2.yaml \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nexport KUBECONFIG=\"$HOME/.kube/config\"\ncurl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\nkubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\nhelm repo add jetstack https://charts.jetstack.io\nhelm repo add rancher-latest https://releases.rancher.com/server-charts/latest\nhelm repo update\nhelm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\nhelm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Rancher RKE2 single-node installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rancher_rke2_single_node\ncat >/opt/octastack/rancher_rke2_single_node/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\ncurl -sfL https://get.rke2.io | sudo INSTALL_RKE2_TYPE=server sh -\nsudo systemctl enable --now rke2-server\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/rancher/rke2/rke2.yaml \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nexport KUBECONFIG=\"$HOME/.kube/config\"\ncurl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\nkubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\nhelm repo add jetstack https://charts.jetstack.io\nhelm repo add rancher-latest https://releases.rancher.com/server-charts/latest\nhelm repo update\nhelm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\nhelm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rancher_rke2_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 4695
+          },
+          "data": {
+            "label": "Review Rancher RKE2 single-node installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/rancher_rke2_single_node/install.sh\nwc -l /opt/octastack/rancher_rke2_single_node/install.sh\nsed -n '1,120p' /opt/octastack/rancher_rke2_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5100
+          },
+          "data": {
+            "label": "Execute Rancher RKE2 single-node installer",
+            "command": "set -euo pipefail\n/opt/octastack/rancher_rke2_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5505
+          },
+          "data": {
+            "label": "Collect Rancher RKE2 single-node runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -160,7 +194,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 1035,
-            "y": 5475
+            "y": 5910
           },
           "data": {
             "label": "Rancher RKE2 health check",
@@ -173,7 +207,7 @@
           "type": "endNode",
           "position": {
             "x": 1085,
-            "y": 5880
+            "y": 6315
           },
           "data": {
             "label": "End"
@@ -218,9 +252,45 @@
           }
         },
         {
-          "id": "edge_wait_install",
+          "id": "edge_step_1",
           "source": "node_wait",
-          "target": "node_install",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -231,7 +301,7 @@
         },
         {
           "id": "edge_install_health",
-          "source": "node_install",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

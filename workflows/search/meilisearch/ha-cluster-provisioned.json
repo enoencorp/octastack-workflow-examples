@@ -1,0 +1,629 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Meilisearch HA provisioned",
+    "description": "Provision Meilisearch HA nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "Meilisearch HA provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "meilisearch"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 105,
+            "y": 465
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
+          }
+        },
+        {
+          "id": "node_provision_meilisearch_01",
+          "type": "provisionNode",
+          "position": {
+            "x": 855,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision meilisearch-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "meilisearch-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "SEARCH",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.31.124.11/24",
+                "gw": "10.31.124.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.31.124.11/24",
+            "gw": "10.31.124.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_meilisearch_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 855,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait meilisearch-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_meilisearch_02",
+          "type": "provisionNode",
+          "position": {
+            "x": 1560,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision meilisearch-02",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "meilisearch-02",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "SEARCH",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.31.124.12/24",
+                "gw": "10.31.124.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.31.124.12/24",
+            "gw": "10.31.124.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_meilisearch_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1560,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait meilisearch-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_meilisearch_03",
+          "type": "provisionNode",
+          "position": {
+            "x": 2265,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision meilisearch-03",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "meilisearch-03",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "SEARCH",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.31.124.13/24",
+                "gw": "10.31.124.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.31.124.13/24",
+            "gw": "10.31.124.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_meilisearch_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2265,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait meilisearch-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5000
+          },
+          "data": {
+            "label": "Prepare Meilisearch inventory",
+            "command": "set -euo pipefail\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass\ncat >/tmp/meilisearch-inventory.ini <<'INVENTORY'\n[meilisearch]\n10.31.124.11 role=search name=meilisearch-01\n10.31.124.12 role=search name=meilisearch-02\n10.31.124.13 role=search name=meilisearch-03\nINVENTORY\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5405
+          },
+          "data": {
+            "label": "Install Meilisearch container runtime",
+            "command": "set -euo pipefail\ncat >/tmp/meilisearch-runtime.yml <<'PLAYBOOK'\n- hosts: meilisearch\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        if command -v docker >/dev/null 2>&1; then\n          docker --version\n          exit 0\n        fi\n        if command -v apt-get >/dev/null 2>&1; then\n          apt-get update\n          DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\n        elif command -v dnf >/dev/null 2>&1; then\n          dnf install -y docker docker-compose-plugin\n        elif command -v yum >/dev/null 2>&1; then\n          yum install -y docker docker-compose-plugin\n        fi\n        systemctl enable --now docker\nPLAYBOOK\nansible-playbook -i /tmp/meilisearch-inventory.ini /tmp/meilisearch-runtime.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5810
+          },
+          "data": {
+            "label": "Render Meilisearch cluster manifests",
+            "command": "set -euo pipefail\ncat >/tmp/meilisearch-deploy.yml <<'PLAYBOOK'\n- hosts: meilisearch\n  become: true\n  tasks:\n    - ansible.builtin.file:\n        path: /opt/octastack/meilisearch\n        state: directory\n        mode: \"0750\"\n    - ansible.builtin.copy:\n        dest: /opt/octastack/meilisearch/compose.yml\n        mode: \"0640\"\n        content: |\n          services:\n            meilisearch:\n              image: getmeili/meilisearch:v1.10\n              container_name: octastack-meilisearch\n              restart: unless-stopped\n              environment:\n                MEILI_MASTER_KEY: \"change-me\"\n              ports:\n                - \"7700:7700\"\n              volumes:\n                - data:/meili_data\n          volumes:\n            data: {}\nPLAYBOOK\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 6215
+          },
+          "data": {
+            "label": "Deploy Meilisearch cluster",
+            "command": "set -euo pipefail\ncat >>/tmp/meilisearch-deploy.yml <<'PLAYBOOK'\n    - ansible.builtin.shell: docker compose -f /opt/octastack/meilisearch/compose.yml pull\n    - ansible.builtin.shell: docker compose -f /opt/octastack/meilisearch/compose.yml up -d\n    - ansible.builtin.shell: docker compose -f /opt/octastack/meilisearch/compose.yml ps\nPLAYBOOK\nansible-playbook -i /tmp/meilisearch-inventory.ini /tmp/meilisearch-deploy.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 6620
+          },
+          "data": {
+            "label": "Document Meilisearch topology",
+            "command": "set -euo pipefail\ncat >/tmp/meilisearch-topology.md <<'EOF'\n# Meilisearch HA topology\n\nMembers:\n- meilisearch-01: 10.31.124.11 (search)\n- meilisearch-02: 10.31.124.12 (search)\n- meilisearch-03: 10.31.124.13 (search)\n\nThis example deploys one Meilisearch container per member host. Replace the placeholder commands with vendor-supported clustering, TLS, backup, and failover automation before production use.\nEOF\ncat /tmp/meilisearch-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 7025
+          },
+          "data": {
+            "label": "Validate Meilisearch cluster",
+            "command": "set -euo pipefail\nansible -i /tmp/meilisearch-inventory.ini meilisearch -b -m shell -a 'docker ps --format \"{{.Names}} {{.Status}}\"'\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 7430
+          },
+          "data": {
+            "label": "Meilisearch HA health check",
+            "command": "curl -fsS http://127.0.0.1:7700/health",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 1790,
+            "y": 7835
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_meilisearch_01",
+          "source": "node_context",
+          "target": "node_provision_meilisearch_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_meilisearch_01_wait",
+          "source": "node_provision_meilisearch_01",
+          "target": "node_wait_meilisearch_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_meilisearch_02",
+          "source": "node_context",
+          "target": "node_provision_meilisearch_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_meilisearch_02_wait",
+          "source": "node_provision_meilisearch_02",
+          "target": "node_wait_meilisearch_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_meilisearch_03",
+          "source": "node_context",
+          "target": "node_provision_meilisearch_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_meilisearch_03_wait",
+          "source": "node_provision_meilisearch_03",
+          "target": "node_wait_meilisearch_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_meilisearch_01_bootstrap",
+          "source": "node_wait_meilisearch_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_meilisearch_02_bootstrap",
+          "source": "node_wait_meilisearch_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_meilisearch_03_bootstrap",
+          "source": "node_wait_meilisearch_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

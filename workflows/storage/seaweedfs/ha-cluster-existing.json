@@ -1,0 +1,320 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "SeaweedFS HA existing",
+    "description": "Bootstrap and validate SeaweedFS HA from an existing automation runner and target inventory.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "SeaweedFS HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "seaweedfs"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_runner",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "Automation Runner",
+            "hostname": "10.10.1.131",
+            "targets": [
+              {
+                "id": "target-runner",
+                "source": "manual",
+                "host": "10.10.1.131",
+                "label": "Automation Runner",
+                "ip": "10.10.1.131",
+                "name": "automation-runner",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_runner",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 885,
+            "y": 885
+          },
+          "data": {
+            "label": "Wait for automation runner",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2300
+          },
+          "data": {
+            "label": "Prepare SeaweedFS inventory",
+            "command": "set -euo pipefail\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass\ncat >/tmp/seaweedfs-inventory.ini <<'INVENTORY'\n[seaweedfs]\n10.31.131.11 role=object_storage name=seaweedfs-01\n10.31.131.12 role=object_storage name=seaweedfs-02\n10.31.131.13 role=object_storage name=seaweedfs-03\nINVENTORY\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Install SeaweedFS container runtime",
+            "command": "set -euo pipefail\ncat >/tmp/seaweedfs-runtime.yml <<'PLAYBOOK'\n- hosts: seaweedfs\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        if command -v docker >/dev/null 2>&1; then\n          docker --version\n          exit 0\n        fi\n        if command -v apt-get >/dev/null 2>&1; then\n          apt-get update\n          DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\n        elif command -v dnf >/dev/null 2>&1; then\n          dnf install -y docker docker-compose-plugin\n        elif command -v yum >/dev/null 2>&1; then\n          yum install -y docker docker-compose-plugin\n        fi\n        systemctl enable --now docker\nPLAYBOOK\nansible-playbook -i /tmp/seaweedfs-inventory.ini /tmp/seaweedfs-runtime.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Render SeaweedFS cluster manifests",
+            "command": "set -euo pipefail\ncat >/tmp/seaweedfs-deploy.yml <<'PLAYBOOK'\n- hosts: seaweedfs\n  become: true\n  tasks:\n    - ansible.builtin.file:\n        path: /opt/octastack/seaweedfs\n        state: directory\n        mode: \"0750\"\n    - ansible.builtin.copy:\n        dest: /opt/octastack/seaweedfs/compose.yml\n        mode: \"0640\"\n        content: |\n          services:\n            seaweedfs:\n              image: chrislusf/seaweedfs:3.73\n              container_name: octastack-seaweedfs\n              restart: unless-stopped\n              command: \"server -dir=/data -s3\"\n              ports:\n                - \"9333:9333\"\n                - \"8333:8333\"\n              volumes:\n                - data:/data\n          volumes:\n            data: {}\nPLAYBOOK\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Deploy SeaweedFS cluster",
+            "command": "set -euo pipefail\ncat >>/tmp/seaweedfs-deploy.yml <<'PLAYBOOK'\n    - ansible.builtin.shell: docker compose -f /opt/octastack/seaweedfs/compose.yml pull\n    - ansible.builtin.shell: docker compose -f /opt/octastack/seaweedfs/compose.yml up -d\n    - ansible.builtin.shell: docker compose -f /opt/octastack/seaweedfs/compose.yml ps\nPLAYBOOK\nansible-playbook -i /tmp/seaweedfs-inventory.ini /tmp/seaweedfs-deploy.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3920
+          },
+          "data": {
+            "label": "Document SeaweedFS topology",
+            "command": "set -euo pipefail\ncat >/tmp/seaweedfs-topology.md <<'EOF'\n# SeaweedFS HA topology\n\nMembers:\n- seaweedfs-01: 10.31.131.11 (object_storage)\n- seaweedfs-02: 10.31.131.12 (object_storage)\n- seaweedfs-03: 10.31.131.13 (object_storage)\n\nThis example deploys one SeaweedFS container per member host. Replace the placeholder commands with vendor-supported clustering, TLS, backup, and failover automation before production use.\nEOF\ncat /tmp/seaweedfs-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 4325
+          },
+          "data": {
+            "label": "Validate SeaweedFS cluster",
+            "command": "set -euo pipefail\nansible -i /tmp/seaweedfs-inventory.ini seaweedfs -b -m shell -a 'docker ps --format \"{{.Names}} {{.Status}}\"'\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 5000
+          },
+          "data": {
+            "label": "SeaweedFS HA health check",
+            "command": "curl -fsS http://127.0.0.1:9333/cluster/status",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 230,
+            "y": 5405
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_runner",
+          "source": "node_trigger",
+          "target": "node_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_runner_wait",
+          "source": "node_runner",
+          "target": "node_wait_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_1",
+          "source": "node_wait_runner",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

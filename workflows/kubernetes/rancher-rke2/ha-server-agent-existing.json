@@ -87,21 +87,55 @@
           }
         },
         {
-          "id": "node_bootstrap",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
             "x": 180,
             "y": 2300
           },
           "data": {
-            "label": "Bootstrap Rancher RKE2 HA",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rke2-rancher-ha.ini <<'INVENTORY'\n[rke2_server]\n10.30.60.11 node_name=rke2-server-01\n10.30.60.12 node_name=rke2-server-02\n10.30.60.13 node_name=rke2-server-03\n\n[rke2_agent]\n10.30.60.21 node_name=rke2-agent-01\n10.30.60.22 node_name=rke2-agent-02\nINVENTORY\ncat >/tmp/rke2-rancher-ha.yml <<'PLAYBOOK'\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_server:!rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_agent\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent sh -\n        systemctl enable --now rke2-agent\n\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        export KUBECONFIG=/etc/rancher/rke2/rke2.yaml\n        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\n        kubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\n        helm repo add jetstack https://charts.jetstack.io\n        helm repo add rancher-latest https://releases.rancher.com/server-charts/latest\n        helm repo update\n        helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\n        helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\nPLAYBOOK\nansible-playbook -i /tmp/rke2-rancher-ha.ini /tmp/rke2-rancher-ha.yml\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Rancher RKE2 HA installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rancher_rke2_ha\ncat >/opt/octastack/rancher_rke2_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rke2-rancher-ha.ini <<'INVENTORY'\n[rke2_server]\n10.30.60.11 node_name=rke2-server-01\n10.30.60.12 node_name=rke2-server-02\n10.30.60.13 node_name=rke2-server-03\n\n[rke2_agent]\n10.30.60.21 node_name=rke2-agent-01\n10.30.60.22 node_name=rke2-agent-02\nINVENTORY\ncat >/tmp/rke2-rancher-ha.yml <<'PLAYBOOK'\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_server:!rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_agent\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent sh -\n        systemctl enable --now rke2-agent\n\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        export KUBECONFIG=/etc/rancher/rke2/rke2.yaml\n        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\n        kubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\n        helm repo add jetstack https://charts.jetstack.io\n        helm repo add rancher-latest https://releases.rancher.com/server-charts/latest\n        helm repo update\n        helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\n        helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\nPLAYBOOK\nansible-playbook -i /tmp/rke2-rancher-ha.ini /tmp/rke2-rancher-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rancher_rke2_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Review Rancher RKE2 HA installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/rancher_rke2_ha/install.sh\nwc -l /opt/octastack/rancher_rke2_ha/install.sh\nsed -n '1,120p' /opt/octastack/rancher_rke2_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Execute Rancher RKE2 HA installer",
+            "command": "set -euo pipefail\n/opt/octastack/rancher_rke2_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Collect Rancher RKE2 HA runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -155,9 +189,45 @@
           }
         },
         {
-          "id": "edge_wait_bootstrap",
+          "id": "edge_step_1",
           "source": "node_wait_runner",
-          "target": "node_bootstrap",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -168,7 +238,7 @@
         },
         {
           "id": "edge_bootstrap_health",
-          "source": "node_bootstrap",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

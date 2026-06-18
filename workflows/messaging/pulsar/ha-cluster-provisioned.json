@@ -1,0 +1,629 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Apache Pulsar HA provisioned",
+    "description": "Provision Apache Pulsar HA nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "Apache Pulsar HA provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "apache-pulsar"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 105,
+            "y": 465
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
+          }
+        },
+        {
+          "id": "node_provision_apache_pulsar_01",
+          "type": "provisionNode",
+          "position": {
+            "x": 855,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision apache-pulsar-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "apache-pulsar-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "PULSAR",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.31.101.11/24",
+                "gw": "10.31.101.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.31.101.11/24",
+            "gw": "10.31.101.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_apache_pulsar_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 855,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait apache-pulsar-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_apache_pulsar_02",
+          "type": "provisionNode",
+          "position": {
+            "x": 1560,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision apache-pulsar-02",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "apache-pulsar-02",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "PULSAR",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.31.101.12/24",
+                "gw": "10.31.101.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.31.101.12/24",
+            "gw": "10.31.101.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_apache_pulsar_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1560,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait apache-pulsar-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_apache_pulsar_03",
+          "type": "provisionNode",
+          "position": {
+            "x": 2265,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision apache-pulsar-03",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "apache-pulsar-03",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "PULSAR",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.31.101.13/24",
+                "gw": "10.31.101.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.31.101.13/24",
+            "gw": "10.31.101.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_apache_pulsar_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2265,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait apache-pulsar-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5000
+          },
+          "data": {
+            "label": "Prepare Apache Pulsar inventory",
+            "command": "set -euo pipefail\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass\ncat >/tmp/apache_pulsar-inventory.ini <<'INVENTORY'\n[apache_pulsar]\n10.31.101.11 role=pulsar name=apache-pulsar-01\n10.31.101.12 role=pulsar name=apache-pulsar-02\n10.31.101.13 role=pulsar name=apache-pulsar-03\nINVENTORY\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5405
+          },
+          "data": {
+            "label": "Install Apache Pulsar container runtime",
+            "command": "set -euo pipefail\ncat >/tmp/apache_pulsar-runtime.yml <<'PLAYBOOK'\n- hosts: apache_pulsar\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        if command -v docker >/dev/null 2>&1; then\n          docker --version\n          exit 0\n        fi\n        if command -v apt-get >/dev/null 2>&1; then\n          apt-get update\n          DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\n        elif command -v dnf >/dev/null 2>&1; then\n          dnf install -y docker docker-compose-plugin\n        elif command -v yum >/dev/null 2>&1; then\n          yum install -y docker docker-compose-plugin\n        fi\n        systemctl enable --now docker\nPLAYBOOK\nansible-playbook -i /tmp/apache_pulsar-inventory.ini /tmp/apache_pulsar-runtime.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5810
+          },
+          "data": {
+            "label": "Render Apache Pulsar cluster manifests",
+            "command": "set -euo pipefail\ncat >/tmp/apache_pulsar-deploy.yml <<'PLAYBOOK'\n- hosts: apache_pulsar\n  become: true\n  tasks:\n    - ansible.builtin.file:\n        path: /opt/octastack/apache_pulsar\n        state: directory\n        mode: \"0750\"\n    - ansible.builtin.copy:\n        dest: /opt/octastack/apache_pulsar/compose.yml\n        mode: \"0640\"\n        content: |\n          services:\n            pulsar:\n              image: apachepulsar/pulsar:3.3.0\n              container_name: octastack-pulsar\n              restart: unless-stopped\n              command: \"bin/pulsar standalone\"\n              ports:\n                - \"6650:6650\"\n                - \"8080:8080\"\n              volumes:\n                - data:/pulsar/data\n          volumes:\n            data: {}\nPLAYBOOK\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 6215
+          },
+          "data": {
+            "label": "Deploy Apache Pulsar cluster",
+            "command": "set -euo pipefail\ncat >>/tmp/apache_pulsar-deploy.yml <<'PLAYBOOK'\n    - ansible.builtin.shell: docker compose -f /opt/octastack/apache_pulsar/compose.yml pull\n    - ansible.builtin.shell: docker compose -f /opt/octastack/apache_pulsar/compose.yml up -d\n    - ansible.builtin.shell: docker compose -f /opt/octastack/apache_pulsar/compose.yml ps\nPLAYBOOK\nansible-playbook -i /tmp/apache_pulsar-inventory.ini /tmp/apache_pulsar-deploy.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 6620
+          },
+          "data": {
+            "label": "Document Apache Pulsar topology",
+            "command": "set -euo pipefail\ncat >/tmp/apache_pulsar-topology.md <<'EOF'\n# Apache Pulsar HA topology\n\nMembers:\n- apache-pulsar-01: 10.31.101.11 (pulsar)\n- apache-pulsar-02: 10.31.101.12 (pulsar)\n- apache-pulsar-03: 10.31.101.13 (pulsar)\n\nThis example deploys one Apache Pulsar container per member host. Replace the placeholder commands with vendor-supported clustering, TLS, backup, and failover automation before production use.\nEOF\ncat /tmp/apache_pulsar-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 7025
+          },
+          "data": {
+            "label": "Validate Apache Pulsar cluster",
+            "command": "set -euo pipefail\nansible -i /tmp/apache_pulsar-inventory.ini apache_pulsar -b -m shell -a 'docker ps --format \"{{.Names}} {{.Status}}\"'\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 7430
+          },
+          "data": {
+            "label": "Apache Pulsar HA health check",
+            "command": "curl -fsS http://127.0.0.1:8080/admin/v2/clusters",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 1790,
+            "y": 7835
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_apache_pulsar_01",
+          "source": "node_context",
+          "target": "node_provision_apache_pulsar_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_apache_pulsar_01_wait",
+          "source": "node_provision_apache_pulsar_01",
+          "target": "node_wait_apache_pulsar_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_apache_pulsar_02",
+          "source": "node_context",
+          "target": "node_provision_apache_pulsar_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_apache_pulsar_02_wait",
+          "source": "node_provision_apache_pulsar_02",
+          "target": "node_wait_apache_pulsar_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_apache_pulsar_03",
+          "source": "node_context",
+          "target": "node_provision_apache_pulsar_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_apache_pulsar_03_wait",
+          "source": "node_provision_apache_pulsar_03",
+          "target": "node_wait_apache_pulsar_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_apache_pulsar_01_bootstrap",
+          "source": "node_wait_apache_pulsar_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_apache_pulsar_02_bootstrap",
+          "source": "node_wait_apache_pulsar_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_apache_pulsar_03_bootstrap",
+          "source": "node_wait_apache_pulsar_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

@@ -87,21 +87,55 @@
           }
         },
         {
-          "id": "node_bootstrap",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
             "x": 180,
             "y": 2300
           },
           "data": {
-            "label": "Bootstrap Kafka KRaft HA",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/kafka-kraft.ini <<'INVENTORY'\n[brokers]\n10.30.30.11 node_id=1 node_name=kafka-01\n10.30.30.12 node_id=2 node_name=kafka-02\n10.30.30.13 node_id=3 node_name=kafka-03\nINVENTORY\ncat >/tmp/kafka-kraft.yml <<'PLAYBOOK'\n- hosts: brokers\n  become: true\n  vars:\n    kafka_version: \"3.7.0\"\n    cluster_id: \"MkU3OEVBNTcwNTJENDM2Qk\"\n    controllers: \"1@10.30.30.11:9093,2@10.30.30.12:9093,3@10.30.30.13:9093\"\n  tasks:\n    - ansible.builtin.apt:\n        name: [openjdk-17-jre-headless, curl, tar]\n        state: present\n        update_cache: true\n    - ansible.builtin.user:\n        name: kafka\n        system: true\n        create_home: true\n        home: /opt/kafka\n    - ansible.builtin.shell: |\n        curl -fsSL https://archive.apache.org/dist/kafka/{{ kafka_version }}/kafka_2.13-{{ kafka_version }}.tgz -o /tmp/kafka.tgz\n        tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\n        chown -R kafka:kafka /opt/kafka\n    - ansible.builtin.copy:\n        dest: /opt/kafka/config/kraft/server.properties\n        owner: kafka\n        group: kafka\n        mode: \"0644\"\n        content: |\n          process.roles=broker,controller\n          node.id={{ node_id }}\n          controller.quorum.voters={{ controllers }}\n          listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093\n          advertised.listeners=PLAINTEXT://{{ inventory_hostname }}:9092\n          controller.listener.names=CONTROLLER\n          listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT\n          log.dirs=/var/lib/kafka\n          offsets.topic.replication.factor=3\n          transaction.state.log.replication.factor=3\n          transaction.state.log.min.isr=2\n          min.insync.replicas=2\n    - ansible.builtin.shell: /opt/kafka/bin/kafka-storage.sh format -t {{ cluster_id }} -c /opt/kafka/config/kraft/server.properties --ignore-formatted\n      become_user: kafka\n    - ansible.builtin.copy:\n        dest: /etc/systemd/system/kafka.service\n        mode: \"0644\"\n        content: |\n          [Unit]\n          Description=Apache Kafka KRaft\n          After=network-online.target\n          [Service]\n          User=kafka\n          ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\n          Restart=always\n          [Install]\n          WantedBy=multi-user.target\n    - ansible.builtin.systemd:\n        name: kafka\n        state: restarted\n        enabled: true\n        daemon_reload: true\nPLAYBOOK\nansible-playbook -i /tmp/kafka-kraft.ini /tmp/kafka-kraft.yml\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Kafka KRaft HA installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/kafka_kraft_ha\ncat >/opt/octastack/kafka_kraft_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/kafka-kraft.ini <<'INVENTORY'\n[brokers]\n10.30.30.11 node_id=1 node_name=kafka-01\n10.30.30.12 node_id=2 node_name=kafka-02\n10.30.30.13 node_id=3 node_name=kafka-03\nINVENTORY\ncat >/tmp/kafka-kraft.yml <<'PLAYBOOK'\n- hosts: brokers\n  become: true\n  vars:\n    kafka_version: \"3.7.0\"\n    cluster_id: \"MkU3OEVBNTcwNTJENDM2Qk\"\n    controllers: \"1@10.30.30.11:9093,2@10.30.30.12:9093,3@10.30.30.13:9093\"\n  tasks:\n    - ansible.builtin.apt:\n        name: [openjdk-17-jre-headless, curl, tar]\n        state: present\n        update_cache: true\n    - ansible.builtin.user:\n        name: kafka\n        system: true\n        create_home: true\n        home: /opt/kafka\n    - ansible.builtin.shell: |\n        curl -fsSL https://archive.apache.org/dist/kafka/{{ kafka_version }}/kafka_2.13-{{ kafka_version }}.tgz -o /tmp/kafka.tgz\n        tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\n        chown -R kafka:kafka /opt/kafka\n    - ansible.builtin.copy:\n        dest: /opt/kafka/config/kraft/server.properties\n        owner: kafka\n        group: kafka\n        mode: \"0644\"\n        content: |\n          process.roles=broker,controller\n          node.id={{ node_id }}\n          controller.quorum.voters={{ controllers }}\n          listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093\n          advertised.listeners=PLAINTEXT://{{ inventory_hostname }}:9092\n          controller.listener.names=CONTROLLER\n          listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT\n          log.dirs=/var/lib/kafka\n          offsets.topic.replication.factor=3\n          transaction.state.log.replication.factor=3\n          transaction.state.log.min.isr=2\n          min.insync.replicas=2\n    - ansible.builtin.shell: /opt/kafka/bin/kafka-storage.sh format -t {{ cluster_id }} -c /opt/kafka/config/kraft/server.properties --ignore-formatted\n      become_user: kafka\n    - ansible.builtin.copy:\n        dest: /etc/systemd/system/kafka.service\n        mode: \"0644\"\n        content: |\n          [Unit]\n          Description=Apache Kafka KRaft\n          After=network-online.target\n          [Service]\n          User=kafka\n          ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\n          Restart=always\n          [Install]\n          WantedBy=multi-user.target\n    - ansible.builtin.systemd:\n        name: kafka\n        state: restarted\n        enabled: true\n        daemon_reload: true\nPLAYBOOK\nansible-playbook -i /tmp/kafka-kraft.ini /tmp/kafka-kraft.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/kafka_kraft_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Review Kafka KRaft HA installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/kafka_kraft_ha/install.sh\nwc -l /opt/octastack/kafka_kraft_ha/install.sh\nsed -n '1,120p' /opt/octastack/kafka_kraft_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Execute Kafka KRaft HA installer",
+            "command": "set -euo pipefail\n/opt/octastack/kafka_kraft_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Collect Kafka KRaft HA runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -155,9 +189,45 @@
           }
         },
         {
-          "id": "edge_wait_bootstrap",
+          "id": "edge_step_1",
           "source": "node_wait_runner",
-          "target": "node_bootstrap",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -168,7 +238,7 @@
         },
         {
           "id": "edge_bootstrap_health",
-          "source": "node_bootstrap",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

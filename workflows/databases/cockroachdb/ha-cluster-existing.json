@@ -1,0 +1,320 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "CockroachDB HA existing",
+    "description": "Bootstrap and validate CockroachDB HA from an existing automation runner and target inventory.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "CockroachDB HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "cockroachdb"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_runner",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "Automation Runner",
+            "hostname": "10.10.1.87",
+            "targets": [
+              {
+                "id": "target-runner",
+                "source": "manual",
+                "host": "10.10.1.87",
+                "label": "Automation Runner",
+                "ip": "10.10.1.87",
+                "name": "automation-runner",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_runner",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 885,
+            "y": 885
+          },
+          "data": {
+            "label": "Wait for automation runner",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2300
+          },
+          "data": {
+            "label": "Prepare CockroachDB inventory",
+            "command": "set -euo pipefail\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass\ncat >/tmp/cockroachdb-inventory.ini <<'INVENTORY'\n[cockroachdb]\n10.31.87.11 role=cockroach name=cockroachdb-01\n10.31.87.12 role=cockroach name=cockroachdb-02\n10.31.87.13 role=cockroach name=cockroachdb-03\nINVENTORY\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Install CockroachDB container runtime",
+            "command": "set -euo pipefail\ncat >/tmp/cockroachdb-runtime.yml <<'PLAYBOOK'\n- hosts: cockroachdb\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        if command -v docker >/dev/null 2>&1; then\n          docker --version\n          exit 0\n        fi\n        if command -v apt-get >/dev/null 2>&1; then\n          apt-get update\n          DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\n        elif command -v dnf >/dev/null 2>&1; then\n          dnf install -y docker docker-compose-plugin\n        elif command -v yum >/dev/null 2>&1; then\n          yum install -y docker docker-compose-plugin\n        fi\n        systemctl enable --now docker\nPLAYBOOK\nansible-playbook -i /tmp/cockroachdb-inventory.ini /tmp/cockroachdb-runtime.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Render CockroachDB cluster manifests",
+            "command": "set -euo pipefail\ncat >/tmp/cockroachdb-deploy.yml <<'PLAYBOOK'\n- hosts: cockroachdb\n  become: true\n  tasks:\n    - ansible.builtin.file:\n        path: /opt/octastack/cockroachdb\n        state: directory\n        mode: \"0750\"\n    - ansible.builtin.copy:\n        dest: /opt/octastack/cockroachdb/compose.yml\n        mode: \"0640\"\n        content: |\n          services:\n            cockroachdb:\n              image: cockroachdb/cockroach:v24.2.0\n              container_name: octastack-cockroachdb\n              restart: unless-stopped\n              command: \"start-single-node --insecure --store=/cockroach/cockroach-data\"\n              ports:\n                - \"26257:26257\"\n                - \"8080:8080\"\n              volumes:\n                - data:/cockroach/cockroach-data\n          volumes:\n            data: {}\nPLAYBOOK\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Deploy CockroachDB cluster",
+            "command": "set -euo pipefail\ncat >>/tmp/cockroachdb-deploy.yml <<'PLAYBOOK'\n    - ansible.builtin.shell: docker compose -f /opt/octastack/cockroachdb/compose.yml pull\n    - ansible.builtin.shell: docker compose -f /opt/octastack/cockroachdb/compose.yml up -d\n    - ansible.builtin.shell: docker compose -f /opt/octastack/cockroachdb/compose.yml ps\nPLAYBOOK\nansible-playbook -i /tmp/cockroachdb-inventory.ini /tmp/cockroachdb-deploy.yml\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3920
+          },
+          "data": {
+            "label": "Document CockroachDB topology",
+            "command": "set -euo pipefail\ncat >/tmp/cockroachdb-topology.md <<'EOF'\n# CockroachDB HA topology\n\nMembers:\n- cockroachdb-01: 10.31.87.11 (cockroach)\n- cockroachdb-02: 10.31.87.12 (cockroach)\n- cockroachdb-03: 10.31.87.13 (cockroach)\n\nThis example deploys one CockroachDB container per member host. Replace the placeholder commands with vendor-supported clustering, TLS, backup, and failover automation before production use.\nEOF\ncat /tmp/cockroachdb-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 4325
+          },
+          "data": {
+            "label": "Validate CockroachDB cluster",
+            "command": "set -euo pipefail\nansible -i /tmp/cockroachdb-inventory.ini cockroachdb -b -m shell -a 'docker ps --format \"{{.Names}} {{.Status}}\"'\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 5000
+          },
+          "data": {
+            "label": "CockroachDB HA health check",
+            "command": "docker exec octastack-cockroachdb cockroach sql --insecure --execute='select 1'",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 230,
+            "y": 5405
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_runner",
+          "source": "node_trigger",
+          "target": "node_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_runner_wait",
+          "source": "node_runner",
+          "target": "node_wait_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_1",
+          "source": "node_wait_runner",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

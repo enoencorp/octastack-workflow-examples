@@ -138,21 +138,55 @@
           }
         },
         {
-          "id": "node_install",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
-            "x": 855,
+            "x": 1035,
             "y": 4290
           },
           "data": {
-            "label": "Install Kafka",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y openjdk-17-jre-headless curl tar\nsudo useradd -r -m -U -d /opt/kafka kafka || true\ncurl -fsSL https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz -o /tmp/kafka.tgz\nsudo tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\nsudo chown -R kafka:kafka /opt/kafka\nKAFKA_CLUSTER_ID=\"$(sudo -u kafka /opt/kafka/bin/kafka-storage.sh random-uuid)\"\nsudo -u kafka /opt/kafka/bin/kafka-storage.sh format -t \"$KAFKA_CLUSTER_ID\" -c /opt/kafka/config/kraft/server.properties --ignore-formatted\nsudo tee /etc/systemd/system/kafka.service >/dev/null <<'EOF'\n[Unit]\nDescription=Apache Kafka KRaft\nAfter=network-online.target\n[Service]\nUser=kafka\nExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\nRestart=always\n[Install]\nWantedBy=multi-user.target\nEOF\nsudo systemctl daemon-reload\nsudo systemctl enable --now kafka\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Kafka single-node installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/kafka_single_node\ncat >/opt/octastack/kafka_single_node/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y openjdk-17-jre-headless curl tar\nsudo useradd -r -m -U -d /opt/kafka kafka || true\ncurl -fsSL https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz -o /tmp/kafka.tgz\nsudo tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\nsudo chown -R kafka:kafka /opt/kafka\nKAFKA_CLUSTER_ID=\"$(sudo -u kafka /opt/kafka/bin/kafka-storage.sh random-uuid)\"\nsudo -u kafka /opt/kafka/bin/kafka-storage.sh format -t \"$KAFKA_CLUSTER_ID\" -c /opt/kafka/config/kraft/server.properties --ignore-formatted\nsudo tee /etc/systemd/system/kafka.service >/dev/null <<'EOF'\n[Unit]\nDescription=Apache Kafka KRaft\nAfter=network-online.target\n[Service]\nUser=kafka\nExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\nRestart=always\n[Install]\nWantedBy=multi-user.target\nEOF\nsudo systemctl daemon-reload\nsudo systemctl enable --now kafka\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/kafka_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 4695
+          },
+          "data": {
+            "label": "Review Kafka single-node installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/kafka_single_node/install.sh\nwc -l /opt/octastack/kafka_single_node/install.sh\nsed -n '1,120p' /opt/octastack/kafka_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5100
+          },
+          "data": {
+            "label": "Execute Kafka single-node installer",
+            "command": "set -euo pipefail\n/opt/octastack/kafka_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1035,
+            "y": 5505
+          },
+          "data": {
+            "label": "Collect Kafka single-node runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -160,7 +194,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 1035,
-            "y": 5475
+            "y": 5910
           },
           "data": {
             "label": "Kafka health check",
@@ -173,7 +207,7 @@
           "type": "endNode",
           "position": {
             "x": 1085,
-            "y": 5880
+            "y": 6315
           },
           "data": {
             "label": "End"
@@ -218,9 +252,45 @@
           }
         },
         {
-          "id": "edge_wait_install",
+          "id": "edge_step_1",
           "source": "node_wait",
-          "target": "node_install",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -231,7 +301,7 @@
         },
         {
           "id": "edge_install_health",
-          "source": "node_install",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

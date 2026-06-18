@@ -87,21 +87,55 @@
           }
         },
         {
-          "id": "node_bootstrap",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
             "x": 180,
             "y": 2300
           },
           "data": {
-            "label": "Bootstrap PostgreSQL Patroni etcd HA",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/postgresql-ha.ini <<'INVENTORY'\n[etcd]\n10.30.10.11 node_name=etcd-01\n10.30.10.12 node_name=etcd-02\n10.30.10.13 node_name=etcd-03\n\n[postgres]\n10.30.10.21 node_name=pg-01\n10.30.10.22 node_name=pg-02\n10.30.10.23 node_name=pg-03\n\n[load_balancer]\n10.30.10.31 node_name=pg-lb-01\n10.30.10.32 node_name=pg-lb-02\nINVENTORY\ncat >/tmp/postgresql-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [curl, jq, chrony]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: chrony\n        state: started\n        enabled: true\n\n- hosts: etcd\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: etcd\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/default/etcd\n        mode: \"0644\"\n        content: |\n          ETCD_NAME=\"{{ inventory_hostname }}\"\n          ETCD_LISTEN_CLIENT_URLS=\"http://0.0.0.0:2379\"\n          ETCD_ADVERTISE_CLIENT_URLS=\"http://{{ inventory_hostname }}:2379\"\n    - ansible.builtin.service:\n        name: etcd\n        state: restarted\n        enabled: true\n\n- hosts: postgres\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [postgresql, postgresql-contrib, python3-pip, patroni]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/patroni.yml\n        mode: \"0640\"\n        content: |\n          scope: octastack-postgres\n          namespace: /service/\n          name: \"{{ inventory_hostname }}\"\n          restapi:\n            listen: 0.0.0.0:8008\n            connect_address: \"{{ inventory_hostname }}:8008\"\n          etcd3:\n            hosts: 10.30.10.11:2379,10.30.10.12:2379,10.30.10.13:2379\n          bootstrap:\n            dcs:\n              ttl: 30\n              loop_wait: 10\n              retry_timeout: 10\n              maximum_lag_on_failover: 1048576\n              postgresql:\n                use_pg_rewind: true\n            initdb:\n              - encoding: UTF8\n              - data-checksums\n          postgresql:\n            listen: 0.0.0.0:5432\n            connect_address: \"{{ inventory_hostname }}:5432\"\n            data_dir: /var/lib/postgresql/patroni\n            authentication:\n              superuser:\n                username: postgres\n                password: change-me\n              replication:\n                username: replicator\n                password: change-me\n    - ansible.builtin.service:\n        name: patroni\n        state: restarted\n        enabled: true\n\n- hosts: load_balancer\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [haproxy, keepalived]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/haproxy/haproxy.cfg\n        mode: \"0644\"\n        content: |\n          global\n            daemon\n            maxconn 4096\n          defaults\n            mode tcp\n            timeout connect 5s\n            timeout client 30s\n            timeout server 30s\n          listen postgres_rw\n            bind *:5432\n            option httpchk GET /primary\n            server pg-01 10.30.10.21:5432 check port 8008\n            server pg-02 10.30.10.22:5432 check port 8008\n            server pg-03 10.30.10.23:5432 check port 8008\n    - ansible.builtin.service:\n        name: haproxy\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/postgresql-ha.ini /tmp/postgresql-ha.yml\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render PostgreSQL Patroni etcd HA installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/postgresql_patroni_etcd_ha\ncat >/opt/octastack/postgresql_patroni_etcd_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/postgresql-ha.ini <<'INVENTORY'\n[etcd]\n10.30.10.11 node_name=etcd-01\n10.30.10.12 node_name=etcd-02\n10.30.10.13 node_name=etcd-03\n\n[postgres]\n10.30.10.21 node_name=pg-01\n10.30.10.22 node_name=pg-02\n10.30.10.23 node_name=pg-03\n\n[load_balancer]\n10.30.10.31 node_name=pg-lb-01\n10.30.10.32 node_name=pg-lb-02\nINVENTORY\ncat >/tmp/postgresql-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [curl, jq, chrony]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: chrony\n        state: started\n        enabled: true\n\n- hosts: etcd\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: etcd\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/default/etcd\n        mode: \"0644\"\n        content: |\n          ETCD_NAME=\"{{ inventory_hostname }}\"\n          ETCD_LISTEN_CLIENT_URLS=\"http://0.0.0.0:2379\"\n          ETCD_ADVERTISE_CLIENT_URLS=\"http://{{ inventory_hostname }}:2379\"\n    - ansible.builtin.service:\n        name: etcd\n        state: restarted\n        enabled: true\n\n- hosts: postgres\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [postgresql, postgresql-contrib, python3-pip, patroni]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/patroni.yml\n        mode: \"0640\"\n        content: |\n          scope: octastack-postgres\n          namespace: /service/\n          name: \"{{ inventory_hostname }}\"\n          restapi:\n            listen: 0.0.0.0:8008\n            connect_address: \"{{ inventory_hostname }}:8008\"\n          etcd3:\n            hosts: 10.30.10.11:2379,10.30.10.12:2379,10.30.10.13:2379\n          bootstrap:\n            dcs:\n              ttl: 30\n              loop_wait: 10\n              retry_timeout: 10\n              maximum_lag_on_failover: 1048576\n              postgresql:\n                use_pg_rewind: true\n            initdb:\n              - encoding: UTF8\n              - data-checksums\n          postgresql:\n            listen: 0.0.0.0:5432\n            connect_address: \"{{ inventory_hostname }}:5432\"\n            data_dir: /var/lib/postgresql/patroni\n            authentication:\n              superuser:\n                username: postgres\n                password: change-me\n              replication:\n                username: replicator\n                password: change-me\n    - ansible.builtin.service:\n        name: patroni\n        state: restarted\n        enabled: true\n\n- hosts: load_balancer\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [haproxy, keepalived]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/haproxy/haproxy.cfg\n        mode: \"0644\"\n        content: |\n          global\n            daemon\n            maxconn 4096\n          defaults\n            mode tcp\n            timeout connect 5s\n            timeout client 30s\n            timeout server 30s\n          listen postgres_rw\n            bind *:5432\n            option httpchk GET /primary\n            server pg-01 10.30.10.21:5432 check port 8008\n            server pg-02 10.30.10.22:5432 check port 8008\n            server pg-03 10.30.10.23:5432 check port 8008\n    - ansible.builtin.service:\n        name: haproxy\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/postgresql-ha.ini /tmp/postgresql-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/postgresql_patroni_etcd_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Review PostgreSQL Patroni etcd HA installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/postgresql_patroni_etcd_ha/install.sh\nwc -l /opt/octastack/postgresql_patroni_etcd_ha/install.sh\nsed -n '1,120p' /opt/octastack/postgresql_patroni_etcd_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Execute PostgreSQL Patroni etcd HA installer",
+            "command": "set -euo pipefail\n/opt/octastack/postgresql_patroni_etcd_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Collect PostgreSQL Patroni etcd HA runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -155,9 +189,45 @@
           }
         },
         {
-          "id": "edge_wait_bootstrap",
+          "id": "edge_step_1",
           "source": "node_wait_runner",
-          "target": "node_bootstrap",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -168,7 +238,7 @@
         },
         {
           "id": "edge_bootstrap_health",
-          "source": "node_bootstrap",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

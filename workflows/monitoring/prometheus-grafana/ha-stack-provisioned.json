@@ -660,21 +660,55 @@
           }
         },
         {
-          "id": "node_bootstrap",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
-            "x": 2970,
+            "x": 3150,
             "y": 5000
           },
           "data": {
-            "label": "Bootstrap Prometheus Grafana HA",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/monitoring-ha.ini <<'INVENTORY'\n[prometheus]\n10.30.70.11 node_name=prometheus-01\n10.30.70.12 node_name=prometheus-02\n\n[alertmanager]\n10.30.70.21 node_name=alertmanager-01\n10.30.70.22 node_name=alertmanager-02\n10.30.70.23 node_name=alertmanager-03\n\n[grafana]\n10.30.70.31 node_name=grafana-01\n10.30.70.32 node_name=grafana-02\nINVENTORY\ncat >/tmp/monitoring-ha.yml <<'PLAYBOOK'\n- hosts: prometheus\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [prometheus, prometheus-node-exporter]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: \"{{ item }}\"\n        state: restarted\n        enabled: true\n      loop: [prometheus, prometheus-node-exporter]\n\n- hosts: alertmanager\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: prometheus-alertmanager\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/prometheus/alertmanager.yml\n        mode: \"0644\"\n        content: |\n          global:\n            resolve_timeout: 5m\n          route:\n            receiver: default\n          receivers:\n            - name: default\n    - ansible.builtin.service:\n        name: prometheus-alertmanager\n        state: restarted\n        enabled: true\n\n- hosts: grafana\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: grafana\n        state: present\n    - ansible.builtin.service:\n        name: grafana-server\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Prometheus Grafana HA installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/prometheus_grafana_ha\ncat >/opt/octastack/prometheus_grafana_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/monitoring-ha.ini <<'INVENTORY'\n[prometheus]\n10.30.70.11 node_name=prometheus-01\n10.30.70.12 node_name=prometheus-02\n\n[alertmanager]\n10.30.70.21 node_name=alertmanager-01\n10.30.70.22 node_name=alertmanager-02\n10.30.70.23 node_name=alertmanager-03\n\n[grafana]\n10.30.70.31 node_name=grafana-01\n10.30.70.32 node_name=grafana-02\nINVENTORY\ncat >/tmp/monitoring-ha.yml <<'PLAYBOOK'\n- hosts: prometheus\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [prometheus, prometheus-node-exporter]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: \"{{ item }}\"\n        state: restarted\n        enabled: true\n      loop: [prometheus, prometheus-node-exporter]\n\n- hosts: alertmanager\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: prometheus-alertmanager\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/prometheus/alertmanager.yml\n        mode: \"0644\"\n        content: |\n          global:\n            resolve_timeout: 5m\n          route:\n            receiver: default\n          receivers:\n            - name: default\n    - ansible.builtin.service:\n        name: prometheus-alertmanager\n        state: restarted\n        enabled: true\n\n- hosts: grafana\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: grafana\n        state: present\n    - ansible.builtin.service:\n        name: grafana-server\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/prometheus_grafana_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 3150,
+            "y": 5405
+          },
+          "data": {
+            "label": "Review Prometheus Grafana HA installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/prometheus_grafana_ha/install.sh\nwc -l /opt/octastack/prometheus_grafana_ha/install.sh\nsed -n '1,120p' /opt/octastack/prometheus_grafana_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 3150,
+            "y": 5810
+          },
+          "data": {
+            "label": "Execute Prometheus Grafana HA installer",
+            "command": "set -euo pipefail\n/opt/octastack/prometheus_grafana_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 3150,
+            "y": 6215
+          },
+          "data": {
+            "label": "Collect Prometheus Grafana HA runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -682,7 +716,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 3150,
-            "y": 6200
+            "y": 6620
           },
           "data": {
             "label": "Prometheus Grafana HA health check",
@@ -695,7 +729,7 @@
           "type": "endNode",
           "position": {
             "x": 3200,
-            "y": 6605
+            "y": 7025
           },
           "data": {
             "label": "End"
@@ -740,18 +774,6 @@
           }
         },
         {
-          "id": "edge_prometheus_01_bootstrap",
-          "source": "node_wait_prometheus_01",
-          "target": "node_bootstrap",
-          "type": "workflowEdge",
-          "mode": "sequential",
-          "order": 1,
-          "data": {
-            "mode": "sequential",
-            "order": 1
-          }
-        },
-        {
           "id": "edge_context_prometheus_02",
           "source": "node_context",
           "target": "node_provision_prometheus_02",
@@ -767,18 +789,6 @@
           "id": "edge_prometheus_02_wait",
           "source": "node_provision_prometheus_02",
           "target": "node_wait_prometheus_02",
-          "type": "workflowEdge",
-          "mode": "sequential",
-          "order": 1,
-          "data": {
-            "mode": "sequential",
-            "order": 1
-          }
-        },
-        {
-          "id": "edge_prometheus_02_bootstrap",
-          "source": "node_wait_prometheus_02",
-          "target": "node_bootstrap",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -812,18 +822,6 @@
           }
         },
         {
-          "id": "edge_alertmanager_01_bootstrap",
-          "source": "node_wait_alertmanager_01",
-          "target": "node_bootstrap",
-          "type": "workflowEdge",
-          "mode": "sequential",
-          "order": 1,
-          "data": {
-            "mode": "sequential",
-            "order": 1
-          }
-        },
-        {
           "id": "edge_context_alertmanager_02",
           "source": "node_context",
           "target": "node_provision_alertmanager_02",
@@ -839,18 +837,6 @@
           "id": "edge_alertmanager_02_wait",
           "source": "node_provision_alertmanager_02",
           "target": "node_wait_alertmanager_02",
-          "type": "workflowEdge",
-          "mode": "sequential",
-          "order": 1,
-          "data": {
-            "mode": "sequential",
-            "order": 1
-          }
-        },
-        {
-          "id": "edge_alertmanager_02_bootstrap",
-          "source": "node_wait_alertmanager_02",
-          "target": "node_bootstrap",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -884,18 +870,6 @@
           }
         },
         {
-          "id": "edge_alertmanager_03_bootstrap",
-          "source": "node_wait_alertmanager_03",
-          "target": "node_bootstrap",
-          "type": "workflowEdge",
-          "mode": "sequential",
-          "order": 1,
-          "data": {
-            "mode": "sequential",
-            "order": 1
-          }
-        },
-        {
           "id": "edge_context_grafana_01",
           "source": "node_context",
           "target": "node_provision_grafana_01",
@@ -911,18 +885,6 @@
           "id": "edge_grafana_01_wait",
           "source": "node_provision_grafana_01",
           "target": "node_wait_grafana_01",
-          "type": "workflowEdge",
-          "mode": "sequential",
-          "order": 1,
-          "data": {
-            "mode": "sequential",
-            "order": 1
-          }
-        },
-        {
-          "id": "edge_grafana_01_bootstrap",
-          "source": "node_wait_grafana_01",
-          "target": "node_bootstrap",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -956,9 +918,117 @@
           }
         },
         {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_prometheus_01_bootstrap",
+          "source": "node_wait_prometheus_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_prometheus_02_bootstrap",
+          "source": "node_wait_prometheus_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_alertmanager_01_bootstrap",
+          "source": "node_wait_alertmanager_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_alertmanager_02_bootstrap",
+          "source": "node_wait_alertmanager_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_alertmanager_03_bootstrap",
+          "source": "node_wait_alertmanager_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_grafana_01_bootstrap",
+          "source": "node_wait_grafana_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
           "id": "edge_grafana_02_bootstrap",
           "source": "node_wait_grafana_02",
-          "target": "node_bootstrap",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -969,7 +1039,7 @@
         },
         {
           "id": "edge_bootstrap_health",
-          "source": "node_bootstrap",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

@@ -87,21 +87,55 @@
           }
         },
         {
-          "id": "node_install",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
             "x": 180,
             "y": 2300
           },
           "data": {
-            "label": "Install Redis",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y redis-server\nsudo sed -i \"s/^bind .*/bind 0.0.0.0 ::1/\" /etc/redis/redis.conf\nsudo sed -i \"s/^supervised .*/supervised systemd/\" /etc/redis/redis.conf\nsudo systemctl enable --now redis-server\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render Redis single-node installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/redis_single_node\ncat >/opt/octastack/redis_single_node/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y redis-server\nsudo sed -i \"s/^bind .*/bind 0.0.0.0 ::1/\" /etc/redis/redis.conf\nsudo sed -i \"s/^supervised .*/supervised systemd/\" /etc/redis/redis.conf\nsudo systemctl enable --now redis-server\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/redis_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Review Redis single-node installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/redis_single_node/install.sh\nwc -l /opt/octastack/redis_single_node/install.sh\nsed -n '1,120p' /opt/octastack/redis_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Execute Redis single-node installer",
+            "command": "set -euo pipefail\n/opt/octastack/redis_single_node/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Collect Redis single-node runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -109,7 +143,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 180,
-            "y": 3600
+            "y": 3920
           },
           "data": {
             "label": "Redis health check",
@@ -122,7 +156,7 @@
           "type": "endNode",
           "position": {
             "x": 230,
-            "y": 4005
+            "y": 4325
           },
           "data": {
             "label": "End"
@@ -155,9 +189,45 @@
           }
         },
         {
-          "id": "edge_wait_install",
+          "id": "edge_step_1",
           "source": "node_wait",
-          "target": "node_install",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -168,7 +238,7 @@
         },
         {
           "id": "edge_install_health",
-          "source": "node_install",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

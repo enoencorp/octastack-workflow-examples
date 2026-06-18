@@ -87,21 +87,55 @@
           }
         },
         {
-          "id": "node_bootstrap",
-          "type": "customNode",
+          "id": "node_step_1",
+          "type": "configCommandNode",
           "position": {
             "x": 180,
             "y": 2300
           },
           "data": {
-            "label": "Bootstrap RabbitMQ Quorum HA",
-            "customNodeId": "",
-            "scriptType": "shell",
-            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rabbitmq-ha.ini <<'INVENTORY'\n[rabbitmq]\n10.30.40.11 node_name=rabbitmq-01\n10.30.40.12 node_name=rabbitmq-02\n10.30.40.13 node_name=rabbitmq-03\nINVENTORY\ncat >/tmp/rabbitmq-ha.yml <<'PLAYBOOK'\n- hosts: rabbitmq\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: rabbitmq-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /var/lib/rabbitmq/.erlang.cookie\n        owner: rabbitmq\n        group: rabbitmq\n        mode: \"0400\"\n        content: \"OCTASTACKRABBITMQCOOKIE\"\n    - ansible.builtin.service:\n        name: rabbitmq-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: rabbitmq-plugins enable rabbitmq_management\n    - ansible.builtin.shell: |\n        rabbitmqctl stop_app\n        rabbitmqctl reset\n        rabbitmqctl join_cluster rabbit@10.30.40.11\n        rabbitmqctl start_app\n      when: inventory_hostname != \"10.30.40.11\"\n    - ansible.builtin.shell: |\n        rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n        rabbitmqctl add_user app_user change-me || true\n        rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\n      when: inventory_hostname == \"10.30.40.11\"\nPLAYBOOK\nansible-playbook -i /tmp/rabbitmq-ha.ini /tmp/rabbitmq-ha.yml\n",
-            "sudo": true,
-            "method": "GET",
-            "path": "",
-            "body": "{}"
+            "label": "Render RabbitMQ Quorum HA installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rabbitmq_quorum_ha\ncat >/opt/octastack/rabbitmq_quorum_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rabbitmq-ha.ini <<'INVENTORY'\n[rabbitmq]\n10.30.40.11 node_name=rabbitmq-01\n10.30.40.12 node_name=rabbitmq-02\n10.30.40.13 node_name=rabbitmq-03\nINVENTORY\ncat >/tmp/rabbitmq-ha.yml <<'PLAYBOOK'\n- hosts: rabbitmq\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: rabbitmq-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /var/lib/rabbitmq/.erlang.cookie\n        owner: rabbitmq\n        group: rabbitmq\n        mode: \"0400\"\n        content: \"OCTASTACKRABBITMQCOOKIE\"\n    - ansible.builtin.service:\n        name: rabbitmq-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: rabbitmq-plugins enable rabbitmq_management\n    - ansible.builtin.shell: |\n        rabbitmqctl stop_app\n        rabbitmqctl reset\n        rabbitmqctl join_cluster rabbit@10.30.40.11\n        rabbitmqctl start_app\n      when: inventory_hostname != \"10.30.40.11\"\n    - ansible.builtin.shell: |\n        rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n        rabbitmqctl add_user app_user change-me || true\n        rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\n      when: inventory_hostname == \"10.30.40.11\"\nPLAYBOOK\nansible-playbook -i /tmp/rabbitmq-ha.ini /tmp/rabbitmq-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rabbitmq_quorum_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Review RabbitMQ Quorum HA installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/rabbitmq_quorum_ha/install.sh\nwc -l /opt/octastack/rabbitmq_quorum_ha/install.sh\nsed -n '1,120p' /opt/octastack/rabbitmq_quorum_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Execute RabbitMQ Quorum HA installer",
+            "command": "set -euo pipefail\n/opt/octastack/rabbitmq_quorum_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Collect RabbitMQ Quorum HA runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
           }
         },
         {
@@ -155,9 +189,45 @@
           }
         },
         {
-          "id": "edge_wait_bootstrap",
+          "id": "edge_step_1",
           "source": "node_wait_runner",
-          "target": "node_bootstrap",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -168,7 +238,7 @@
         },
         {
           "id": "edge_bootstrap_health",
-          "source": "node_bootstrap",
+          "source": "node_step_4",
           "target": "node_health",
           "type": "workflowEdge",
           "mode": "sequential",

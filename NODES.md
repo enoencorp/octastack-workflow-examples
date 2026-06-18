@@ -88,6 +88,7 @@ Rules for AI generation:
 - Node positions must use a readable layered layout and must not overlap. Use type-aware spacing because editor nodes such as `provisionNode` and `serverNode` are much larger than compact command nodes.
 - Use the manual editor layout scale from the examples: entry nodes near `x: 45-105`, fan-out columns spaced by about `705px`, and large vertical bands for provision, wait, server/bootstrap, health, and end stages.
 - For HA fan-out graphs, place trigger/context at the top-left, distribute provision/server branches left-to-right across the X axis, then converge to a lower central branch for bootstrap, health, and end nodes.
+- Prefer multiple small `configCommandNode` steps over one large script node. Split workflows into prepare, install runtime, render configuration, deploy, initialize, inspect, and validate phases where possible.
 
 ## 2. Runtime Execution Model
 

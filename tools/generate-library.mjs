@@ -183,6 +183,38 @@ function node(id, type, x, y, data) {
   return { id, type, position: { x, y }, data };
 }
 
+function commandData(label, command, sudo = true) {
+  return {
+    label,
+    command: text(command),
+    sudo
+  };
+}
+
+function appendCommandSteps(nodes, edges, fromId, steps, options) {
+  const gap = options.gap ?? 405;
+  let previousId = fromId;
+  let firstId = "";
+  for (const [index, step] of steps.entries()) {
+    const id = `${options.idPrefix}_${index + 1}`;
+    const x = step.x ?? options.x;
+    const y = step.y ?? options.y + index * gap;
+    nodes.push(node(id, "configCommandNode", x, y, commandData(step.label, step.command, step.sudo ?? true)));
+    if (!firstId) {
+      firstId = id;
+    }
+    if (previousId) {
+      edges.push(edge(`${options.edgePrefix}_${index + 1}`, previousId, id));
+    }
+    previousId = id;
+  }
+  return {
+    firstId,
+    lastId: previousId,
+    nextY: options.y + steps.length * gap
+  };
+}
+
 function edge(id, source, target, options = {}) {
   const mode = options.mode ?? "sequential";
   const out = {
@@ -228,8 +260,29 @@ function createSingleProvisionedWorkflow(stack) {
       profileId: PROFILE_ID
     }),
     node("node_provision", "provisionNode", LAYOUT.singleProvisioned.provision.x, LAYOUT.singleProvisioned.provision.y, provisionData(target, stack)),
-    node("node_wait", "waitUntilUpNode", LAYOUT.singleProvisioned.wait.x, LAYOUT.singleProvisioned.wait.y, waitData("Wait for provisioned host")),
-    node("node_install", "customNode", LAYOUT.singleProvisioned.install.x, LAYOUT.singleProvisioned.install.y, {
+    node("node_wait", "waitUntilUpNode", LAYOUT.singleProvisioned.wait.x, LAYOUT.singleProvisioned.wait.y, waitData("Wait for provisioned host"))
+  ];
+  const edges = [
+    edge("edge_trigger_context", "node_trigger", "node_context"),
+    edge("edge_context_provision", "node_context", "node_provision"),
+    edge("edge_provision_wait", "node_provision", "node_wait")
+  ];
+  let previousId = "node_wait";
+  let healthY = LAYOUT.singleProvisioned.health.y;
+  let endY = LAYOUT.singleProvisioned.end.y;
+
+  if (stack.single.steps?.length) {
+    const stepResult = appendCommandSteps(nodes, edges, "node_wait", stack.single.steps, {
+      idPrefix: "node_step",
+      edgePrefix: "edge_step",
+      x: LAYOUT.singleProvisioned.install.x + LAYOUT.commandInsetX,
+      y: LAYOUT.singleProvisioned.install.y
+    });
+    previousId = stepResult.lastId;
+    healthY = Math.max(healthY, stepResult.nextY);
+    endY = healthY + 405;
+  } else {
+    nodes.push(node("node_install", "customNode", LAYOUT.singleProvisioned.install.x, LAYOUT.singleProvisioned.install.y, {
       label: `Install ${stack.displayName}`,
       customNodeId: "",
       scriptType: "shell",
@@ -238,22 +291,19 @@ function createSingleProvisionedWorkflow(stack) {
       method: "GET",
       path: "",
       body: "{}"
-    }),
-    node("node_health", "configCommandNode", LAYOUT.singleProvisioned.health.x, LAYOUT.singleProvisioned.health.y, {
-      label: `${stack.displayName} health check`,
-      command: stack.single.health,
-      sudo: false
-    }),
-    node("node_end", "endNode", LAYOUT.singleProvisioned.end.x, LAYOUT.singleProvisioned.end.y, { label: "End" })
-  ];
-  const edges = [
-    edge("edge_trigger_context", "node_trigger", "node_context"),
-    edge("edge_context_provision", "node_context", "node_provision"),
-    edge("edge_provision_wait", "node_provision", "node_wait"),
-    edge("edge_wait_install", "node_wait", "node_install"),
-    edge("edge_install_health", "node_install", "node_health"),
-    edge("edge_health_end", "node_health", "node_end")
-  ];
+    }));
+    edges.push(edge("edge_wait_install", "node_wait", "node_install"));
+    previousId = "node_install";
+  }
+
+  nodes.push(node("node_health", "configCommandNode", LAYOUT.singleProvisioned.health.x, healthY, {
+    label: `${stack.displayName} health check`,
+    command: stack.single.health,
+    sudo: false
+  }));
+  nodes.push(node("node_end", "endNode", LAYOUT.singleProvisioned.end.x, endY, { label: "End" }));
+  edges.push(edge("edge_install_health", previousId, "node_health"));
+  edges.push(edge("edge_health_end", "node_health", "node_end"));
   return { nodes, edges };
 }
 
@@ -262,8 +312,28 @@ function createSingleExistingWorkflow(stack) {
   const nodes = [
     node("node_trigger", "triggerNode", LAYOUT.trigger.x, LAYOUT.trigger.y, triggerData(`${stack.displayName} single-node existing`, stack.variables)),
     node("node_server", "serverNode", LAYOUT.singleExisting.server.x, LAYOUT.singleExisting.server.y, serverData(`${stack.displayName} Host`, stack.single.existingHost ?? target.ip)),
-    node("node_wait", "waitUntilUpNode", LAYOUT.singleExisting.wait.x, LAYOUT.singleExisting.wait.y, waitData("Wait for existing host")),
-    node("node_install", "customNode", LAYOUT.singleExisting.install.x, LAYOUT.singleExisting.install.y, {
+    node("node_wait", "waitUntilUpNode", LAYOUT.singleExisting.wait.x, LAYOUT.singleExisting.wait.y, waitData("Wait for existing host"))
+  ];
+  const edges = [
+    edge("edge_trigger_server", "node_trigger", "node_server"),
+    edge("edge_server_wait", "node_server", "node_wait")
+  ];
+  let previousId = "node_wait";
+  let healthY = LAYOUT.singleExisting.health.y;
+  let endY = LAYOUT.singleExisting.end.y;
+
+  if (stack.single.steps?.length) {
+    const stepResult = appendCommandSteps(nodes, edges, "node_wait", stack.single.steps, {
+      idPrefix: "node_step",
+      edgePrefix: "edge_step",
+      x: LAYOUT.singleExisting.install.x,
+      y: LAYOUT.singleExisting.install.y
+    });
+    previousId = stepResult.lastId;
+    healthY = Math.max(healthY, stepResult.nextY);
+    endY = healthY + 405;
+  } else {
+    nodes.push(node("node_install", "customNode", LAYOUT.singleExisting.install.x, LAYOUT.singleExisting.install.y, {
       label: `Install ${stack.displayName}`,
       customNodeId: "",
       scriptType: "shell",
@@ -272,21 +342,19 @@ function createSingleExistingWorkflow(stack) {
       method: "GET",
       path: "",
       body: "{}"
-    }),
-    node("node_health", "configCommandNode", LAYOUT.singleExisting.health.x, LAYOUT.singleExisting.health.y, {
-      label: `${stack.displayName} health check`,
-      command: stack.single.health,
-      sudo: false
-    }),
-    node("node_end", "endNode", LAYOUT.singleExisting.end.x, LAYOUT.singleExisting.end.y, { label: "End" })
-  ];
-  const edges = [
-    edge("edge_trigger_server", "node_trigger", "node_server"),
-    edge("edge_server_wait", "node_server", "node_wait"),
-    edge("edge_wait_install", "node_wait", "node_install"),
-    edge("edge_install_health", "node_install", "node_health"),
-    edge("edge_health_end", "node_health", "node_end")
-  ];
+    }));
+    edges.push(edge("edge_wait_install", "node_wait", "node_install"));
+    previousId = "node_install";
+  }
+
+  nodes.push(node("node_health", "configCommandNode", LAYOUT.singleExisting.health.x, healthY, {
+    label: `${stack.displayName} health check`,
+    command: stack.single.health,
+    sudo: false
+  }));
+  nodes.push(node("node_end", "endNode", LAYOUT.singleExisting.end.x, endY, { label: "End" }));
+  edges.push(edge("edge_install_health", previousId, "node_health"));
+  edges.push(edge("edge_health_end", "node_health", "node_end"));
   return { nodes, edges };
 }
 
@@ -310,26 +378,47 @@ function createHaProvisionedWorkflow(stack) {
       order: index + 1
     }));
     edges.push(edge(`edge_${slug(target.label)}_wait`, provisionId, waitId));
-    edges.push(edge(`edge_${slug(target.label)}_bootstrap`, waitId, "node_bootstrap"));
   });
   const centerX = branchCenterX(stack.ha.nodes.length, LAYOUT.provisionBranchStartX);
-  nodes.push(node("node_bootstrap", "customNode", centerX, LAYOUT.haProvisioned.bootstrapY, {
-    label: `Bootstrap ${stack.ha.title}`,
-    customNodeId: "",
-    scriptType: "shell",
-    scriptContent: stack.ha.install,
-    sudo: true,
-    method: "GET",
-    path: "",
-    body: "{}"
-  }));
-  nodes.push(node("node_health", "configCommandNode", centerX + LAYOUT.commandInsetX, LAYOUT.haProvisioned.healthY, {
+  let previousId = "node_bootstrap";
+  let firstBootstrapId = "node_bootstrap";
+  let healthY = LAYOUT.haProvisioned.healthY;
+  let endY = LAYOUT.haProvisioned.endY;
+
+  if (stack.ha.steps?.length) {
+    const stepResult = appendCommandSteps(nodes, edges, "", stack.ha.steps, {
+      idPrefix: "node_step",
+      edgePrefix: "edge_step",
+      x: centerX + LAYOUT.commandInsetX,
+      y: LAYOUT.haProvisioned.bootstrapY
+    });
+    firstBootstrapId = stepResult.firstId;
+    previousId = stepResult.lastId;
+    healthY = Math.max(healthY, stepResult.nextY);
+    endY = healthY + 405;
+  } else {
+    nodes.push(node("node_bootstrap", "customNode", centerX, LAYOUT.haProvisioned.bootstrapY, {
+      label: `Bootstrap ${stack.ha.title}`,
+      customNodeId: "",
+      scriptType: "shell",
+      scriptContent: stack.ha.install,
+      sudo: true,
+      method: "GET",
+      path: "",
+      body: "{}"
+    }));
+  }
+
+  for (const target of stack.ha.nodes) {
+    edges.push(edge(`edge_${slug(target.label)}_bootstrap`, `node_wait_${slug(target.label)}`, firstBootstrapId));
+  }
+  nodes.push(node("node_health", "configCommandNode", centerX + LAYOUT.commandInsetX, healthY, {
     label: `${stack.ha.title} health check`,
     command: stack.ha.health,
     sudo: false
   }));
-  nodes.push(node("node_end", "endNode", centerX + LAYOUT.commandInsetX + 50, LAYOUT.haProvisioned.endY, { label: "End" }));
-  edges.push(edge("edge_bootstrap_health", "node_bootstrap", "node_health"));
+  nodes.push(node("node_end", "endNode", centerX + LAYOUT.commandInsetX + 50, endY, { label: "End" }));
+  edges.push(edge("edge_bootstrap_health", previousId, "node_health"));
   edges.push(edge("edge_health_end", "node_health", "node_end"));
   return { nodes, edges };
 }
@@ -342,8 +431,28 @@ function createHaExistingWorkflow(stack) {
       hostname: stack.ha.runnerHost,
       targets: [serverTarget("target-runner", "Automation Runner", stack.ha.runnerHost)]
     }),
-    node("node_wait_runner", "waitUntilUpNode", LAYOUT.haExisting.wait.x, LAYOUT.haExisting.wait.y, waitData("Wait for automation runner")),
-    node("node_bootstrap", "customNode", LAYOUT.haExisting.bootstrap.x, LAYOUT.haExisting.bootstrap.y, {
+    node("node_wait_runner", "waitUntilUpNode", LAYOUT.haExisting.wait.x, LAYOUT.haExisting.wait.y, waitData("Wait for automation runner"))
+  ];
+  const edges = [
+    edge("edge_trigger_runner", "node_trigger", "node_runner"),
+    edge("edge_runner_wait", "node_runner", "node_wait_runner")
+  ];
+  let previousId = "node_wait_runner";
+  let healthY = LAYOUT.haExisting.health.y;
+  let endY = LAYOUT.haExisting.end.y;
+
+  if (stack.ha.steps?.length) {
+    const stepResult = appendCommandSteps(nodes, edges, "node_wait_runner", stack.ha.steps, {
+      idPrefix: "node_step",
+      edgePrefix: "edge_step",
+      x: LAYOUT.haExisting.bootstrap.x,
+      y: LAYOUT.haExisting.bootstrap.y
+    });
+    previousId = stepResult.lastId;
+    healthY = Math.max(healthY, stepResult.nextY);
+    endY = healthY + 405;
+  } else {
+    nodes.push(node("node_bootstrap", "customNode", LAYOUT.haExisting.bootstrap.x, LAYOUT.haExisting.bootstrap.y, {
       label: `Bootstrap ${stack.ha.title}`,
       customNodeId: "",
       scriptType: "shell",
@@ -352,21 +461,19 @@ function createHaExistingWorkflow(stack) {
       method: "GET",
       path: "",
       body: "{}"
-    }),
-    node("node_health", "configCommandNode", LAYOUT.haExisting.health.x, LAYOUT.haExisting.health.y, {
-      label: `${stack.ha.title} health check`,
-      command: stack.ha.health,
-      sudo: false
-    }),
-    node("node_end", "endNode", LAYOUT.haExisting.end.x, LAYOUT.haExisting.end.y, { label: "End" })
-  ];
-  const edges = [
-    edge("edge_trigger_runner", "node_trigger", "node_runner"),
-    edge("edge_runner_wait", "node_runner", "node_wait_runner"),
-    edge("edge_wait_bootstrap", "node_wait_runner", "node_bootstrap"),
-    edge("edge_bootstrap_health", "node_bootstrap", "node_health"),
-    edge("edge_health_end", "node_health", "node_end")
-  ];
+    }));
+    edges.push(edge("edge_wait_bootstrap", "node_wait_runner", "node_bootstrap"));
+    previousId = "node_bootstrap";
+  }
+
+  nodes.push(node("node_health", "configCommandNode", LAYOUT.haExisting.health.x, healthY, {
+    label: `${stack.ha.title} health check`,
+    command: stack.ha.health,
+    sudo: false
+  }));
+  nodes.push(node("node_end", "endNode", LAYOUT.haExisting.end.x, endY, { label: "End" }));
+  edges.push(edge("edge_bootstrap_health", previousId, "node_health"));
+  edges.push(edge("edge_health_end", "node_health", "node_end"));
   return { nodes, edges };
 }
 
@@ -1008,6 +1115,408 @@ ansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml
 `);
 }
 
+function shellQuote(value) {
+  return String(value).replaceAll("'", "'\"'\"'");
+}
+
+function legacyScriptSteps(displayName, script) {
+  const serviceSlug = slug(displayName);
+  const scriptPath = `/opt/octastack/${serviceSlug}/install.sh`;
+  return [
+    {
+      label: `Render ${displayName} installer`,
+      command: `
+set -euo pipefail
+install -d -m 0750 /opt/octastack/${serviceSlug}
+cat >${scriptPath} <<'OCTASTACK_INSTALLER'
+${text(script)}
+OCTASTACK_INSTALLER
+chmod 0750 ${scriptPath}
+`
+    },
+    {
+      label: `Review ${displayName} installer`,
+      command: `
+set -euo pipefail
+bash -n ${scriptPath}
+wc -l ${scriptPath}
+sed -n '1,120p' ${scriptPath}
+`
+    },
+    {
+      label: `Execute ${displayName} installer`,
+      command: `
+set -euo pipefail
+${scriptPath}
+`
+    },
+    {
+      label: `Collect ${displayName} runtime status`,
+      command: `
+set -euo pipefail
+systemctl --failed --no-pager || true
+if command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi
+if command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi
+`
+    }
+  ];
+}
+
+function composePorts(ports = []) {
+  return ports.map((port) => `      - "${port}"`).join("\n");
+}
+
+function composeEnvironment(env = {}) {
+  const entries = Object.entries(env);
+  if (!entries.length) {
+    return "";
+  }
+  return [
+    "    environment:",
+    ...entries.map(([key, value]) => `      ${key}: "${String(value).replaceAll('"', '\\"')}"`)
+  ].join("\n");
+}
+
+function composeVolumes(volumes = ["data:/data"]) {
+  return volumes.map((volume) => `      - ${volume}`).join("\n");
+}
+
+function composeCommand(command) {
+  if (!command) {
+    return "";
+  }
+  return `    command: ${JSON.stringify(command)}`;
+}
+
+function composeManifest(def) {
+  const parts = [
+    "services:",
+    `  ${def.serviceName}:`,
+    `    image: ${def.image}`,
+    `    container_name: octastack-${def.serviceName}`,
+    "    restart: unless-stopped"
+  ];
+  if (def.command) {
+    parts.push(composeCommand(def.command));
+  }
+  const env = composeEnvironment(def.env);
+  if (env) {
+    parts.push(env);
+  }
+  if (def.ports?.length) {
+    parts.push("    ports:");
+    parts.push(composePorts(def.ports));
+  }
+  if (def.volumes?.length) {
+    parts.push("    volumes:");
+    parts.push(composeVolumes(def.volumes));
+  }
+  parts.push("volumes:");
+  parts.push("  data: {}");
+  return parts.join("\n");
+}
+
+function containerRuntimeInstallCommand() {
+  return `
+set -euo pipefail
+if command -v docker >/dev/null 2>&1; then
+  docker --version
+  exit 0
+fi
+if command -v apt-get >/dev/null 2>&1; then
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin
+elif command -v dnf >/dev/null 2>&1; then
+  dnf install -y docker docker-compose-plugin
+elif command -v yum >/dev/null 2>&1; then
+  yum install -y docker docker-compose-plugin
+else
+  echo "Unsupported package manager. Install Docker manually." >&2
+  exit 1
+fi
+systemctl enable --now docker
+docker version
+`;
+}
+
+function containerSingleSteps(def) {
+  const serviceSlug = slug(def.displayName);
+  const manifest = composeManifest(def);
+  const envText = Object.entries(def.env ?? {}).map(([key, value]) => `${key}=${value}`).join("\n") || `OCTASTACK_SERVICE=${def.displayName}`;
+  const steps = [
+    {
+      label: `Prepare ${def.displayName} runtime`,
+      command: containerRuntimeInstallCommand()
+    },
+    {
+      label: `Create ${def.displayName} directories`,
+      command: `
+set -euo pipefail
+install -d -m 0750 /opt/octastack/${serviceSlug}
+install -d -m 0750 /var/lib/octastack/${serviceSlug}
+cat >/opt/octastack/${serviceSlug}/.env <<'EOF'
+${envText}
+EOF
+chmod 0600 /opt/octastack/${serviceSlug}/.env
+`
+    },
+    {
+      label: `Render ${def.displayName} compose`,
+      command: `
+set -euo pipefail
+cat >/opt/octastack/${serviceSlug}/compose.yml <<'COMPOSE'
+${manifest}
+COMPOSE
+`
+    },
+    {
+      label: `Deploy ${def.displayName}`,
+      command: `
+set -euo pipefail
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml pull
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml up -d
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml ps
+`
+    },
+    {
+      label: `Inspect ${def.displayName}`,
+      command: `
+set -euo pipefail
+docker ps --filter name=octastack-${def.serviceName}
+docker logs octastack-${def.serviceName} --tail=80 || true
+`
+    }
+  ];
+  if (def.initCommand) {
+    steps.splice(4, 0, {
+      label: `Initialize ${def.displayName}`,
+      command: def.initCommand
+    });
+  }
+  return steps;
+}
+
+function containerHaSteps(def, nodes) {
+  const serviceSlug = slug(def.displayName);
+  const manifest = composeManifest(def);
+  return [
+    {
+      label: `Prepare ${def.displayName} inventory`,
+      command: `
+set -euo pipefail
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
+cat >/tmp/${serviceSlug}-inventory.ini <<'INVENTORY'
+[${serviceSlug}]
+${inventory(nodes)}
+INVENTORY
+`
+    },
+    {
+      label: `Install ${def.displayName} container runtime`,
+      command: `
+set -euo pipefail
+cat >/tmp/${serviceSlug}-runtime.yml <<'PLAYBOOK'
+- hosts: ${serviceSlug}
+  become: true
+  tasks:
+    - ansible.builtin.shell: |
+        if command -v docker >/dev/null 2>&1; then
+          docker --version
+          exit 0
+        fi
+        if command -v apt-get >/dev/null 2>&1; then
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin
+        elif command -v dnf >/dev/null 2>&1; then
+          dnf install -y docker docker-compose-plugin
+        elif command -v yum >/dev/null 2>&1; then
+          yum install -y docker docker-compose-plugin
+        fi
+        systemctl enable --now docker
+PLAYBOOK
+ansible-playbook -i /tmp/${serviceSlug}-inventory.ini /tmp/${serviceSlug}-runtime.yml
+`
+    },
+    {
+      label: `Render ${def.displayName} cluster manifests`,
+      command: `
+set -euo pipefail
+cat >/tmp/${serviceSlug}-deploy.yml <<'PLAYBOOK'
+- hosts: ${serviceSlug}
+  become: true
+  tasks:
+    - ansible.builtin.file:
+        path: /opt/octastack/${serviceSlug}
+        state: directory
+        mode: "0750"
+    - ansible.builtin.copy:
+        dest: /opt/octastack/${serviceSlug}/compose.yml
+        mode: "0640"
+        content: |
+${manifest.split("\n").map((line) => `          ${line}`).join("\n")}
+PLAYBOOK
+`
+    },
+    {
+      label: `Deploy ${def.displayName} cluster`,
+      command: `
+set -euo pipefail
+cat >>/tmp/${serviceSlug}-deploy.yml <<'PLAYBOOK'
+    - ansible.builtin.shell: docker compose -f /opt/octastack/${serviceSlug}/compose.yml pull
+    - ansible.builtin.shell: docker compose -f /opt/octastack/${serviceSlug}/compose.yml up -d
+    - ansible.builtin.shell: docker compose -f /opt/octastack/${serviceSlug}/compose.yml ps
+PLAYBOOK
+ansible-playbook -i /tmp/${serviceSlug}-inventory.ini /tmp/${serviceSlug}-deploy.yml
+`
+    },
+    {
+      label: `Document ${def.displayName} topology`,
+      command: `
+set -euo pipefail
+cat >/tmp/${serviceSlug}-topology.md <<'EOF'
+# ${def.displayName} HA topology
+
+Members:
+${nodes.map((n) => `- ${n.label}: ${n.ip} (${n.role})`).join("\n")}
+
+This example deploys one ${def.displayName} container per member host. Replace the placeholder commands with vendor-supported clustering, TLS, backup, and failover automation before production use.
+EOF
+cat /tmp/${serviceSlug}-topology.md
+`
+    },
+    {
+      label: `Validate ${def.displayName} cluster`,
+      command: def.haValidateCommand ?? `
+set -euo pipefail
+ansible -i /tmp/${serviceSlug}-inventory.ini ${serviceSlug} -b -m shell -a 'docker ps --format "{{.Names}} {{.Status}}"'
+`
+    }
+  ];
+}
+
+function catalogTarget(def, index) {
+  const tech = slug(def.displayName).replaceAll("_", "-");
+  return {
+    label: `${tech}-single-01`,
+    role: def.role ?? "app",
+    vmName: `${tech}-single-01`,
+    ip: `10.31.${index}.50`,
+    cores: def.cores ?? 4,
+    memory: def.memory ?? 8192,
+    diskGb: def.diskGb ?? "80"
+  };
+}
+
+function catalogNodes(def, index) {
+  const tech = slug(def.displayName).replaceAll("_", "-");
+  const count = def.haCount ?? 3;
+  return Array.from({ length: count }, (_, itemIndex) => ({
+    label: `${tech}-${String(itemIndex + 1).padStart(2, "0")}`,
+    role: def.role ?? "member",
+    vmName: `${tech}-${String(itemIndex + 1).padStart(2, "0")}`,
+    ip: `10.31.${index}.${11 + itemIndex}`,
+    cores: def.haCores ?? def.cores ?? 4,
+    memory: def.haMemory ?? def.memory ?? 8192,
+    diskGb: def.haDiskGb ?? def.diskGb ?? "80"
+  }));
+}
+
+function catalogStack(def, index) {
+  const target = catalogTarget(def, index);
+  const nodes = catalogNodes(def, index);
+  return {
+    displayName: def.displayName,
+    category: def.category,
+    domain: def.domain ?? "apps.example.internal",
+    gateway: `10.31.${index}.1`,
+    defaultCores: def.cores ?? 4,
+    defaultMemory: def.memory ?? 8192,
+    defaultDiskGb: def.diskGb ?? "80",
+    variables: [
+      variable("var-0", "environment", "payload.environment", "production"),
+      variable("var-1", "service_name", "payload.service_name", slug(def.displayName).replaceAll("_", "-"))
+    ],
+    single: {
+      filePrefix: def.singleFilePrefix ?? "single-node",
+      target,
+      existingHost: `10.21.${index}.50`,
+      steps: containerSingleSteps(def),
+      health: def.health
+    },
+    ha: {
+      title: def.haTitle ?? `${def.displayName} HA`,
+      filePrefix: def.haFilePrefix ?? "ha-cluster",
+      runnerHost: `10.10.1.${index}`,
+      nodes,
+      steps: containerHaSteps(def, nodes),
+      health: def.haHealth ?? def.health
+    }
+  };
+}
+
+function catalogStacks() {
+  const definitions = [
+    { displayName: "MySQL", category: "databases/mysql", serviceName: "mysql", image: "mysql:8.4", role: "mysql", ports: ["3306:3306"], env: { MYSQL_ROOT_PASSWORD: "change-me", MYSQL_DATABASE: "app_db", MYSQL_USER: "app_user", MYSQL_PASSWORD: "change-me" }, volumes: ["data:/var/lib/mysql"], health: "docker exec octastack-mysql mysqladmin ping -uroot -pchange-me" },
+    { displayName: "MariaDB", category: "databases/mariadb", serviceName: "mariadb", image: "mariadb:11.4", role: "mariadb", ports: ["3306:3306"], env: { MARIADB_ROOT_PASSWORD: "change-me", MARIADB_DATABASE: "app_db", MARIADB_USER: "app_user", MARIADB_PASSWORD: "change-me" }, volumes: ["data:/var/lib/mysql"], health: "docker exec octastack-mariadb mariadb-admin ping -uroot -pchange-me" },
+    { displayName: "MongoDB", category: "databases/mongodb", serviceName: "mongodb", image: "mongo:7", role: "mongodb", ports: ["27017:27017"], env: { MONGO_INITDB_ROOT_USERNAME: "root", MONGO_INITDB_ROOT_PASSWORD: "change-me" }, volumes: ["data:/data/db"], health: "docker exec octastack-mongodb mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'" },
+    { displayName: "Cassandra", category: "databases/cassandra", serviceName: "cassandra", image: "cassandra:5", role: "cassandra", ports: ["9042:9042"], env: { CASSANDRA_CLUSTER_NAME: "octastack-cassandra" }, volumes: ["data:/var/lib/cassandra"], health: "docker exec octastack-cassandra nodetool status" },
+    { displayName: "ScyllaDB", category: "databases/scylladb", serviceName: "scylladb", image: "scylladb/scylla:6.1", role: "scylladb", ports: ["9042:9042"], command: "--smp 2 --memory 4G --overprovisioned 1", volumes: ["data:/var/lib/scylla"], health: "docker exec octastack-scylladb nodetool status" },
+    { displayName: "ClickHouse", category: "databases/clickhouse", serviceName: "clickhouse", image: "clickhouse/clickhouse-server:24.8", role: "clickhouse", ports: ["8123:8123", "9000:9000"], env: { CLICKHOUSE_DB: "app_db", CLICKHOUSE_USER: "app_user", CLICKHOUSE_PASSWORD: "change-me" }, volumes: ["data:/var/lib/clickhouse"], health: "curl -fsS 'http://127.0.0.1:8123/ping'" },
+    { displayName: "TimescaleDB", category: "databases/timescaledb", serviceName: "timescaledb", image: "timescale/timescaledb:latest-pg16", role: "timescaledb", ports: ["5432:5432"], env: { POSTGRES_PASSWORD: "change-me", POSTGRES_DB: "metrics" }, volumes: ["data:/var/lib/postgresql/data"], health: "docker exec octastack-timescaledb pg_isready -U postgres" },
+    { displayName: "CockroachDB", category: "databases/cockroachdb", serviceName: "cockroachdb", image: "cockroachdb/cockroach:v24.2.0", role: "cockroach", ports: ["26257:26257", "8080:8080"], command: "start-single-node --insecure --store=/cockroach/cockroach-data", volumes: ["data:/cockroach/cockroach-data"], health: "docker exec octastack-cockroachdb cockroach sql --insecure --execute='select 1'" },
+    { displayName: "YugabyteDB", category: "databases/yugabytedb", serviceName: "yugabytedb", image: "yugabytedb/yugabyte:2.23.0.0-b710", role: "yugabyte", ports: ["5433:5433", "7000:7000", "9000:9000"], command: "bin/yugabyted start --foreground", volumes: ["data:/root/var"], health: "docker exec octastack-yugabytedb bin/ysqlsh -h 127.0.0.1 -c 'select 1;'" },
+    { displayName: "Neo4j", category: "databases/neo4j", serviceName: "neo4j", image: "neo4j:5", role: "neo4j", ports: ["7474:7474", "7687:7687"], env: { NEO4J_AUTH: "neo4j/change-me" }, volumes: ["data:/data"], health: "docker exec octastack-neo4j cypher-shell -u neo4j -p change-me 'RETURN 1;'" },
+    { displayName: "CouchDB", category: "databases/couchdb", serviceName: "couchdb", image: "couchdb:3", role: "couchdb", ports: ["5984:5984"], env: { COUCHDB_USER: "admin", COUCHDB_PASSWORD: "change-me" }, volumes: ["data:/opt/couchdb/data"], health: "curl -fsS http://admin:change-me@127.0.0.1:5984/_up" },
+    { displayName: "InfluxDB", category: "databases/influxdb", serviceName: "influxdb", image: "influxdb:2", role: "influxdb", ports: ["8086:8086"], env: { DOCKER_INFLUXDB_INIT_MODE: "setup", DOCKER_INFLUXDB_INIT_USERNAME: "admin", DOCKER_INFLUXDB_INIT_PASSWORD: "change-me-123", DOCKER_INFLUXDB_INIT_ORG: "octastack", DOCKER_INFLUXDB_INIT_BUCKET: "metrics" }, volumes: ["data:/var/lib/influxdb2"], health: "curl -fsS http://127.0.0.1:8086/health" },
+    { displayName: "VictoriaMetrics", category: "databases/victoriametrics", serviceName: "victoriametrics", image: "victoriametrics/victoria-metrics:v1.103.0", role: "victoriametrics", ports: ["8428:8428"], command: "-storageDataPath=/storage", volumes: ["data:/storage"], health: "curl -fsS http://127.0.0.1:8428/health" },
+    { displayName: "QuestDB", category: "databases/questdb", serviceName: "questdb", image: "questdb/questdb:8.1.0", role: "questdb", ports: ["9000:9000", "8812:8812", "9009:9009"], volumes: ["data:/var/lib/questdb"], health: "curl -fsS http://127.0.0.1:9000/" },
+    { displayName: "OpenSearch", category: "search/opensearch", serviceName: "opensearch", image: "opensearchproject/opensearch:2.17.0", role: "opensearch", ports: ["9200:9200", "9600:9600"], env: { discovery_type: "single-node", OPENSEARCH_INITIAL_ADMIN_PASSWORD: "ChangeMe123!" }, volumes: ["data:/usr/share/opensearch/data"], health: "curl -kfsS -u admin:ChangeMe123! https://127.0.0.1:9200/_cluster/health" },
+    { displayName: "Elasticsearch", category: "search/elasticsearch", serviceName: "elasticsearch", image: "docker.elastic.co/elasticsearch/elasticsearch:8.15.0", role: "elasticsearch", ports: ["9200:9200"], env: { discovery_type: "single-node", xpack_security_enabled: "false", ES_JAVA_OPTS: "-Xms1g -Xmx1g" }, volumes: ["data:/usr/share/elasticsearch/data"], health: "curl -fsS http://127.0.0.1:9200/_cluster/health" },
+    { displayName: "MinIO", category: "storage/minio", serviceName: "minio", image: "minio/minio:RELEASE.2024-08-29T01-40-52Z", role: "minio", ports: ["9000:9000", "9001:9001"], env: { MINIO_ROOT_USER: "admin", MINIO_ROOT_PASSWORD: "change-me-123456" }, command: "server /data --console-address ':9001'", volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:9000/minio/health/live" },
+    { displayName: "etcd", category: "coordination/etcd", serviceName: "etcd", image: "quay.io/coreos/etcd:v3.5.16", role: "etcd", ports: ["2379:2379", "2380:2380"], command: "etcd --advertise-client-urls=http://0.0.0.0:2379 --listen-client-urls=http://0.0.0.0:2379", volumes: ["data:/etcd-data"], health: "docker exec octastack-etcd etcdctl endpoint health" },
+    { displayName: "Consul", category: "coordination/consul", serviceName: "consul", image: "hashicorp/consul:1.19", role: "consul", ports: ["8500:8500", "8600:8600/udp"], command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0", volumes: ["data:/consul/data"], health: "curl -fsS http://127.0.0.1:8500/v1/status/leader" },
+    { displayName: "NATS JetStream", category: "messaging/nats", serviceName: "nats", image: "nats:2.10", role: "nats", ports: ["4222:4222", "8222:8222"], command: "-js -m 8222", volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:8222/healthz" },
+    { displayName: "Redpanda", category: "messaging/redpanda", serviceName: "redpanda", image: "redpandadata/redpanda:v24.2.3", role: "redpanda", ports: ["9092:9092", "9644:9644"], command: "redpanda start --overprovisioned --smp 1 --memory 2G --reserve-memory 0M --node-id 0 --check=false", volumes: ["data:/var/lib/redpanda/data"], health: "curl -fsS http://127.0.0.1:9644/v1/status/ready" },
+    { displayName: "Apache Pulsar", category: "messaging/pulsar", serviceName: "pulsar", image: "apachepulsar/pulsar:3.3.0", role: "pulsar", ports: ["6650:6650", "8080:8080"], command: "bin/pulsar standalone", volumes: ["data:/pulsar/data"], health: "curl -fsS http://127.0.0.1:8080/admin/v2/clusters" },
+    { displayName: "ActiveMQ Artemis", category: "messaging/activemq-artemis", serviceName: "artemis", image: "apache/activemq-artemis:latest", role: "artemis", ports: ["61616:61616", "8161:8161"], env: { ARTEMIS_USER: "admin", ARTEMIS_PASSWORD: "change-me" }, volumes: ["data:/var/lib/artemis-instance"], health: "curl -fsS http://127.0.0.1:8161/console/" },
+    { displayName: "Nginx", category: "web/nginx", serviceName: "nginx", image: "nginx:1.27", role: "web", ports: ["80:80"], volumes: ["data:/usr/share/nginx/html"], health: "curl -fsS http://127.0.0.1/" },
+    { displayName: "Apache HTTPD", category: "web/apache-httpd", serviceName: "httpd", image: "httpd:2.4", role: "web", ports: ["80:80"], volumes: ["data:/usr/local/apache2/htdocs"], health: "curl -fsS http://127.0.0.1/" },
+    { displayName: "HAProxy", category: "networking/haproxy", serviceName: "haproxy", image: "haproxy:3.0", role: "load_balancer", ports: ["80:80", "8404:8404"], volumes: ["data:/usr/local/etc/haproxy"], health: "docker ps --filter name=octastack-haproxy" },
+    { displayName: "Traefik", category: "networking/traefik", serviceName: "traefik", image: "traefik:v3.1", role: "ingress", ports: ["80:80", "8080:8080"], command: "--api.insecure=true --providers.docker=false --entrypoints.web.address=:80", volumes: ["data:/etc/traefik"], health: "curl -fsS http://127.0.0.1:8080/api/rawdata" },
+    { displayName: "Jenkins", category: "devops/jenkins", serviceName: "jenkins", image: "jenkins/jenkins:lts", role: "ci", ports: ["8080:8080", "50000:50000"], volumes: ["data:/var/jenkins_home"], health: "curl -fsS http://127.0.0.1:8080/login" },
+    { displayName: "GitLab CE", category: "devops/gitlab-ce", serviceName: "gitlab", image: "gitlab/gitlab-ce:17.3.0-ce.0", role: "gitlab", ports: ["80:80", "443:443", "2222:22"], env: { GITLAB_OMNIBUS_CONFIG: "external_url 'http://gitlab.example.internal'" }, volumes: ["data:/var/opt/gitlab"], health: "docker exec octastack-gitlab gitlab-ctl status" },
+    { displayName: "Nexus Repository", category: "devops/nexus-repository", serviceName: "nexus", image: "sonatype/nexus3:3.72.0", role: "artifact_repo", ports: ["8081:8081"], volumes: ["data:/nexus-data"], health: "curl -fsS http://127.0.0.1:8081/service/rest/v1/status" },
+    { displayName: "SonarQube", category: "devops/sonarqube", serviceName: "sonarqube", image: "sonarqube:10-community", role: "quality", ports: ["9000:9000"], env: { SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true" }, volumes: ["data:/opt/sonarqube/data"], health: "curl -fsS http://127.0.0.1:9000/api/system/status" },
+    { displayName: "Keycloak", category: "identity/keycloak", serviceName: "keycloak", image: "quay.io/keycloak/keycloak:25.0", role: "identity", ports: ["8080:8080"], env: { KEYCLOAK_ADMIN: "admin", KEYCLOAK_ADMIN_PASSWORD: "change-me" }, command: "start-dev", volumes: ["data:/opt/keycloak/data"], health: "curl -fsS http://127.0.0.1:8080/realms/master" },
+    { displayName: "Vault", category: "security/vault", serviceName: "vault", image: "hashicorp/vault:1.17", role: "vault", ports: ["8200:8200"], env: { VAULT_DEV_ROOT_TOKEN_ID: "change-me", VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200" }, volumes: ["data:/vault/file"], health: "curl -fsS http://127.0.0.1:8200/v1/sys/health || true" },
+    { displayName: "Loki", category: "observability/loki", serviceName: "loki", image: "grafana/loki:3.1.0", role: "logs", ports: ["3100:3100"], command: "-config.file=/etc/loki/local-config.yaml", volumes: ["data:/loki"], health: "curl -fsS http://127.0.0.1:3100/ready" },
+    { displayName: "Tempo", category: "observability/tempo", serviceName: "tempo", image: "grafana/tempo:2.6.0", role: "traces", ports: ["3200:3200", "4317:4317"], command: "-config.file=/etc/tempo.yaml", volumes: ["data:/tmp/tempo"], health: "curl -fsS http://127.0.0.1:3200/ready" },
+    { displayName: "Microsoft SQL Server", category: "databases/mssql", serviceName: "mssql", image: "mcr.microsoft.com/mssql/server:2022-latest", role: "mssql", ports: ["1433:1433"], env: { ACCEPT_EULA: "Y", MSSQL_SA_PASSWORD: "ChangeMe123!" }, volumes: ["data:/var/opt/mssql"], health: "docker exec octastack-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ChangeMe123! -C -Q 'SELECT 1'" },
+    { displayName: "Oracle Database Free", category: "databases/oracle-free", serviceName: "oracle-free", image: "gvenzl/oracle-free:23-slim", role: "oracle", ports: ["1521:1521"], env: { ORACLE_PASSWORD: "ChangeMe123!" }, volumes: ["data:/opt/oracle/oradata"], health: "docker exec octastack-oracle-free healthcheck.sh" },
+    { displayName: "Firebird", category: "databases/firebird", serviceName: "firebird", image: "firebirdsql/firebird:5.0", role: "firebird", ports: ["3050:3050"], env: { FIREBIRD_ROOT_PASSWORD: "change-me" }, volumes: ["data:/firebird/data"], health: "docker ps --filter name=octastack-firebird" },
+    { displayName: "ArangoDB", category: "databases/arangodb", serviceName: "arangodb", image: "arangodb:3.12", role: "arangodb", ports: ["8529:8529"], env: { ARANGO_ROOT_PASSWORD: "change-me" }, volumes: ["data:/var/lib/arangodb3"], health: "curl -fsS http://root:change-me@127.0.0.1:8529/_api/version" },
+    { displayName: "RethinkDB", category: "databases/rethinkdb", serviceName: "rethinkdb", image: "rethinkdb:2.4", role: "rethinkdb", ports: ["28015:28015", "8080:8080"], volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:8080/" },
+    { displayName: "Memcached", category: "cache/memcached", serviceName: "memcached", image: "memcached:1.6", role: "cache", ports: ["11211:11211"], command: "memcached -m 256", volumes: ["data:/tmp"], health: "docker exec octastack-memcached sh -lc 'echo version | nc 127.0.0.1 11211 || true'" },
+    { displayName: "Valkey", category: "cache/valkey", serviceName: "valkey", image: "valkey/valkey:8", role: "cache", ports: ["6379:6379"], volumes: ["data:/data"], health: "docker exec octastack-valkey valkey-cli ping" },
+    { displayName: "DragonflyDB", category: "cache/dragonflydb", serviceName: "dragonflydb", image: "docker.dragonflydb.io/dragonflydb/dragonfly:latest", role: "cache", ports: ["6379:6379"], volumes: ["data:/data"], health: "docker exec octastack-dragonflydb redis-cli ping" },
+    { displayName: "Apache Solr", category: "search/solr", serviceName: "solr", image: "solr:9", role: "search", ports: ["8983:8983"], volumes: ["data:/var/solr"], health: "curl -fsS http://127.0.0.1:8983/solr/admin/info/system" },
+    { displayName: "Meilisearch", category: "search/meilisearch", serviceName: "meilisearch", image: "getmeili/meilisearch:v1.10", role: "search", ports: ["7700:7700"], env: { MEILI_MASTER_KEY: "change-me" }, volumes: ["data:/meili_data"], health: "curl -fsS http://127.0.0.1:7700/health" },
+    { displayName: "Typesense", category: "search/typesense", serviceName: "typesense", image: "typesense/typesense:27.1", role: "search", ports: ["8108:8108"], command: "--data-dir /data --api-key=change-me --enable-cors", volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:8108/health" },
+    { displayName: "Qdrant", category: "vector/qdrant", serviceName: "qdrant", image: "qdrant/qdrant:v1.11.0", role: "vector", ports: ["6333:6333", "6334:6334"], volumes: ["data:/qdrant/storage"], health: "curl -fsS http://127.0.0.1:6333/healthz" },
+    { displayName: "Weaviate", category: "vector/weaviate", serviceName: "weaviate", image: "semitechnologies/weaviate:1.26.1", role: "vector", ports: ["8080:8080"], env: { QUERY_DEFAULTS_LIMIT: "25", AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true", PERSISTENCE_DATA_PATH: "/var/lib/weaviate", DEFAULT_VECTORIZER_MODULE: "none", CLUSTER_HOSTNAME: "node1" }, volumes: ["data:/var/lib/weaviate"], health: "curl -fsS http://127.0.0.1:8080/v1/.well-known/ready" },
+    { displayName: "Milvus", category: "vector/milvus", serviceName: "milvus", image: "milvusdb/milvus:v2.4.6", role: "vector", ports: ["19530:19530", "9091:9091"], command: "milvus run standalone", volumes: ["data:/var/lib/milvus"], health: "curl -fsS http://127.0.0.1:9091/healthz" },
+    { displayName: "ChromaDB", category: "vector/chromadb", serviceName: "chromadb", image: "chromadb/chroma:0.5.5", role: "vector", ports: ["8000:8000"], volumes: ["data:/chroma/chroma"], health: "curl -fsS http://127.0.0.1:8000/api/v1/heartbeat" },
+    { displayName: "ZooKeeper", category: "coordination/zookeeper", serviceName: "zookeeper", image: "zookeeper:3.9", role: "zookeeper", ports: ["2181:2181"], volumes: ["data:/data"], health: "docker exec octastack-zookeeper zkServer.sh status || true" },
+    { displayName: "SeaweedFS", category: "storage/seaweedfs", serviceName: "seaweedfs", image: "chrislusf/seaweedfs:3.73", role: "object_storage", ports: ["9333:9333", "8333:8333"], command: "server -dir=/data -s3", volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:9333/cluster/status" },
+    { displayName: "Grafana", category: "observability/grafana", serviceName: "grafana", image: "grafana/grafana:11.1.0", role: "dashboard", ports: ["3000:3000"], env: { GF_SECURITY_ADMIN_PASSWORD: "change-me" }, volumes: ["data:/var/lib/grafana"], health: "curl -fsS http://127.0.0.1:3000/api/health" },
+    { displayName: "Gitea", category: "devops/gitea", serviceName: "gitea", image: "gitea/gitea:1.22", role: "git", ports: ["3000:3000", "2222:22"], volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:3000/" },
+    { displayName: "Drone CI", category: "devops/drone", serviceName: "drone", image: "drone/drone:2", role: "ci", ports: ["8080:80"], env: { DRONE_GITEA_SERVER: "http://gitea.example.internal", DRONE_RPC_SECRET: "change-me", DRONE_SERVER_HOST: "drone.example.internal", DRONE_SERVER_PROTO: "http" }, volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:8080/healthz" },
+    { displayName: "Jaeger", category: "observability/jaeger", serviceName: "jaeger", image: "jaegertracing/all-in-one:1.60", role: "traces", ports: ["16686:16686", "4317:4317"], env: { COLLECTOR_OTLP_ENABLED: "true" }, volumes: ["data:/badger"], health: "curl -fsS http://127.0.0.1:16686/" }
+  ];
+  return definitions.map((definition, index) => catalogStack(definition, index + 80));
+}
+
 const stacks = [
   {
     displayName: "PostgreSQL",
@@ -1026,6 +1535,7 @@ const stacks = [
       target: { label: "postgres-single-01", role: "postgres", vmName: "pg-single-01", ip: "10.30.10.50", cores: 4, memory: 8192, diskGb: "100" },
       existingHost: "10.20.10.50",
       install: pgSingleInstall(),
+      get steps() { return legacyScriptSteps("PostgreSQL single-node", this.install); },
       health: "pg_isready -h 127.0.0.1 -p 5432 && sudo -u postgres psql -c 'SELECT version();'"
     },
     ha: {
@@ -1043,6 +1553,7 @@ const stacks = [
         { label: "pg-lb-02", role: "load_balancer", vmName: "pg-lb-02", ip: "10.30.10.32", cores: 2, memory: 2048, diskGb: "30" }
       ],
       get install() { return pgHaInstall(this.nodes); },
+      get steps() { return legacyScriptSteps(this.title, this.install); },
       health: "curl -fsS http://10.30.10.21:8008/health && curl -fsS http://10.30.10.31:5432 || true"
     }
   },
@@ -1063,6 +1574,7 @@ const stacks = [
       target: { label: "redis-single-01", role: "redis", vmName: "redis-single-01", ip: "10.30.20.50", cores: 2, memory: 4096, diskGb: "40" },
       existingHost: "10.20.20.50",
       install: redisSingleInstall(),
+      get steps() { return legacyScriptSteps("Redis single-node", this.install); },
       health: "redis-cli -h 127.0.0.1 -p 6379 PING"
     },
     ha: {
@@ -1075,6 +1587,7 @@ const stacks = [
         { label: "redis-03", role: "redis", vmName: "redis-ha-03", ip: "10.30.20.13", cores: 2, memory: 4096, diskGb: "50" }
       ],
       get install() { return redisHaInstall(this.nodes); },
+      get steps() { return legacyScriptSteps(this.title, this.install); },
       health: "redis-cli -h 10.30.20.11 -p 26379 sentinel master redis-ha"
     }
   },
@@ -1095,6 +1608,7 @@ const stacks = [
       target: { label: "kafka-single-01", role: "broker", vmName: "kafka-single-01", ip: "10.30.30.50", cores: 4, memory: 8192, diskGb: "100" },
       existingHost: "10.20.30.50",
       install: kafkaSingleInstall(),
+      get steps() { return legacyScriptSteps("Kafka single-node", this.install); },
       health: "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092"
     },
     ha: {
@@ -1107,6 +1621,7 @@ const stacks = [
         { label: "kafka-03", role: "broker", vmName: "kafka-ha-03", ip: "10.30.30.13", cores: 4, memory: 8192, diskGb: "150" }
       ],
       get install() { return kafkaHaInstall(this.nodes); },
+      get steps() { return legacyScriptSteps(this.title, this.install); },
       health: "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server 10.30.30.11:9092 describe --status"
     }
   },
@@ -1127,6 +1642,7 @@ const stacks = [
       target: { label: "rabbitmq-single-01", role: "rabbitmq", vmName: "rabbitmq-single-01", ip: "10.30.40.50", cores: 2, memory: 4096, diskGb: "60" },
       existingHost: "10.20.40.50",
       install: rabbitSingleInstall(),
+      get steps() { return legacyScriptSteps("RabbitMQ single-node", this.install); },
       health: "sudo rabbitmq-diagnostics ping && sudo rabbitmqctl status"
     },
     ha: {
@@ -1139,6 +1655,7 @@ const stacks = [
         { label: "rabbitmq-03", role: "rabbitmq", vmName: "rabbitmq-ha-03", ip: "10.30.40.13", cores: 2, memory: 4096, diskGb: "80" }
       ],
       get install() { return rabbitHaInstall(this.nodes); },
+      get steps() { return legacyScriptSteps(this.title, this.install); },
       health: "sudo rabbitmq-diagnostics cluster_status"
     }
   },
@@ -1159,6 +1676,7 @@ const stacks = [
       target: { label: "k8s-cp-single-01", role: "control_plane", vmName: "k8s-single-cp-01", ip: "10.30.50.50", cores: 4, memory: 8192, diskGb: "80" },
       existingHost: "10.20.50.50",
       install: vanillaSingleInstall(),
+      get steps() { return legacyScriptSteps("Vanilla Kubernetes single-node", this.install); },
       health: "kubectl get nodes -o wide && kubectl get pods -A"
     },
     ha: {
@@ -1173,6 +1691,7 @@ const stacks = [
         { label: "k8s-worker-02", role: "worker", vmName: "k8s-worker-02", ip: "10.30.50.22", cores: 4, memory: 8192, diskGb: "120" }
       ],
       get install() { return vanillaHaInstall(this.nodes); },
+      get steps() { return legacyScriptSteps(this.title, this.install); },
       health: "kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide"
     }
   },
@@ -1193,6 +1712,7 @@ const stacks = [
       target: { label: "rke2-single-01", role: "rke2_server", vmName: "rke2-single-01", ip: "10.30.60.50", cores: 4, memory: 8192, diskGb: "100" },
       existingHost: "10.20.60.50",
       install: rke2SingleInstall(),
+      get steps() { return legacyScriptSteps("Rancher RKE2 single-node", this.install); },
       health: "sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide"
     },
     ha: {
@@ -1207,6 +1727,7 @@ const stacks = [
         { label: "rke2-agent-02", role: "rke2_agent", vmName: "rke2-agent-02", ip: "10.30.60.22", cores: 4, memory: 8192, diskGb: "120" }
       ],
       get install() { return rke2HaInstall(this.nodes); },
+      get steps() { return legacyScriptSteps(this.title, this.install); },
       health: "sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide"
     }
   },
@@ -1227,6 +1748,7 @@ const stacks = [
       target: { label: "monitoring-single-01", role: "monitoring", vmName: "monitoring-single-01", ip: "10.30.70.50", cores: 2, memory: 4096, diskGb: "80" },
       existingHost: "10.20.70.50",
       install: monitoringSingleInstall(),
+      get steps() { return legacyScriptSteps("Prometheus Grafana single-node", this.install); },
       health: "curl -fsS http://127.0.0.1:9090/-/ready && curl -fsS http://127.0.0.1:3000/api/health"
     },
     ha: {
@@ -1243,9 +1765,11 @@ const stacks = [
         { label: "grafana-02", role: "grafana", vmName: "grafana-02", ip: "10.30.70.32", cores: 2, memory: 4096, diskGb: "60" }
       ],
       get install() { return monitoringHaInstall(this.nodes); },
+      get steps() { return legacyScriptSteps(this.title, this.install); },
       health: "curl -fsS http://10.30.70.11:9090/-/ready && curl -fsS http://10.30.70.31:3000/api/health"
     }
-  }
+  },
+  ...catalogStacks()
 ];
 
 function validateWorkflow(workflow, fileName) {
@@ -1415,6 +1939,7 @@ function workflowPackage(entry) {
 
 function makeReadme(entries) {
   const lines = [];
+  const categories = [...new Set(entries.map((entry) => entry.stack.category))].sort();
   lines.push("# OctaStack Workflow Example Library");
   lines.push("");
   lines.push("This repository contains ready-to-adapt JSON workflow packages for OctaStack automation imports. The examples follow the package, canonical graph, and validation rules documented in `NODES.md`.");
@@ -1437,19 +1962,17 @@ function makeReadme(entries) {
   lines.push("");
   lines.push("## Directory guide");
   lines.push("");
-  lines.push("- `workflows/databases/postgresql`: PostgreSQL standalone and Patroni plus etcd plus HAProxy examples.");
-  lines.push("- `workflows/cache/redis`: Redis standalone and Redis Sentinel HA examples.");
-  lines.push("- `workflows/messaging/kafka`: Kafka KRaft standalone and 3-node HA examples.");
-  lines.push("- `workflows/messaging/rabbitmq`: RabbitMQ standalone and quorum-queue cluster examples.");
-  lines.push("- `workflows/kubernetes/vanilla`: kubeadm-based Kubernetes single control plane and HA control plane examples.");
-  lines.push("- `workflows/kubernetes/rancher-rke2`: RKE2 and Rancher single-server and HA server/agent examples.");
-  lines.push("- `workflows/monitoring/prometheus-grafana`: Prometheus, Alertmanager, Grafana, and node-exporter examples.");
+  for (const category of categories) {
+    const stacksInCategory = [...new Set(entries.filter((entry) => entry.stack.category === category).map((entry) => entry.stack.displayName))].join(", ");
+    lines.push(`- \`workflows/${category}\`: ${stacksInCategory} examples.`);
+  }
   lines.push("");
   lines.push("## Standard conventions");
   lines.push("");
   lines.push("- Every JSON file is an importable workflow package with `kind: \"octastack.workflow.package\"`, `version: 1`, and the graph nested under `workflow.graphData`.");
   lines.push("- Every workflow uses `triggerNode` as the only root entry point.");
   lines.push("- Nodes are generated with a layered layout: linear flows use wide vertical spacing, and HA fan-out branches are distributed horizontally so nodes do not overlap in the editor.");
+  lines.push("- Newer catalog examples break installation into multiple small `configCommandNode` steps so each phase can be inspected, retried, or replaced independently.");
   lines.push("- Provisioned examples use `profileId: \"replace-with-proxmox-profile-id\"`; replace it with the real Proxmox profile ID before importing.");
   lines.push("- Template VM IDs default to `9000`; adjust `templateId`, CPU, memory, storage, network bridge, VLAN, and static IP values per environment.");
   lines.push("- All example credentials and secrets use obvious placeholders such as `change-me` and `replace-with-rke2-token`.");
@@ -1465,7 +1988,7 @@ function makeReadme(entries) {
   lines.push("node tools/validate-workflows.mjs");
   lines.push("```");
   lines.push("");
-  lines.push("The validator checks JSON parseability, unique node and edge IDs, valid edge references, trigger/end rules, context requirements for provision/wait/config nodes, and sequential edge ordering.");
+  lines.push("The validator checks JSON parseability, unique node and edge IDs, valid edge references, trigger/end rules, context requirements for provision/wait/config nodes, sequential edge ordering, and approximate node layout overlap.");
   lines.push("");
   lines.push("## Regeneration");
   lines.push("");

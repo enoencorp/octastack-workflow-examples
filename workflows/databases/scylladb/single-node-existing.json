@@ -1,0 +1,295 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "ScyllaDB single-node existing",
+    "description": "Install and validate ScyllaDB on an existing single host.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "ScyllaDB single-node existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "scylladb"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "ScyllaDB Host",
+            "hostname": "10.21.84.50",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.21.84.50",
+                "label": "ScyllaDB Host",
+                "ip": "10.21.84.50",
+                "name": "scylladb-host",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 885,
+            "y": 885
+          },
+          "data": {
+            "label": "Wait for existing host",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2300
+          },
+          "data": {
+            "label": "Prepare ScyllaDB runtime",
+            "command": "set -euo pipefail\nif command -v docker >/dev/null 2>&1; then\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 2705
+          },
+          "data": {
+            "label": "Create ScyllaDB directories",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/scylladb\ninstall -d -m 0750 /var/lib/octastack/scylladb\ncat >/opt/octastack/scylladb/.env <<'EOF'\nOCTASTACK_SERVICE=ScyllaDB\nEOF\nchmod 0600 /opt/octastack/scylladb/.env\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3110
+          },
+          "data": {
+            "label": "Render ScyllaDB compose",
+            "command": "set -euo pipefail\ncat >/opt/octastack/scylladb/compose.yml <<'COMPOSE'\nservices:\n  scylladb:\n    image: scylladb/scylla:6.1\n    container_name: octastack-scylladb\n    restart: unless-stopped\n    command: \"--smp 2 --memory 4G --overprovisioned 1\"\n    ports:\n      - \"9042:9042\"\n    volumes:\n      - data:/var/lib/scylla\nvolumes:\n  data: {}\nCOMPOSE\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3515
+          },
+          "data": {
+            "label": "Deploy ScyllaDB",
+            "command": "set -euo pipefail\ndocker compose -f /opt/octastack/scylladb/compose.yml pull\ndocker compose -f /opt/octastack/scylladb/compose.yml up -d\ndocker compose -f /opt/octastack/scylladb/compose.yml ps\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 3920
+          },
+          "data": {
+            "label": "Inspect ScyllaDB",
+            "command": "set -euo pipefail\ndocker ps --filter name=octastack-scylladb\ndocker logs octastack-scylladb --tail=80 || true\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 180,
+            "y": 4325
+          },
+          "data": {
+            "label": "ScyllaDB health check",
+            "command": "docker exec octastack-scylladb nodetool status",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 230,
+            "y": 4730
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_server",
+          "source": "node_trigger",
+          "target": "node_server",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_server_wait",
+          "source": "node_server",
+          "target": "node_wait",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_1",
+          "source": "node_wait",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_install_health",
+          "source": "node_step_5",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

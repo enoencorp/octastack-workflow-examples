@@ -1,0 +1,187 @@
+{
+  "nodes": [
+    {
+      "id": "node_trigger",
+      "type": "triggerNode",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "data": {
+        "label": "Rancher RKE2 single-node existing",
+        "triggerType": "manual",
+        "enabled": true,
+        "variables": [
+          {
+            "id": "var-0",
+            "key": "cluster_name",
+            "source": "payload.cluster_name",
+            "value": "rke2-prod"
+          },
+          {
+            "id": "var-1",
+            "key": "rancher_hostname",
+            "source": "payload.rancher_hostname",
+            "value": "rancher.example.internal"
+          }
+        ],
+        "webhookPath": "",
+        "secretRef": "",
+        "cronExpr": "",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "node_server",
+      "type": "serverNode",
+      "position": {
+        "x": 80,
+        "y": 240
+      },
+      "data": {
+        "label": "Rancher RKE2 Host",
+        "hostname": "10.20.60.50",
+        "targets": [
+          {
+            "id": "target-0",
+            "source": "manual",
+            "host": "10.20.60.50",
+            "label": "Rancher RKE2 Host",
+            "ip": "10.20.60.50",
+            "name": "rancher-rke2-host",
+            "node": "",
+            "vmid": "",
+            "status": "existing",
+            "type": "manual"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_wait",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 80,
+        "y": 400
+      },
+      "data": {
+        "label": "Wait for existing host",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_install",
+      "type": "customNode",
+      "position": {
+        "x": 80,
+        "y": 580
+      },
+      "data": {
+        "label": "Install Rancher RKE2",
+        "customNodeId": "",
+        "scriptType": "shell",
+        "scriptContent": "set -euo pipefail\ncurl -sfL https://get.rke2.io | sudo INSTALL_RKE2_TYPE=server sh -\nsudo systemctl enable --now rke2-server\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/rancher/rke2/rke2.yaml \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nexport KUBECONFIG=\"$HOME/.kube/config\"\ncurl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\nkubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\nhelm repo add jetstack https://charts.jetstack.io\nhelm repo add rancher-latest https://releases.rancher.com/server-charts/latest\nhelm repo update\nhelm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\nhelm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\n",
+        "sudo": true,
+        "method": "GET",
+        "path": "",
+        "body": "{}"
+      }
+    },
+    {
+      "id": "node_health",
+      "type": "configCommandNode",
+      "position": {
+        "x": 80,
+        "y": 780
+      },
+      "data": {
+        "label": "Rancher RKE2 health check",
+        "command": "sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide",
+        "sudo": false
+      }
+    },
+    {
+      "id": "node_end",
+      "type": "endNode",
+      "position": {
+        "x": 80,
+        "y": 960
+      },
+      "data": {
+        "label": "End"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_trigger_server",
+      "source": "node_trigger",
+      "target": "node_server",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_server_wait",
+      "source": "node_server",
+      "target": "node_wait",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_wait_install",
+      "source": "node_wait",
+      "target": "node_install",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_install_health",
+      "source": "node_install",
+      "target": "node_health",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_health_end",
+      "source": "node_health",
+      "target": "node_end",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    }
+  ]
+}

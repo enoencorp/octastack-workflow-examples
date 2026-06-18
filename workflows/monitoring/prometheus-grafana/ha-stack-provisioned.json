@@ -1,0 +1,988 @@
+{
+  "nodes": [
+    {
+      "id": "node_trigger",
+      "type": "triggerNode",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "data": {
+        "label": "Prometheus Grafana HA provisioned",
+        "triggerType": "manual",
+        "enabled": true,
+        "variables": [
+          {
+            "id": "var-0",
+            "key": "cluster_name",
+            "source": "payload.cluster_name",
+            "value": "monitoring-prod"
+          },
+          {
+            "id": "var-1",
+            "key": "retention",
+            "source": "payload.retention",
+            "value": "30d"
+          }
+        ],
+        "webhookPath": "",
+        "secretRef": "",
+        "cronExpr": "",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "node_context",
+      "type": "proxmoxConfigNode",
+      "position": {
+        "x": 80,
+        "y": 240
+      },
+      "data": {
+        "label": "Cluster Context",
+        "profileId": "replace-with-proxmox-profile-id"
+      }
+    },
+    {
+      "id": "node_provision_prometheus_01",
+      "type": "provisionNode",
+      "position": {
+        "x": -480,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision prometheus-01",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "prometheus-01",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "PROMETHEUS",
+        "cores": "4",
+        "memory": "8192",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "200",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.70.11/24",
+            "gw": "10.30.70.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "monitoring.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.70.11/24",
+        "gw": "10.30.70.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "monitoring.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_prometheus_01",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": -480,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait prometheus-01",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_prometheus_02",
+      "type": "provisionNode",
+      "position": {
+        "x": -300,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision prometheus-02",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "prometheus-02",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "PROMETHEUS",
+        "cores": "4",
+        "memory": "8192",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "200",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.70.12/24",
+            "gw": "10.30.70.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "monitoring.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.70.12/24",
+        "gw": "10.30.70.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "monitoring.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_prometheus_02",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": -300,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait prometheus-02",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_alertmanager_01",
+      "type": "provisionNode",
+      "position": {
+        "x": -120,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision alertmanager-01",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "alertmanager-01",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "ALERTMANAGER",
+        "cores": "2",
+        "memory": "2048",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "40",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.70.21/24",
+            "gw": "10.30.70.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "monitoring.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.70.21/24",
+        "gw": "10.30.70.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "monitoring.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_alertmanager_01",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": -120,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait alertmanager-01",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_alertmanager_02",
+      "type": "provisionNode",
+      "position": {
+        "x": 60,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision alertmanager-02",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "alertmanager-02",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "ALERTMANAGER",
+        "cores": "2",
+        "memory": "2048",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "40",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.70.22/24",
+            "gw": "10.30.70.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "monitoring.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.70.22/24",
+        "gw": "10.30.70.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "monitoring.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_alertmanager_02",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 60,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait alertmanager-02",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_alertmanager_03",
+      "type": "provisionNode",
+      "position": {
+        "x": 240,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision alertmanager-03",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "alertmanager-03",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "ALERTMANAGER",
+        "cores": "2",
+        "memory": "2048",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "40",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.70.23/24",
+            "gw": "10.30.70.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "monitoring.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.70.23/24",
+        "gw": "10.30.70.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "monitoring.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_alertmanager_03",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 240,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait alertmanager-03",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_grafana_01",
+      "type": "provisionNode",
+      "position": {
+        "x": 420,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision grafana-01",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "grafana-01",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "GRAFANA",
+        "cores": "2",
+        "memory": "4096",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "60",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.70.31/24",
+            "gw": "10.30.70.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "monitoring.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.70.31/24",
+        "gw": "10.30.70.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "monitoring.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_grafana_01",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 420,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait grafana-01",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_grafana_02",
+      "type": "provisionNode",
+      "position": {
+        "x": 600,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision grafana-02",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "grafana-02",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "GRAFANA",
+        "cores": "2",
+        "memory": "4096",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "60",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.70.32/24",
+            "gw": "10.30.70.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "monitoring.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.70.32/24",
+        "gw": "10.30.70.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "monitoring.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_grafana_02",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 600,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait grafana-02",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_bootstrap",
+      "type": "customNode",
+      "position": {
+        "x": 80,
+        "y": 840
+      },
+      "data": {
+        "label": "Bootstrap Prometheus Grafana HA",
+        "customNodeId": "",
+        "scriptType": "shell",
+        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/monitoring-ha.ini <<'INVENTORY'\n[prometheus]\n10.30.70.11 node_name=prometheus-01\n10.30.70.12 node_name=prometheus-02\n\n[alertmanager]\n10.30.70.21 node_name=alertmanager-01\n10.30.70.22 node_name=alertmanager-02\n10.30.70.23 node_name=alertmanager-03\n\n[grafana]\n10.30.70.31 node_name=grafana-01\n10.30.70.32 node_name=grafana-02\nINVENTORY\ncat >/tmp/monitoring-ha.yml <<'PLAYBOOK'\n- hosts: prometheus\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [prometheus, prometheus-node-exporter]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: \"{{ item }}\"\n        state: restarted\n        enabled: true\n      loop: [prometheus, prometheus-node-exporter]\n\n- hosts: alertmanager\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: prometheus-alertmanager\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/prometheus/alertmanager.yml\n        mode: \"0644\"\n        content: |\n          global:\n            resolve_timeout: 5m\n          route:\n            receiver: default\n          receivers:\n            - name: default\n    - ansible.builtin.service:\n        name: prometheus-alertmanager\n        state: restarted\n        enabled: true\n\n- hosts: grafana\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: grafana\n        state: present\n    - ansible.builtin.service:\n        name: grafana-server\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml\n",
+        "sudo": true,
+        "method": "GET",
+        "path": "",
+        "body": "{}"
+      }
+    },
+    {
+      "id": "node_health",
+      "type": "configCommandNode",
+      "position": {
+        "x": 80,
+        "y": 1040
+      },
+      "data": {
+        "label": "Prometheus Grafana HA health check",
+        "command": "curl -fsS http://10.30.70.11:9090/-/ready && curl -fsS http://10.30.70.31:3000/api/health",
+        "sudo": false
+      }
+    },
+    {
+      "id": "node_end",
+      "type": "endNode",
+      "position": {
+        "x": 80,
+        "y": 1220
+      },
+      "data": {
+        "label": "End"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_trigger_context",
+      "source": "node_trigger",
+      "target": "node_context",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_prometheus_01",
+      "source": "node_context",
+      "target": "node_provision_prometheus_01",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 1,
+      "data": {
+        "mode": "parallel",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_prometheus_01_wait",
+      "source": "node_provision_prometheus_01",
+      "target": "node_wait_prometheus_01",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_prometheus_01_bootstrap",
+      "source": "node_wait_prometheus_01",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_prometheus_02",
+      "source": "node_context",
+      "target": "node_provision_prometheus_02",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 2,
+      "data": {
+        "mode": "parallel",
+        "order": 2
+      }
+    },
+    {
+      "id": "edge_prometheus_02_wait",
+      "source": "node_provision_prometheus_02",
+      "target": "node_wait_prometheus_02",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_prometheus_02_bootstrap",
+      "source": "node_wait_prometheus_02",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_alertmanager_01",
+      "source": "node_context",
+      "target": "node_provision_alertmanager_01",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 3,
+      "data": {
+        "mode": "parallel",
+        "order": 3
+      }
+    },
+    {
+      "id": "edge_alertmanager_01_wait",
+      "source": "node_provision_alertmanager_01",
+      "target": "node_wait_alertmanager_01",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_alertmanager_01_bootstrap",
+      "source": "node_wait_alertmanager_01",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_alertmanager_02",
+      "source": "node_context",
+      "target": "node_provision_alertmanager_02",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 4,
+      "data": {
+        "mode": "parallel",
+        "order": 4
+      }
+    },
+    {
+      "id": "edge_alertmanager_02_wait",
+      "source": "node_provision_alertmanager_02",
+      "target": "node_wait_alertmanager_02",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_alertmanager_02_bootstrap",
+      "source": "node_wait_alertmanager_02",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_alertmanager_03",
+      "source": "node_context",
+      "target": "node_provision_alertmanager_03",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 5,
+      "data": {
+        "mode": "parallel",
+        "order": 5
+      }
+    },
+    {
+      "id": "edge_alertmanager_03_wait",
+      "source": "node_provision_alertmanager_03",
+      "target": "node_wait_alertmanager_03",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_alertmanager_03_bootstrap",
+      "source": "node_wait_alertmanager_03",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_grafana_01",
+      "source": "node_context",
+      "target": "node_provision_grafana_01",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 6,
+      "data": {
+        "mode": "parallel",
+        "order": 6
+      }
+    },
+    {
+      "id": "edge_grafana_01_wait",
+      "source": "node_provision_grafana_01",
+      "target": "node_wait_grafana_01",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_grafana_01_bootstrap",
+      "source": "node_wait_grafana_01",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_grafana_02",
+      "source": "node_context",
+      "target": "node_provision_grafana_02",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 7,
+      "data": {
+        "mode": "parallel",
+        "order": 7
+      }
+    },
+    {
+      "id": "edge_grafana_02_wait",
+      "source": "node_provision_grafana_02",
+      "target": "node_wait_grafana_02",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_grafana_02_bootstrap",
+      "source": "node_wait_grafana_02",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_bootstrap_health",
+      "source": "node_bootstrap",
+      "target": "node_health",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_health_end",
+      "source": "node_health",
+      "target": "node_end",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    }
+  ]
+}

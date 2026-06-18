@@ -1,6 +1,6 @@
 # OctaStack Workflow Example Library
 
-This repository contains ready-to-adapt JSON workflow graphs for OctaStack automation. The examples follow the canonical graph and validation rules documented in `NODES.md`.
+This repository contains ready-to-adapt JSON workflow packages for OctaStack automation imports. The examples follow the package, canonical graph, and validation rules documented in `NODES.md`.
 
 The library is organized by operational domain, then by technology. Each technology includes both simple single-node examples and high-availability examples, and each pattern is available in provisioned and existing-infrastructure variants.
 
@@ -54,6 +54,7 @@ The library is organized by operational domain, then by technology. Each technol
 
 ## Standard conventions
 
+- Every JSON file is an importable workflow package with `kind: "octastack.workflow.package"`, `version: 1`, and the graph nested under `workflow.graphData`.
 - Every workflow uses `triggerNode` as the only root entry point.
 - Provisioned examples use `profileId: "replace-with-proxmox-profile-id"`; replace it with the real Proxmox profile ID before importing.
 - Template VM IDs default to `9000`; adjust `templateId`, CPU, memory, storage, network bridge, VLAN, and static IP values per environment.

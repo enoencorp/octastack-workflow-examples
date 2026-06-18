@@ -1,187 +1,200 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "Kafka single-node existing",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "kafka-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Kafka single-node existing",
+    "description": "Install and validate Kafka on an existing single host.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "environment",
-            "source": "payload.environment",
-            "value": "production"
+          "data": {
+            "label": "Kafka single-node existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "kafka-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_server",
-      "type": "serverNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Kafka Host",
-        "hostname": "10.20.30.50",
-        "targets": [
-          {
-            "id": "target-0",
-            "source": "manual",
-            "host": "10.20.30.50",
+        },
+        {
+          "id": "node_server",
+          "type": "serverNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
             "label": "Kafka Host",
-            "ip": "10.20.30.50",
-            "name": "kafka-host",
-            "node": "",
-            "vmid": "",
-            "status": "existing",
-            "type": "manual"
+            "hostname": "10.20.30.50",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.20.30.50",
+                "label": "Kafka Host",
+                "ip": "10.20.30.50",
+                "name": "kafka-host",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_wait",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 80,
-        "y": 400
-      },
-      "data": {
-        "label": "Wait for existing host",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 80,
+            "y": 400
+          },
+          "data": {
+            "label": "Wait for existing host",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_install",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 580
-      },
-      "data": {
-        "label": "Install Kafka",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y openjdk-17-jre-headless curl tar\nsudo useradd -r -m -U -d /opt/kafka kafka || true\ncurl -fsSL https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz -o /tmp/kafka.tgz\nsudo tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\nsudo chown -R kafka:kafka /opt/kafka\nKAFKA_CLUSTER_ID=\"$(sudo -u kafka /opt/kafka/bin/kafka-storage.sh random-uuid)\"\nsudo -u kafka /opt/kafka/bin/kafka-storage.sh format -t \"$KAFKA_CLUSTER_ID\" -c /opt/kafka/config/kraft/server.properties --ignore-formatted\nsudo tee /etc/systemd/system/kafka.service >/dev/null <<'EOF'\n[Unit]\nDescription=Apache Kafka KRaft\nAfter=network-online.target\n[Service]\nUser=kafka\nExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\nRestart=always\n[Install]\nWantedBy=multi-user.target\nEOF\nsudo systemctl daemon-reload\nsudo systemctl enable --now kafka\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 780
-      },
-      "data": {
-        "label": "Kafka health check",
-        "command": "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 960
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_install",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 580
+          },
+          "data": {
+            "label": "Install Kafka",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y openjdk-17-jre-headless curl tar\nsudo useradd -r -m -U -d /opt/kafka kafka || true\ncurl -fsSL https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz -o /tmp/kafka.tgz\nsudo tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\nsudo chown -R kafka:kafka /opt/kafka\nKAFKA_CLUSTER_ID=\"$(sudo -u kafka /opt/kafka/bin/kafka-storage.sh random-uuid)\"\nsudo -u kafka /opt/kafka/bin/kafka-storage.sh format -t \"$KAFKA_CLUSTER_ID\" -c /opt/kafka/config/kraft/server.properties --ignore-formatted\nsudo tee /etc/systemd/system/kafka.service >/dev/null <<'EOF'\n[Unit]\nDescription=Apache Kafka KRaft\nAfter=network-online.target\n[Service]\nUser=kafka\nExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\nRestart=always\n[Install]\nWantedBy=multi-user.target\nEOF\nsudo systemctl daemon-reload\nsudo systemctl enable --now kafka\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 780
+          },
+          "data": {
+            "label": "Kafka health check",
+            "command": "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 960
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_server",
+          "source": "node_trigger",
+          "target": "node_server",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_server_wait",
+          "source": "node_server",
+          "target": "node_wait",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_wait_install",
+          "source": "node_wait",
+          "target": "node_install",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_install_health",
+          "source": "node_install",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_server",
-      "source": "node_trigger",
-      "target": "node_server",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_server_wait",
-      "source": "node_server",
-      "target": "node_wait",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_wait_install",
-      "source": "node_wait",
-      "target": "node_install",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_install_health",
-      "source": "node_install",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

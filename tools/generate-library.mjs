@@ -4,6 +4,9 @@ import path from "node:path";
 const ROOT = process.cwd();
 const WORKFLOW_ROOT = path.join(ROOT, "workflows");
 
+const WORKFLOW_PACKAGE_KIND = "octastack.workflow.package";
+const WORKFLOW_PACKAGE_VERSION = 1;
+const EXPORTED_AT = "2026-06-19T00:00:00Z";
 const PROFILE_ID = "replace-with-proxmox-profile-id";
 const TEMPLATE_ID = "9000";
 
@@ -1245,13 +1248,13 @@ function validateWorkflow(workflow, fileName) {
   return errors;
 }
 
-function writeJson(filePath, workflow) {
-  const errors = validateWorkflow(workflow, path.relative(ROOT, filePath));
+function writeWorkflowPackage(filePath, entry) {
+  const errors = validateWorkflow(entry.workflow, path.relative(ROOT, filePath));
   if (errors.length) {
     throw new Error(errors.join("\n"));
   }
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify(workflow, null, 2) + "\n");
+  fs.writeFileSync(filePath, JSON.stringify(workflowPackage(entry), null, 2) + "\n");
 }
 
 function workflowEntries() {
@@ -1262,38 +1265,63 @@ function workflowEntries() {
       mode: "single-node",
       provisioning: "provisioned",
       fileName: `${stack.single.filePrefix}-provisioned.json`,
-      workflow: createSingleProvisionedWorkflow(stack)
+      workflow: createSingleProvisionedWorkflow(stack),
+      name: `${stack.displayName} single-node provisioned`,
+      description: `Provision a single ${stack.displayName} node on Proxmox, wait for reachability, then install and validate the stack.`
     });
     entries.push({
       stack,
       mode: "single-node",
       provisioning: "existing",
       fileName: `${stack.single.filePrefix}-existing.json`,
-      workflow: createSingleExistingWorkflow(stack)
+      workflow: createSingleExistingWorkflow(stack),
+      name: `${stack.displayName} single-node existing`,
+      description: `Install and validate ${stack.displayName} on an existing single host.`
     });
     entries.push({
       stack,
       mode: "high-availability",
       provisioning: "provisioned",
       fileName: `${stack.ha.filePrefix}-provisioned.json`,
-      workflow: createHaProvisionedWorkflow(stack)
+      workflow: createHaProvisionedWorkflow(stack),
+      name: `${stack.ha.title} provisioned`,
+      description: `Provision ${stack.ha.title} nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.`
     });
     entries.push({
       stack,
       mode: "high-availability",
       provisioning: "existing",
       fileName: `${stack.ha.filePrefix}-existing.json`,
-      workflow: createHaExistingWorkflow(stack)
+      workflow: createHaExistingWorkflow(stack),
+      name: `${stack.ha.title} existing`,
+      description: `Bootstrap and validate ${stack.ha.title} from an existing automation runner and target inventory.`
     });
   }
   return entries;
+}
+
+function workflowPackage(entry) {
+  return {
+    kind: WORKFLOW_PACKAGE_KIND,
+    version: WORKFLOW_PACKAGE_VERSION,
+    exportedAt: EXPORTED_AT,
+    workflow: {
+      name: entry.name,
+      description: entry.description,
+      graphData: entry.workflow
+    },
+    dependencies: {
+      templates: [],
+      customNodes: []
+    }
+  };
 }
 
 function makeReadme(entries) {
   const lines = [];
   lines.push("# OctaStack Workflow Example Library");
   lines.push("");
-  lines.push("This repository contains ready-to-adapt JSON workflow graphs for OctaStack automation. The examples follow the canonical graph and validation rules documented in `NODES.md`.");
+  lines.push("This repository contains ready-to-adapt JSON workflow packages for OctaStack automation imports. The examples follow the package, canonical graph, and validation rules documented in `NODES.md`.");
   lines.push("");
   lines.push("The library is organized by operational domain, then by technology. Each technology includes both simple single-node examples and high-availability examples, and each pattern is available in provisioned and existing-infrastructure variants.");
   lines.push("");
@@ -1323,6 +1351,7 @@ function makeReadme(entries) {
   lines.push("");
   lines.push("## Standard conventions");
   lines.push("");
+  lines.push("- Every JSON file is an importable workflow package with `kind: \"octastack.workflow.package\"`, `version: 1`, and the graph nested under `workflow.graphData`.");
   lines.push("- Every workflow uses `triggerNode` as the only root entry point.");
   lines.push("- Provisioned examples use `profileId: \"replace-with-proxmox-profile-id\"`; replace it with the real Proxmox profile ID before importing.");
   lines.push("- Template VM IDs default to `9000`; adjust `templateId`, CPU, memory, storage, network bridge, VLAN, and static IP values per environment.");
@@ -1356,7 +1385,7 @@ function makeReadme(entries) {
 fs.rmSync(WORKFLOW_ROOT, { recursive: true, force: true });
 const entries = workflowEntries();
 for (const entry of entries) {
-  writeJson(path.join(WORKFLOW_ROOT, entry.stack.category, entry.fileName), entry.workflow);
+  writeWorkflowPackage(path.join(WORKFLOW_ROOT, entry.stack.category, entry.fileName), entry);
 }
 fs.writeFileSync(path.join(ROOT, "README.md"), makeReadme(entries));
 console.log(`Generated ${entries.length} workflow examples.`);

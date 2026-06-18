@@ -1,496 +1,509 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "Kafka KRaft HA provisioned",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "kafka-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Kafka KRaft HA provisioned",
+    "description": "Provision Kafka KRaft HA nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "environment",
-            "source": "payload.environment",
-            "value": "production"
+          "data": {
+            "label": "Kafka KRaft HA provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "kafka-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_context",
-      "type": "proxmoxConfigNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Cluster Context",
-        "profileId": "replace-with-proxmox-profile-id"
-      }
-    },
-    {
-      "id": "node_provision_kafka_01",
-      "type": "provisionNode",
-      "position": {
-        "x": -240,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision kafka-01",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "kafka-ha-01",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "BROKER",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "150",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
           }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_kafka_01",
+          "type": "provisionNode",
+          "position": {
+            "x": -240,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision kafka-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "kafka-ha-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "BROKER",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "150",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.30.11/24",
+                "gw": "10.30.30.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "msg.example.internal"
+              }
+            ],
             "ipAddress": "10.30.30.11/24",
             "gw": "10.30.30.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "msg.example.internal"
           }
-        ],
-        "ipAddress": "10.30.30.11/24",
-        "gw": "10.30.30.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "msg.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_kafka_01",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": -240,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait kafka-01",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_kafka_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": -240,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait kafka-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_provision_kafka_02",
-      "type": "provisionNode",
-      "position": {
-        "x": -60,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision kafka-02",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "kafka-ha-02",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "BROKER",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "150",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
-          }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_kafka_02",
+          "type": "provisionNode",
+          "position": {
+            "x": -60,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision kafka-02",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "kafka-ha-02",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "BROKER",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "150",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.30.12/24",
+                "gw": "10.30.30.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "msg.example.internal"
+              }
+            ],
             "ipAddress": "10.30.30.12/24",
             "gw": "10.30.30.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "msg.example.internal"
           }
-        ],
-        "ipAddress": "10.30.30.12/24",
-        "gw": "10.30.30.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "msg.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_kafka_02",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": -60,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait kafka-02",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_kafka_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": -60,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait kafka-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_provision_kafka_03",
-      "type": "provisionNode",
-      "position": {
-        "x": 120,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision kafka-03",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "kafka-ha-03",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "BROKER",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "150",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
-          }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_kafka_03",
+          "type": "provisionNode",
+          "position": {
+            "x": 120,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision kafka-03",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "kafka-ha-03",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "BROKER",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "150",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.30.13/24",
+                "gw": "10.30.30.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "msg.example.internal"
+              }
+            ],
             "ipAddress": "10.30.30.13/24",
             "gw": "10.30.30.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "msg.example.internal"
           }
-        ],
-        "ipAddress": "10.30.30.13/24",
-        "gw": "10.30.30.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "msg.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_kafka_03",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 120,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait kafka-03",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_kafka_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 120,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait kafka-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_bootstrap",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 840
-      },
-      "data": {
-        "label": "Bootstrap Kafka KRaft HA",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/kafka-kraft.ini <<'INVENTORY'\n[brokers]\n10.30.30.11 node_id=1 node_name=kafka-01\n10.30.30.12 node_id=2 node_name=kafka-02\n10.30.30.13 node_id=3 node_name=kafka-03\nINVENTORY\ncat >/tmp/kafka-kraft.yml <<'PLAYBOOK'\n- hosts: brokers\n  become: true\n  vars:\n    kafka_version: \"3.7.0\"\n    cluster_id: \"MkU3OEVBNTcwNTJENDM2Qk\"\n    controllers: \"1@10.30.30.11:9093,2@10.30.30.12:9093,3@10.30.30.13:9093\"\n  tasks:\n    - ansible.builtin.apt:\n        name: [openjdk-17-jre-headless, curl, tar]\n        state: present\n        update_cache: true\n    - ansible.builtin.user:\n        name: kafka\n        system: true\n        create_home: true\n        home: /opt/kafka\n    - ansible.builtin.shell: |\n        curl -fsSL https://archive.apache.org/dist/kafka/{{ kafka_version }}/kafka_2.13-{{ kafka_version }}.tgz -o /tmp/kafka.tgz\n        tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\n        chown -R kafka:kafka /opt/kafka\n    - ansible.builtin.copy:\n        dest: /opt/kafka/config/kraft/server.properties\n        owner: kafka\n        group: kafka\n        mode: \"0644\"\n        content: |\n          process.roles=broker,controller\n          node.id={{ node_id }}\n          controller.quorum.voters={{ controllers }}\n          listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093\n          advertised.listeners=PLAINTEXT://{{ inventory_hostname }}:9092\n          controller.listener.names=CONTROLLER\n          listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT\n          log.dirs=/var/lib/kafka\n          offsets.topic.replication.factor=3\n          transaction.state.log.replication.factor=3\n          transaction.state.log.min.isr=2\n          min.insync.replicas=2\n    - ansible.builtin.shell: /opt/kafka/bin/kafka-storage.sh format -t {{ cluster_id }} -c /opt/kafka/config/kraft/server.properties --ignore-formatted\n      become_user: kafka\n    - ansible.builtin.copy:\n        dest: /etc/systemd/system/kafka.service\n        mode: \"0644\"\n        content: |\n          [Unit]\n          Description=Apache Kafka KRaft\n          After=network-online.target\n          [Service]\n          User=kafka\n          ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\n          Restart=always\n          [Install]\n          WantedBy=multi-user.target\n    - ansible.builtin.systemd:\n        name: kafka\n        state: restarted\n        enabled: true\n        daemon_reload: true\nPLAYBOOK\nansible-playbook -i /tmp/kafka-kraft.ini /tmp/kafka-kraft.yml\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 1040
-      },
-      "data": {
-        "label": "Kafka KRaft HA health check",
-        "command": "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server 10.30.30.11:9092 describe --status",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 1220
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_bootstrap",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 840
+          },
+          "data": {
+            "label": "Bootstrap Kafka KRaft HA",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/kafka-kraft.ini <<'INVENTORY'\n[brokers]\n10.30.30.11 node_id=1 node_name=kafka-01\n10.30.30.12 node_id=2 node_name=kafka-02\n10.30.30.13 node_id=3 node_name=kafka-03\nINVENTORY\ncat >/tmp/kafka-kraft.yml <<'PLAYBOOK'\n- hosts: brokers\n  become: true\n  vars:\n    kafka_version: \"3.7.0\"\n    cluster_id: \"MkU3OEVBNTcwNTJENDM2Qk\"\n    controllers: \"1@10.30.30.11:9093,2@10.30.30.12:9093,3@10.30.30.13:9093\"\n  tasks:\n    - ansible.builtin.apt:\n        name: [openjdk-17-jre-headless, curl, tar]\n        state: present\n        update_cache: true\n    - ansible.builtin.user:\n        name: kafka\n        system: true\n        create_home: true\n        home: /opt/kafka\n    - ansible.builtin.shell: |\n        curl -fsSL https://archive.apache.org/dist/kafka/{{ kafka_version }}/kafka_2.13-{{ kafka_version }}.tgz -o /tmp/kafka.tgz\n        tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\n        chown -R kafka:kafka /opt/kafka\n    - ansible.builtin.copy:\n        dest: /opt/kafka/config/kraft/server.properties\n        owner: kafka\n        group: kafka\n        mode: \"0644\"\n        content: |\n          process.roles=broker,controller\n          node.id={{ node_id }}\n          controller.quorum.voters={{ controllers }}\n          listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093\n          advertised.listeners=PLAINTEXT://{{ inventory_hostname }}:9092\n          controller.listener.names=CONTROLLER\n          listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT\n          log.dirs=/var/lib/kafka\n          offsets.topic.replication.factor=3\n          transaction.state.log.replication.factor=3\n          transaction.state.log.min.isr=2\n          min.insync.replicas=2\n    - ansible.builtin.shell: /opt/kafka/bin/kafka-storage.sh format -t {{ cluster_id }} -c /opt/kafka/config/kraft/server.properties --ignore-formatted\n      become_user: kafka\n    - ansible.builtin.copy:\n        dest: /etc/systemd/system/kafka.service\n        mode: \"0644\"\n        content: |\n          [Unit]\n          Description=Apache Kafka KRaft\n          After=network-online.target\n          [Service]\n          User=kafka\n          ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\n          Restart=always\n          [Install]\n          WantedBy=multi-user.target\n    - ansible.builtin.systemd:\n        name: kafka\n        state: restarted\n        enabled: true\n        daemon_reload: true\nPLAYBOOK\nansible-playbook -i /tmp/kafka-kraft.ini /tmp/kafka-kraft.yml\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 1040
+          },
+          "data": {
+            "label": "Kafka KRaft HA health check",
+            "command": "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server 10.30.30.11:9092 describe --status",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 1220
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_kafka_01",
+          "source": "node_context",
+          "target": "node_provision_kafka_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_01_wait",
+          "source": "node_provision_kafka_01",
+          "target": "node_wait_kafka_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_01_bootstrap",
+          "source": "node_wait_kafka_01",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_kafka_02",
+          "source": "node_context",
+          "target": "node_provision_kafka_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_kafka_02_wait",
+          "source": "node_provision_kafka_02",
+          "target": "node_wait_kafka_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_02_bootstrap",
+          "source": "node_wait_kafka_02",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_kafka_03",
+          "source": "node_context",
+          "target": "node_provision_kafka_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_kafka_03_wait",
+          "source": "node_provision_kafka_03",
+          "target": "node_wait_kafka_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_03_bootstrap",
+          "source": "node_wait_kafka_03",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_bootstrap",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_context",
-      "source": "node_trigger",
-      "target": "node_context",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_kafka_01",
-      "source": "node_context",
-      "target": "node_provision_kafka_01",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 1,
-      "data": {
-        "mode": "parallel",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_kafka_01_wait",
-      "source": "node_provision_kafka_01",
-      "target": "node_wait_kafka_01",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_kafka_01_bootstrap",
-      "source": "node_wait_kafka_01",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_kafka_02",
-      "source": "node_context",
-      "target": "node_provision_kafka_02",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 2,
-      "data": {
-        "mode": "parallel",
-        "order": 2
-      }
-    },
-    {
-      "id": "edge_kafka_02_wait",
-      "source": "node_provision_kafka_02",
-      "target": "node_wait_kafka_02",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_kafka_02_bootstrap",
-      "source": "node_wait_kafka_02",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_kafka_03",
-      "source": "node_context",
-      "target": "node_provision_kafka_03",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 3,
-      "data": {
-        "mode": "parallel",
-        "order": 3
-      }
-    },
-    {
-      "id": "edge_kafka_03_wait",
-      "source": "node_provision_kafka_03",
-      "target": "node_wait_kafka_03",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_kafka_03_bootstrap",
-      "source": "node_wait_kafka_03",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_bootstrap_health",
-      "source": "node_bootstrap",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

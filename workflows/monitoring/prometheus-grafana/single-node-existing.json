@@ -1,187 +1,200 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "Prometheus Grafana single-node existing",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "monitoring-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Prometheus Grafana single-node existing",
+    "description": "Install and validate Prometheus Grafana on an existing single host.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "retention",
-            "source": "payload.retention",
-            "value": "30d"
+          "data": {
+            "label": "Prometheus Grafana single-node existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "monitoring-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "retention",
+                "source": "payload.retention",
+                "value": "30d"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_server",
-      "type": "serverNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Prometheus Grafana Host",
-        "hostname": "10.20.70.50",
-        "targets": [
-          {
-            "id": "target-0",
-            "source": "manual",
-            "host": "10.20.70.50",
+        },
+        {
+          "id": "node_server",
+          "type": "serverNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
             "label": "Prometheus Grafana Host",
-            "ip": "10.20.70.50",
-            "name": "prometheus-grafana-host",
-            "node": "",
-            "vmid": "",
-            "status": "existing",
-            "type": "manual"
+            "hostname": "10.20.70.50",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.20.70.50",
+                "label": "Prometheus Grafana Host",
+                "ip": "10.20.70.50",
+                "name": "prometheus-grafana-host",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_wait",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 80,
-        "y": 400
-      },
-      "data": {
-        "label": "Wait for existing host",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 80,
+            "y": 400
+          },
+          "data": {
+            "label": "Wait for existing host",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_install",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 580
-      },
-      "data": {
-        "label": "Install Prometheus Grafana",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y prometheus prometheus-node-exporter grafana\nsudo systemctl enable --now prometheus prometheus-node-exporter grafana-server\nsudo tee /etc/prometheus/rules/octastack.rules.yml >/dev/null <<'EOF'\ngroups:\n  - name: octastack-base\n    rules:\n      - alert: InstanceDown\n        expr: up == 0\n        for: 2m\n        labels:\n          severity: critical\nEOF\nsudo systemctl restart prometheus\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 780
-      },
-      "data": {
-        "label": "Prometheus Grafana health check",
-        "command": "curl -fsS http://127.0.0.1:9090/-/ready && curl -fsS http://127.0.0.1:3000/api/health",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 960
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_install",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 580
+          },
+          "data": {
+            "label": "Install Prometheus Grafana",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y prometheus prometheus-node-exporter grafana\nsudo systemctl enable --now prometheus prometheus-node-exporter grafana-server\nsudo tee /etc/prometheus/rules/octastack.rules.yml >/dev/null <<'EOF'\ngroups:\n  - name: octastack-base\n    rules:\n      - alert: InstanceDown\n        expr: up == 0\n        for: 2m\n        labels:\n          severity: critical\nEOF\nsudo systemctl restart prometheus\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 780
+          },
+          "data": {
+            "label": "Prometheus Grafana health check",
+            "command": "curl -fsS http://127.0.0.1:9090/-/ready && curl -fsS http://127.0.0.1:3000/api/health",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 960
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_server",
+          "source": "node_trigger",
+          "target": "node_server",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_server_wait",
+          "source": "node_server",
+          "target": "node_wait",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_wait_install",
+          "source": "node_wait",
+          "target": "node_install",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_install_health",
+          "source": "node_install",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_server",
-      "source": "node_trigger",
-      "target": "node_server",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_server_wait",
-      "source": "node_server",
-      "target": "node_wait",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_wait_install",
-      "source": "node_wait",
-      "target": "node_install",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_install_health",
-      "source": "node_install",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

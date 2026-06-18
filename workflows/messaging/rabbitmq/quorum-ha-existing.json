@@ -1,187 +1,200 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "RabbitMQ Quorum HA existing",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "rabbitmq-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "RabbitMQ Quorum HA existing",
+    "description": "Bootstrap and validate RabbitMQ Quorum HA from an existing automation runner and target inventory.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "environment",
-            "source": "payload.environment",
-            "value": "production"
+          "data": {
+            "label": "RabbitMQ Quorum HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "rabbitmq-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_runner",
-      "type": "serverNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Automation Runner",
-        "hostname": "10.10.0.24",
-        "targets": [
-          {
-            "id": "target-runner",
-            "source": "manual",
-            "host": "10.10.0.24",
+        },
+        {
+          "id": "node_runner",
+          "type": "serverNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
             "label": "Automation Runner",
-            "ip": "10.10.0.24",
-            "name": "automation-runner",
-            "node": "",
-            "vmid": "",
-            "status": "existing",
-            "type": "manual"
+            "hostname": "10.10.0.24",
+            "targets": [
+              {
+                "id": "target-runner",
+                "source": "manual",
+                "host": "10.10.0.24",
+                "label": "Automation Runner",
+                "ip": "10.10.0.24",
+                "name": "automation-runner",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_wait_runner",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 80,
-        "y": 400
-      },
-      "data": {
-        "label": "Wait for automation runner",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_runner",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 80,
+            "y": 400
+          },
+          "data": {
+            "label": "Wait for automation runner",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_bootstrap",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 580
-      },
-      "data": {
-        "label": "Bootstrap RabbitMQ Quorum HA",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rabbitmq-ha.ini <<'INVENTORY'\n[rabbitmq]\n10.30.40.11 node_name=rabbitmq-01\n10.30.40.12 node_name=rabbitmq-02\n10.30.40.13 node_name=rabbitmq-03\nINVENTORY\ncat >/tmp/rabbitmq-ha.yml <<'PLAYBOOK'\n- hosts: rabbitmq\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: rabbitmq-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /var/lib/rabbitmq/.erlang.cookie\n        owner: rabbitmq\n        group: rabbitmq\n        mode: \"0400\"\n        content: \"OCTASTACKRABBITMQCOOKIE\"\n    - ansible.builtin.service:\n        name: rabbitmq-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: rabbitmq-plugins enable rabbitmq_management\n    - ansible.builtin.shell: |\n        rabbitmqctl stop_app\n        rabbitmqctl reset\n        rabbitmqctl join_cluster rabbit@10.30.40.11\n        rabbitmqctl start_app\n      when: inventory_hostname != \"10.30.40.11\"\n    - ansible.builtin.shell: |\n        rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n        rabbitmqctl add_user app_user change-me || true\n        rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\n      when: inventory_hostname == \"10.30.40.11\"\nPLAYBOOK\nansible-playbook -i /tmp/rabbitmq-ha.ini /tmp/rabbitmq-ha.yml\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 780
-      },
-      "data": {
-        "label": "RabbitMQ Quorum HA health check",
-        "command": "sudo rabbitmq-diagnostics cluster_status",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 960
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_bootstrap",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 580
+          },
+          "data": {
+            "label": "Bootstrap RabbitMQ Quorum HA",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rabbitmq-ha.ini <<'INVENTORY'\n[rabbitmq]\n10.30.40.11 node_name=rabbitmq-01\n10.30.40.12 node_name=rabbitmq-02\n10.30.40.13 node_name=rabbitmq-03\nINVENTORY\ncat >/tmp/rabbitmq-ha.yml <<'PLAYBOOK'\n- hosts: rabbitmq\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: rabbitmq-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /var/lib/rabbitmq/.erlang.cookie\n        owner: rabbitmq\n        group: rabbitmq\n        mode: \"0400\"\n        content: \"OCTASTACKRABBITMQCOOKIE\"\n    - ansible.builtin.service:\n        name: rabbitmq-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: rabbitmq-plugins enable rabbitmq_management\n    - ansible.builtin.shell: |\n        rabbitmqctl stop_app\n        rabbitmqctl reset\n        rabbitmqctl join_cluster rabbit@10.30.40.11\n        rabbitmqctl start_app\n      when: inventory_hostname != \"10.30.40.11\"\n    - ansible.builtin.shell: |\n        rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n        rabbitmqctl add_user app_user change-me || true\n        rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\n      when: inventory_hostname == \"10.30.40.11\"\nPLAYBOOK\nansible-playbook -i /tmp/rabbitmq-ha.ini /tmp/rabbitmq-ha.yml\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 780
+          },
+          "data": {
+            "label": "RabbitMQ Quorum HA health check",
+            "command": "sudo rabbitmq-diagnostics cluster_status",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 960
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_runner",
+          "source": "node_trigger",
+          "target": "node_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_runner_wait",
+          "source": "node_runner",
+          "target": "node_wait_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_wait_bootstrap",
+          "source": "node_wait_runner",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_bootstrap",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_runner",
-      "source": "node_trigger",
-      "target": "node_runner",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_runner_wait",
-      "source": "node_runner",
-      "target": "node_wait_runner",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_wait_bootstrap",
-      "source": "node_wait_runner",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_bootstrap_health",
-      "source": "node_bootstrap",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

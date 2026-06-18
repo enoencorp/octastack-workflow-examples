@@ -1,187 +1,200 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "Prometheus Grafana HA existing",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "monitoring-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Prometheus Grafana HA existing",
+    "description": "Bootstrap and validate Prometheus Grafana HA from an existing automation runner and target inventory.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "retention",
-            "source": "payload.retention",
-            "value": "30d"
+          "data": {
+            "label": "Prometheus Grafana HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "monitoring-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "retention",
+                "source": "payload.retention",
+                "value": "30d"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_runner",
-      "type": "serverNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Automation Runner",
-        "hostname": "10.10.0.27",
-        "targets": [
-          {
-            "id": "target-runner",
-            "source": "manual",
-            "host": "10.10.0.27",
+        },
+        {
+          "id": "node_runner",
+          "type": "serverNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
             "label": "Automation Runner",
-            "ip": "10.10.0.27",
-            "name": "automation-runner",
-            "node": "",
-            "vmid": "",
-            "status": "existing",
-            "type": "manual"
+            "hostname": "10.10.0.27",
+            "targets": [
+              {
+                "id": "target-runner",
+                "source": "manual",
+                "host": "10.10.0.27",
+                "label": "Automation Runner",
+                "ip": "10.10.0.27",
+                "name": "automation-runner",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_wait_runner",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 80,
-        "y": 400
-      },
-      "data": {
-        "label": "Wait for automation runner",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_runner",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 80,
+            "y": 400
+          },
+          "data": {
+            "label": "Wait for automation runner",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_bootstrap",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 580
-      },
-      "data": {
-        "label": "Bootstrap Prometheus Grafana HA",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/monitoring-ha.ini <<'INVENTORY'\n[prometheus]\n10.30.70.11 node_name=prometheus-01\n10.30.70.12 node_name=prometheus-02\n\n[alertmanager]\n10.30.70.21 node_name=alertmanager-01\n10.30.70.22 node_name=alertmanager-02\n10.30.70.23 node_name=alertmanager-03\n\n[grafana]\n10.30.70.31 node_name=grafana-01\n10.30.70.32 node_name=grafana-02\nINVENTORY\ncat >/tmp/monitoring-ha.yml <<'PLAYBOOK'\n- hosts: prometheus\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [prometheus, prometheus-node-exporter]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: \"{{ item }}\"\n        state: restarted\n        enabled: true\n      loop: [prometheus, prometheus-node-exporter]\n\n- hosts: alertmanager\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: prometheus-alertmanager\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/prometheus/alertmanager.yml\n        mode: \"0644\"\n        content: |\n          global:\n            resolve_timeout: 5m\n          route:\n            receiver: default\n          receivers:\n            - name: default\n    - ansible.builtin.service:\n        name: prometheus-alertmanager\n        state: restarted\n        enabled: true\n\n- hosts: grafana\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: grafana\n        state: present\n    - ansible.builtin.service:\n        name: grafana-server\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 780
-      },
-      "data": {
-        "label": "Prometheus Grafana HA health check",
-        "command": "curl -fsS http://10.30.70.11:9090/-/ready && curl -fsS http://10.30.70.31:3000/api/health",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 960
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_bootstrap",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 580
+          },
+          "data": {
+            "label": "Bootstrap Prometheus Grafana HA",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/monitoring-ha.ini <<'INVENTORY'\n[prometheus]\n10.30.70.11 node_name=prometheus-01\n10.30.70.12 node_name=prometheus-02\n\n[alertmanager]\n10.30.70.21 node_name=alertmanager-01\n10.30.70.22 node_name=alertmanager-02\n10.30.70.23 node_name=alertmanager-03\n\n[grafana]\n10.30.70.31 node_name=grafana-01\n10.30.70.32 node_name=grafana-02\nINVENTORY\ncat >/tmp/monitoring-ha.yml <<'PLAYBOOK'\n- hosts: prometheus\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [prometheus, prometheus-node-exporter]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: \"{{ item }}\"\n        state: restarted\n        enabled: true\n      loop: [prometheus, prometheus-node-exporter]\n\n- hosts: alertmanager\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: prometheus-alertmanager\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/prometheus/alertmanager.yml\n        mode: \"0644\"\n        content: |\n          global:\n            resolve_timeout: 5m\n          route:\n            receiver: default\n          receivers:\n            - name: default\n    - ansible.builtin.service:\n        name: prometheus-alertmanager\n        state: restarted\n        enabled: true\n\n- hosts: grafana\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: grafana\n        state: present\n    - ansible.builtin.service:\n        name: grafana-server\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 780
+          },
+          "data": {
+            "label": "Prometheus Grafana HA health check",
+            "command": "curl -fsS http://10.30.70.11:9090/-/ready && curl -fsS http://10.30.70.31:3000/api/health",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 960
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_runner",
+          "source": "node_trigger",
+          "target": "node_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_runner_wait",
+          "source": "node_runner",
+          "target": "node_wait_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_wait_bootstrap",
+          "source": "node_wait_runner",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_bootstrap",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_runner",
-      "source": "node_trigger",
-      "target": "node_runner",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_runner_wait",
-      "source": "node_runner",
-      "target": "node_wait_runner",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_wait_bootstrap",
-      "source": "node_wait_runner",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_bootstrap_health",
-      "source": "node_bootstrap",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

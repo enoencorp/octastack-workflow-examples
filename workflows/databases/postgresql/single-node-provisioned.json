@@ -1,250 +1,263 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "PostgreSQL single-node provisioned",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "pg-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "PostgreSQL single-node provisioned",
+    "description": "Provision a single PostgreSQL node on Proxmox, wait for reachability, then install and validate the stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "environment",
-            "source": "payload.environment",
-            "value": "production"
+          "data": {
+            "label": "PostgreSQL single-node provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "pg-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_context",
-      "type": "proxmoxConfigNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Cluster Context",
-        "profileId": "replace-with-proxmox-profile-id"
-      }
-    },
-    {
-      "id": "node_provision",
-      "type": "provisionNode",
-      "position": {
-        "x": 80,
-        "y": 400
-      },
-      "data": {
-        "label": "Provision postgres-single-01",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "pg-single-01",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "POSTGRES",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "100",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
           }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision",
+          "type": "provisionNode",
+          "position": {
+            "x": 80,
+            "y": 400
+          },
+          "data": {
+            "label": "Provision postgres-single-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "pg-single-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "POSTGRES",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "100",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.10.50/24",
+                "gw": "10.30.10.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "db.example.internal"
+              }
+            ],
             "ipAddress": "10.30.10.50/24",
             "gw": "10.30.10.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
           }
-        ],
-        "ipAddress": "10.30.10.50/24",
-        "gw": "10.30.10.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "db.example.internal"
-      }
-    },
-    {
-      "id": "node_wait",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 80,
-        "y": 600
-      },
-      "data": {
-        "label": "Wait for provisioned host",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 80,
+            "y": 600
+          },
+          "data": {
+            "label": "Wait for provisioned host",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_install",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 780
-      },
-      "data": {
-        "label": "Install PostgreSQL",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nexport DEBIAN_FRONTEND=noninteractive\nsudo apt-get update\nsudo apt-get install -y postgresql postgresql-contrib\nsudo sed -i \"s/^#listen_addresses.*/listen_addresses = '*'/\" /etc/postgresql/*/main/postgresql.conf\nsudo tee -a /etc/postgresql/*/main/pg_hba.conf >/dev/null <<'EOF'\nhost all all 10.0.0.0/8 scram-sha-256\nEOF\nsudo systemctl enable --now postgresql\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='app_user'\" | grep -q 1 || sudo -u postgres psql -c \"CREATE ROLE app_user LOGIN PASSWORD 'change-me';\"\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_database WHERE datname='app_db'\" | grep -q 1 || sudo -u postgres createdb app_db -O app_user\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 980
-      },
-      "data": {
-        "label": "PostgreSQL health check",
-        "command": "pg_isready -h 127.0.0.1 -p 5432 && sudo -u postgres psql -c 'SELECT version();'",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 1160
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_install",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 780
+          },
+          "data": {
+            "label": "Install PostgreSQL",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nexport DEBIAN_FRONTEND=noninteractive\nsudo apt-get update\nsudo apt-get install -y postgresql postgresql-contrib\nsudo sed -i \"s/^#listen_addresses.*/listen_addresses = '*'/\" /etc/postgresql/*/main/postgresql.conf\nsudo tee -a /etc/postgresql/*/main/pg_hba.conf >/dev/null <<'EOF'\nhost all all 10.0.0.0/8 scram-sha-256\nEOF\nsudo systemctl enable --now postgresql\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='app_user'\" | grep -q 1 || sudo -u postgres psql -c \"CREATE ROLE app_user LOGIN PASSWORD 'change-me';\"\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_database WHERE datname='app_db'\" | grep -q 1 || sudo -u postgres createdb app_db -O app_user\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 980
+          },
+          "data": {
+            "label": "PostgreSQL health check",
+            "command": "pg_isready -h 127.0.0.1 -p 5432 && sudo -u postgres psql -c 'SELECT version();'",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 1160
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_provision",
+          "source": "node_context",
+          "target": "node_provision",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_provision_wait",
+          "source": "node_provision",
+          "target": "node_wait",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_wait_install",
+          "source": "node_wait",
+          "target": "node_install",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_install_health",
+          "source": "node_install",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_context",
-      "source": "node_trigger",
-      "target": "node_context",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_provision",
-      "source": "node_context",
-      "target": "node_provision",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_provision_wait",
-      "source": "node_provision",
-      "target": "node_wait",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_wait_install",
-      "source": "node_wait",
-      "target": "node_install",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_install_health",
-      "source": "node_install",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

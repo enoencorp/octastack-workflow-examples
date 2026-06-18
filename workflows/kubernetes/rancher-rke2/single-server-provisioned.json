@@ -1,250 +1,263 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "Rancher RKE2 single-node provisioned",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "rke2-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Rancher RKE2 single-node provisioned",
+    "description": "Provision a single Rancher RKE2 node on Proxmox, wait for reachability, then install and validate the stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "rancher_hostname",
-            "source": "payload.rancher_hostname",
-            "value": "rancher.example.internal"
+          "data": {
+            "label": "Rancher RKE2 single-node provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "rke2-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "rancher_hostname",
+                "source": "payload.rancher_hostname",
+                "value": "rancher.example.internal"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_context",
-      "type": "proxmoxConfigNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Cluster Context",
-        "profileId": "replace-with-proxmox-profile-id"
-      }
-    },
-    {
-      "id": "node_provision",
-      "type": "provisionNode",
-      "position": {
-        "x": 80,
-        "y": 400
-      },
-      "data": {
-        "label": "Provision rke2-single-01",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "rke2-single-01",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "RKE2_SERVER",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "100",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
           }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision",
+          "type": "provisionNode",
+          "position": {
+            "x": 80,
+            "y": 400
+          },
+          "data": {
+            "label": "Provision rke2-single-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "rke2-single-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "RKE2_SERVER",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "100",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.60.50/24",
+                "gw": "10.30.60.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "rancher.example.internal"
+              }
+            ],
             "ipAddress": "10.30.60.50/24",
             "gw": "10.30.60.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "rancher.example.internal"
           }
-        ],
-        "ipAddress": "10.30.60.50/24",
-        "gw": "10.30.60.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "rancher.example.internal"
-      }
-    },
-    {
-      "id": "node_wait",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 80,
-        "y": 600
-      },
-      "data": {
-        "label": "Wait for provisioned host",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 80,
+            "y": 600
+          },
+          "data": {
+            "label": "Wait for provisioned host",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_install",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 780
-      },
-      "data": {
-        "label": "Install Rancher RKE2",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\ncurl -sfL https://get.rke2.io | sudo INSTALL_RKE2_TYPE=server sh -\nsudo systemctl enable --now rke2-server\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/rancher/rke2/rke2.yaml \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nexport KUBECONFIG=\"$HOME/.kube/config\"\ncurl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\nkubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\nhelm repo add jetstack https://charts.jetstack.io\nhelm repo add rancher-latest https://releases.rancher.com/server-charts/latest\nhelm repo update\nhelm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\nhelm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 980
-      },
-      "data": {
-        "label": "Rancher RKE2 health check",
-        "command": "sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 1160
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_install",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 780
+          },
+          "data": {
+            "label": "Install Rancher RKE2",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\ncurl -sfL https://get.rke2.io | sudo INSTALL_RKE2_TYPE=server sh -\nsudo systemctl enable --now rke2-server\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/rancher/rke2/rke2.yaml \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nexport KUBECONFIG=\"$HOME/.kube/config\"\ncurl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\nkubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\nhelm repo add jetstack https://charts.jetstack.io\nhelm repo add rancher-latest https://releases.rancher.com/server-charts/latest\nhelm repo update\nhelm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\nhelm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 980
+          },
+          "data": {
+            "label": "Rancher RKE2 health check",
+            "command": "sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 1160
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_provision",
+          "source": "node_context",
+          "target": "node_provision",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_provision_wait",
+          "source": "node_provision",
+          "target": "node_wait",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_wait_install",
+          "source": "node_wait",
+          "target": "node_install",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_install_health",
+          "source": "node_install",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_context",
-      "source": "node_trigger",
-      "target": "node_context",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_provision",
-      "source": "node_context",
-      "target": "node_provision",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_provision_wait",
-      "source": "node_provision",
-      "target": "node_wait",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_wait_install",
-      "source": "node_wait",
-      "target": "node_install",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_install_health",
-      "source": "node_install",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

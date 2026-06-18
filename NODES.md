@@ -13,7 +13,39 @@ Scope is the main workflow editor:
 
 ## 1. Canonical Graph Format
 
-The workflow graph is stored as JSONB with `nodes` and `edges` fields.
+The workflow graph itself is stored as JSONB with `nodes` and `edges` fields.
+
+Import/export note: the OctaStack import screen does not accept a raw graph object at the JSON root. It expects a workflow package object. Put the canonical graph under `workflow.graphData`:
+
+```json
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Example Workflow",
+    "description": "Short workflow description.",
+    "graphData": {
+      "nodes": [],
+      "edges": []
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}
+```
+
+Package rules for importable JSON files:
+
+- `kind` is required and must be exactly `octastack.workflow.package`.
+- `version` is required and must be `1`.
+- `workflow.name` is the imported workflow name. If it is blank, the backend uses `Imported Workflow`.
+- `workflow.description` may be blank.
+- `workflow.graphData` contains the canonical graph object described below.
+- `dependencies.templates` contains exported Ansible template dependencies when referenced by action nodes.
+- `dependencies.customNodes` contains registered custom node dependencies when referenced by ID. Inline `customNode` scripts with an empty `customNodeId` do not need dependency entries.
 
 ```json
 {

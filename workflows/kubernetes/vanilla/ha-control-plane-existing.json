@@ -1,187 +1,200 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "Vanilla Kubernetes HA existing",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "k8s-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Vanilla Kubernetes HA existing",
+    "description": "Bootstrap and validate Vanilla Kubernetes HA from an existing automation runner and target inventory.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "pod_cidr",
-            "source": "payload.pod_cidr",
-            "value": "192.168.0.0/16"
+          "data": {
+            "label": "Vanilla Kubernetes HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "k8s-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "pod_cidr",
+                "source": "payload.pod_cidr",
+                "value": "192.168.0.0/16"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_runner",
-      "type": "serverNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Automation Runner",
-        "hostname": "10.10.0.25",
-        "targets": [
-          {
-            "id": "target-runner",
-            "source": "manual",
-            "host": "10.10.0.25",
+        },
+        {
+          "id": "node_runner",
+          "type": "serverNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
             "label": "Automation Runner",
-            "ip": "10.10.0.25",
-            "name": "automation-runner",
-            "node": "",
-            "vmid": "",
-            "status": "existing",
-            "type": "manual"
+            "hostname": "10.10.0.25",
+            "targets": [
+              {
+                "id": "target-runner",
+                "source": "manual",
+                "host": "10.10.0.25",
+                "label": "Automation Runner",
+                "ip": "10.10.0.25",
+                "name": "automation-runner",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_wait_runner",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 80,
-        "y": 400
-      },
-      "data": {
-        "label": "Wait for automation runner",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_runner",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 80,
+            "y": 400
+          },
+          "data": {
+            "label": "Wait for automation runner",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_bootstrap",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 580
-      },
-      "data": {
-        "label": "Bootstrap Vanilla Kubernetes HA",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/vanilla-k8s-ha.ini <<'INVENTORY'\n[control_plane]\n10.30.50.11 node_name=k8s-cp-01\n10.30.50.12 node_name=k8s-cp-02\n10.30.50.13 node_name=k8s-cp-03\n\n[worker]\n10.30.50.21 node_name=k8s-worker-01\n10.30.50.22 node_name=k8s-worker-02\nINVENTORY\ncat >/tmp/vanilla-k8s-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        swapoff -a\n        modprobe br_netfilter\n        sysctl -w net.bridge.bridge-nf-call-iptables=1\n        apt-get update\n        apt-get install -y containerd apt-transport-https ca-certificates curl gpg\n        systemctl enable --now containerd\n    - ansible.builtin.shell: |\n        mkdir -p /etc/apt/keyrings\n        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\n        echo \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" > /etc/apt/sources.list.d/kubernetes.list\n        apt-get update\n        apt-get install -y kubelet kubeadm kubectl\n\n- hosts: control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: kubeadm init --control-plane-endpoint \"10.30.50.10:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n    - ansible.builtin.shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n\n- hosts: control_plane:!control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join additional control plane nodes using the kubeadm join command printed by the first control plane.\"\n\n- hosts: worker\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join worker nodes using the kubeadm join command printed by the first control plane.\"\nPLAYBOOK\nansible-playbook -i /tmp/vanilla-k8s-ha.ini /tmp/vanilla-k8s-ha.yml\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 780
-      },
-      "data": {
-        "label": "Vanilla Kubernetes HA health check",
-        "command": "kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 960
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_bootstrap",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 580
+          },
+          "data": {
+            "label": "Bootstrap Vanilla Kubernetes HA",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/vanilla-k8s-ha.ini <<'INVENTORY'\n[control_plane]\n10.30.50.11 node_name=k8s-cp-01\n10.30.50.12 node_name=k8s-cp-02\n10.30.50.13 node_name=k8s-cp-03\n\n[worker]\n10.30.50.21 node_name=k8s-worker-01\n10.30.50.22 node_name=k8s-worker-02\nINVENTORY\ncat >/tmp/vanilla-k8s-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        swapoff -a\n        modprobe br_netfilter\n        sysctl -w net.bridge.bridge-nf-call-iptables=1\n        apt-get update\n        apt-get install -y containerd apt-transport-https ca-certificates curl gpg\n        systemctl enable --now containerd\n    - ansible.builtin.shell: |\n        mkdir -p /etc/apt/keyrings\n        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\n        echo \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" > /etc/apt/sources.list.d/kubernetes.list\n        apt-get update\n        apt-get install -y kubelet kubeadm kubectl\n\n- hosts: control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: kubeadm init --control-plane-endpoint \"10.30.50.10:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n    - ansible.builtin.shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n\n- hosts: control_plane:!control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join additional control plane nodes using the kubeadm join command printed by the first control plane.\"\n\n- hosts: worker\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join worker nodes using the kubeadm join command printed by the first control plane.\"\nPLAYBOOK\nansible-playbook -i /tmp/vanilla-k8s-ha.ini /tmp/vanilla-k8s-ha.yml\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 780
+          },
+          "data": {
+            "label": "Vanilla Kubernetes HA health check",
+            "command": "kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 960
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_runner",
+          "source": "node_trigger",
+          "target": "node_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_runner_wait",
+          "source": "node_runner",
+          "target": "node_wait_runner",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_wait_bootstrap",
+          "source": "node_wait_runner",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_bootstrap",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_runner",
-      "source": "node_trigger",
-      "target": "node_runner",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_runner_wait",
-      "source": "node_runner",
-      "target": "node_wait_runner",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_wait_bootstrap",
-      "source": "node_wait_runner",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_bootstrap_health",
-      "source": "node_bootstrap",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

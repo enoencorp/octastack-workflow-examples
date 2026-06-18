@@ -3,6 +3,8 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const WORKFLOW_ROOT = path.join(ROOT, "workflows");
+const WORKFLOW_PACKAGE_KIND = "octastack.workflow.package";
+const WORKFLOW_PACKAGE_VERSION = 1;
 
 function walkJsonFiles(dir) {
   if (!fs.existsSync(dir)) {
@@ -170,14 +172,51 @@ function validateWorkflow(workflow, fileName) {
   return errors;
 }
 
+function validateWorkflowPackage(pkg, fileName) {
+  const errors = [];
+  if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+    return [`${fileName}: top-level value must be a workflow package object`];
+  }
+  if (pkg.kind !== WORKFLOW_PACKAGE_KIND) {
+    errors.push(`${fileName}: kind must be ${JSON.stringify(WORKFLOW_PACKAGE_KIND)}`);
+  }
+  if (pkg.version !== WORKFLOW_PACKAGE_VERSION) {
+    errors.push(`${fileName}: version must be ${WORKFLOW_PACKAGE_VERSION}`);
+  }
+  if (!pkg.workflow || typeof pkg.workflow !== "object" || Array.isArray(pkg.workflow)) {
+    errors.push(`${fileName}: workflow must be an object`);
+  }
+  if (!pkg.dependencies || typeof pkg.dependencies !== "object" || Array.isArray(pkg.dependencies)) {
+    errors.push(`${fileName}: dependencies must be an object`);
+  } else {
+    if (!Array.isArray(pkg.dependencies.templates)) {
+      errors.push(`${fileName}: dependencies.templates must be an array`);
+    }
+    if (!Array.isArray(pkg.dependencies.customNodes)) {
+      errors.push(`${fileName}: dependencies.customNodes must be an array`);
+    }
+  }
+  if (errors.length) {
+    return errors;
+  }
+  if (typeof pkg.workflow.name !== "string") {
+    errors.push(`${fileName}: workflow.name must be a string`);
+  }
+  if (typeof pkg.workflow.description !== "string") {
+    errors.push(`${fileName}: workflow.description must be a string`);
+  }
+  errors.push(...validateWorkflow(pkg.workflow.graphData, fileName));
+  return errors;
+}
+
 const files = walkJsonFiles(WORKFLOW_ROOT);
 const allErrors = [];
 
 for (const file of files) {
   const relative = path.relative(ROOT, file);
   try {
-    const workflow = JSON.parse(fs.readFileSync(file, "utf8"));
-    allErrors.push(...validateWorkflow(workflow, relative));
+    const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+    allErrors.push(...validateWorkflowPackage(pkg, relative));
   } catch (error) {
     allErrors.push(`${relative}: ${error.message}`);
   }

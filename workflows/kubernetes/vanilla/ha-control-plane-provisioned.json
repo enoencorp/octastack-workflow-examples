@@ -1,742 +1,755 @@
 {
-  "nodes": [
-    {
-      "id": "node_trigger",
-      "type": "triggerNode",
-      "position": {
-        "x": 80,
-        "y": 80
-      },
-      "data": {
-        "label": "Vanilla Kubernetes HA provisioned",
-        "triggerType": "manual",
-        "enabled": true,
-        "variables": [
-          {
-            "id": "var-0",
-            "key": "cluster_name",
-            "source": "payload.cluster_name",
-            "value": "k8s-prod"
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Vanilla Kubernetes HA provisioned",
+    "description": "Provision Vanilla Kubernetes HA nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 80,
+            "y": 80
           },
-          {
-            "id": "var-1",
-            "key": "pod_cidr",
-            "source": "payload.pod_cidr",
-            "value": "192.168.0.0/16"
+          "data": {
+            "label": "Vanilla Kubernetes HA provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "k8s-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "pod_cidr",
+                "source": "payload.pod_cidr",
+                "value": "192.168.0.0/16"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
           }
-        ],
-        "webhookPath": "",
-        "secretRef": "",
-        "cronExpr": "",
-        "timezone": "UTC"
-      }
-    },
-    {
-      "id": "node_context",
-      "type": "proxmoxConfigNode",
-      "position": {
-        "x": 80,
-        "y": 240
-      },
-      "data": {
-        "label": "Cluster Context",
-        "profileId": "replace-with-proxmox-profile-id"
-      }
-    },
-    {
-      "id": "node_provision_k8s_cp_01",
-      "type": "provisionNode",
-      "position": {
-        "x": -400,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision k8s-cp-01",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "k8s-cp-01",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "CONTROL_PLANE",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "100",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 80,
+            "y": 240
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
           }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_k8s_cp_01",
+          "type": "provisionNode",
+          "position": {
+            "x": -400,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision k8s-cp-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "k8s-cp-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "CONTROL_PLANE",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "100",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.50.11/24",
+                "gw": "10.30.50.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "k8s.example.internal"
+              }
+            ],
             "ipAddress": "10.30.50.11/24",
             "gw": "10.30.50.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
           }
-        ],
-        "ipAddress": "10.30.50.11/24",
-        "gw": "10.30.50.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "k8s.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_k8s_cp_01",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": -400,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait k8s-cp-01",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_k8s_cp_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": -400,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait k8s-cp-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_provision_k8s_cp_02",
-      "type": "provisionNode",
-      "position": {
-        "x": -220,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision k8s-cp-02",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "k8s-cp-02",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "CONTROL_PLANE",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "100",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
-          }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_k8s_cp_02",
+          "type": "provisionNode",
+          "position": {
+            "x": -220,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision k8s-cp-02",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "k8s-cp-02",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "CONTROL_PLANE",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "100",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.50.12/24",
+                "gw": "10.30.50.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "k8s.example.internal"
+              }
+            ],
             "ipAddress": "10.30.50.12/24",
             "gw": "10.30.50.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
           }
-        ],
-        "ipAddress": "10.30.50.12/24",
-        "gw": "10.30.50.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "k8s.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_k8s_cp_02",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": -220,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait k8s-cp-02",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_k8s_cp_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": -220,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait k8s-cp-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_provision_k8s_cp_03",
-      "type": "provisionNode",
-      "position": {
-        "x": -40,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision k8s-cp-03",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "k8s-cp-03",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "CONTROL_PLANE",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "100",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
-          }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_k8s_cp_03",
+          "type": "provisionNode",
+          "position": {
+            "x": -40,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision k8s-cp-03",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "k8s-cp-03",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "CONTROL_PLANE",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "100",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.50.13/24",
+                "gw": "10.30.50.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "k8s.example.internal"
+              }
+            ],
             "ipAddress": "10.30.50.13/24",
             "gw": "10.30.50.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
           }
-        ],
-        "ipAddress": "10.30.50.13/24",
-        "gw": "10.30.50.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "k8s.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_k8s_cp_03",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": -40,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait k8s-cp-03",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_k8s_cp_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": -40,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait k8s-cp-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_provision_k8s_worker_01",
-      "type": "provisionNode",
-      "position": {
-        "x": 140,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision k8s-worker-01",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "k8s-worker-01",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "WORKER",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "120",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
-          }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_k8s_worker_01",
+          "type": "provisionNode",
+          "position": {
+            "x": 140,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision k8s-worker-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "k8s-worker-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "WORKER",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "120",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.50.21/24",
+                "gw": "10.30.50.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "k8s.example.internal"
+              }
+            ],
             "ipAddress": "10.30.50.21/24",
             "gw": "10.30.50.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
           }
-        ],
-        "ipAddress": "10.30.50.21/24",
-        "gw": "10.30.50.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "k8s.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_k8s_worker_01",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 140,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait k8s-worker-01",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_k8s_worker_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 140,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait k8s-worker-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_provision_k8s_worker_02",
-      "type": "provisionNode",
-      "position": {
-        "x": 320,
-        "y": 420
-      },
-      "data": {
-        "label": "Provision k8s-worker-02",
-        "node": "pve1",
-        "templateId": "9000",
-        "instanceName": "k8s-worker-02",
-        "vmId": "",
-        "autoVmid": true,
-        "environment": "PROD",
-        "serverType": "WORKER",
-        "cores": "4",
-        "memory": "8192",
-        "machine": "q35",
-        "ostype": "l26",
-        "bios": "seabios",
-        "onboot": true,
-        "agent": true,
-        "targetStorage": "local-lvm",
-        "cloudInitStorage": "local-lvm",
-        "cicustom": "",
-        "disks": [
-          {
-            "id": "disk-0",
-            "slot": "scsi1",
-            "bus": "scsi",
-            "storage": "local-lvm",
-            "sizeGb": "120",
-            "cache": "",
-            "iothread": true,
-            "discard": true,
-            "ssd": true,
-            "backup": true
-          }
-        ],
-        "networks": [
-          {
-            "id": "net-0",
-            "slot": "net0",
-            "model": "virtio",
-            "bridge": "vmbr0",
-            "vlanTag": "",
-            "firewall": true,
-            "rateLimitMbps": "",
-            "macAddress": "",
-            "queues": "",
+        },
+        {
+          "id": "node_provision_k8s_worker_02",
+          "type": "provisionNode",
+          "position": {
+            "x": 320,
+            "y": 420
+          },
+          "data": {
+            "label": "Provision k8s-worker-02",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "k8s-worker-02",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "WORKER",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "120",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.30.50.22/24",
+                "gw": "10.30.50.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "k8s.example.internal"
+              }
+            ],
             "ipAddress": "10.30.50.22/24",
             "gw": "10.30.50.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
           }
-        ],
-        "ipAddress": "10.30.50.22/24",
-        "gw": "10.30.50.1",
-        "dns1": "1.1.1.1",
-        "dns2": "8.8.8.8",
-        "domain": "k8s.example.internal"
-      }
-    },
-    {
-      "id": "node_wait_k8s_worker_02",
-      "type": "waitUntilUpNode",
-      "position": {
-        "x": 320,
-        "y": 620
-      },
-      "data": {
-        "label": "Wait k8s-worker-02",
-        "timeout": "20",
-        "interval": "10",
-        "probes": [
-          {
-            "id": "probe-0",
-            "type": "ssh",
-            "host": "",
-            "port": "22",
-            "label": "SSH reachability"
+        },
+        {
+          "id": "node_wait_k8s_worker_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 320,
+            "y": 620
+          },
+          "data": {
+            "label": "Wait k8s-worker-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
           }
-        ]
-      }
-    },
-    {
-      "id": "node_bootstrap",
-      "type": "customNode",
-      "position": {
-        "x": 80,
-        "y": 840
-      },
-      "data": {
-        "label": "Bootstrap Vanilla Kubernetes HA",
-        "customNodeId": "",
-        "scriptType": "shell",
-        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/vanilla-k8s-ha.ini <<'INVENTORY'\n[control_plane]\n10.30.50.11 node_name=k8s-cp-01\n10.30.50.12 node_name=k8s-cp-02\n10.30.50.13 node_name=k8s-cp-03\n\n[worker]\n10.30.50.21 node_name=k8s-worker-01\n10.30.50.22 node_name=k8s-worker-02\nINVENTORY\ncat >/tmp/vanilla-k8s-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        swapoff -a\n        modprobe br_netfilter\n        sysctl -w net.bridge.bridge-nf-call-iptables=1\n        apt-get update\n        apt-get install -y containerd apt-transport-https ca-certificates curl gpg\n        systemctl enable --now containerd\n    - ansible.builtin.shell: |\n        mkdir -p /etc/apt/keyrings\n        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\n        echo \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" > /etc/apt/sources.list.d/kubernetes.list\n        apt-get update\n        apt-get install -y kubelet kubeadm kubectl\n\n- hosts: control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: kubeadm init --control-plane-endpoint \"10.30.50.10:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n    - ansible.builtin.shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n\n- hosts: control_plane:!control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join additional control plane nodes using the kubeadm join command printed by the first control plane.\"\n\n- hosts: worker\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join worker nodes using the kubeadm join command printed by the first control plane.\"\nPLAYBOOK\nansible-playbook -i /tmp/vanilla-k8s-ha.ini /tmp/vanilla-k8s-ha.yml\n",
-        "sudo": true,
-        "method": "GET",
-        "path": "",
-        "body": "{}"
-      }
-    },
-    {
-      "id": "node_health",
-      "type": "configCommandNode",
-      "position": {
-        "x": 80,
-        "y": 1040
-      },
-      "data": {
-        "label": "Vanilla Kubernetes HA health check",
-        "command": "kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide",
-        "sudo": false
-      }
-    },
-    {
-      "id": "node_end",
-      "type": "endNode",
-      "position": {
-        "x": 80,
-        "y": 1220
-      },
-      "data": {
-        "label": "End"
-      }
+        },
+        {
+          "id": "node_bootstrap",
+          "type": "customNode",
+          "position": {
+            "x": 80,
+            "y": 840
+          },
+          "data": {
+            "label": "Bootstrap Vanilla Kubernetes HA",
+            "customNodeId": "",
+            "scriptType": "shell",
+            "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/vanilla-k8s-ha.ini <<'INVENTORY'\n[control_plane]\n10.30.50.11 node_name=k8s-cp-01\n10.30.50.12 node_name=k8s-cp-02\n10.30.50.13 node_name=k8s-cp-03\n\n[worker]\n10.30.50.21 node_name=k8s-worker-01\n10.30.50.22 node_name=k8s-worker-02\nINVENTORY\ncat >/tmp/vanilla-k8s-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        swapoff -a\n        modprobe br_netfilter\n        sysctl -w net.bridge.bridge-nf-call-iptables=1\n        apt-get update\n        apt-get install -y containerd apt-transport-https ca-certificates curl gpg\n        systemctl enable --now containerd\n    - ansible.builtin.shell: |\n        mkdir -p /etc/apt/keyrings\n        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\n        echo \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" > /etc/apt/sources.list.d/kubernetes.list\n        apt-get update\n        apt-get install -y kubelet kubeadm kubectl\n\n- hosts: control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: kubeadm init --control-plane-endpoint \"10.30.50.10:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n    - ansible.builtin.shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n\n- hosts: control_plane:!control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join additional control plane nodes using the kubeadm join command printed by the first control plane.\"\n\n- hosts: worker\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join worker nodes using the kubeadm join command printed by the first control plane.\"\nPLAYBOOK\nansible-playbook -i /tmp/vanilla-k8s-ha.ini /tmp/vanilla-k8s-ha.yml\n",
+            "sudo": true,
+            "method": "GET",
+            "path": "",
+            "body": "{}"
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 80,
+            "y": 1040
+          },
+          "data": {
+            "label": "Vanilla Kubernetes HA health check",
+            "command": "kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 80,
+            "y": 1220
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_k8s_cp_01",
+          "source": "node_context",
+          "target": "node_provision_k8s_cp_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_01_wait",
+          "source": "node_provision_k8s_cp_01",
+          "target": "node_wait_k8s_cp_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_01_bootstrap",
+          "source": "node_wait_k8s_cp_01",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_k8s_cp_02",
+          "source": "node_context",
+          "target": "node_provision_k8s_cp_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_k8s_cp_02_wait",
+          "source": "node_provision_k8s_cp_02",
+          "target": "node_wait_k8s_cp_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_02_bootstrap",
+          "source": "node_wait_k8s_cp_02",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_k8s_cp_03",
+          "source": "node_context",
+          "target": "node_provision_k8s_cp_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_k8s_cp_03_wait",
+          "source": "node_provision_k8s_cp_03",
+          "target": "node_wait_k8s_cp_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_03_bootstrap",
+          "source": "node_wait_k8s_cp_03",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_k8s_worker_01",
+          "source": "node_context",
+          "target": "node_provision_k8s_worker_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_k8s_worker_01_wait",
+          "source": "node_provision_k8s_worker_01",
+          "target": "node_wait_k8s_worker_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_worker_01_bootstrap",
+          "source": "node_wait_k8s_worker_01",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_k8s_worker_02",
+          "source": "node_context",
+          "target": "node_provision_k8s_worker_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 5,
+          "data": {
+            "mode": "parallel",
+            "order": 5
+          }
+        },
+        {
+          "id": "edge_k8s_worker_02_wait",
+          "source": "node_provision_k8s_worker_02",
+          "target": "node_wait_k8s_worker_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_worker_02_bootstrap",
+          "source": "node_wait_k8s_worker_02",
+          "target": "node_bootstrap",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_bootstrap",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
     }
-  ],
-  "edges": [
-    {
-      "id": "edge_trigger_context",
-      "source": "node_trigger",
-      "target": "node_context",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_k8s_cp_01",
-      "source": "node_context",
-      "target": "node_provision_k8s_cp_01",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 1,
-      "data": {
-        "mode": "parallel",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_k8s_cp_01_wait",
-      "source": "node_provision_k8s_cp_01",
-      "target": "node_wait_k8s_cp_01",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_k8s_cp_01_bootstrap",
-      "source": "node_wait_k8s_cp_01",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_k8s_cp_02",
-      "source": "node_context",
-      "target": "node_provision_k8s_cp_02",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 2,
-      "data": {
-        "mode": "parallel",
-        "order": 2
-      }
-    },
-    {
-      "id": "edge_k8s_cp_02_wait",
-      "source": "node_provision_k8s_cp_02",
-      "target": "node_wait_k8s_cp_02",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_k8s_cp_02_bootstrap",
-      "source": "node_wait_k8s_cp_02",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_k8s_cp_03",
-      "source": "node_context",
-      "target": "node_provision_k8s_cp_03",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 3,
-      "data": {
-        "mode": "parallel",
-        "order": 3
-      }
-    },
-    {
-      "id": "edge_k8s_cp_03_wait",
-      "source": "node_provision_k8s_cp_03",
-      "target": "node_wait_k8s_cp_03",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_k8s_cp_03_bootstrap",
-      "source": "node_wait_k8s_cp_03",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_k8s_worker_01",
-      "source": "node_context",
-      "target": "node_provision_k8s_worker_01",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 4,
-      "data": {
-        "mode": "parallel",
-        "order": 4
-      }
-    },
-    {
-      "id": "edge_k8s_worker_01_wait",
-      "source": "node_provision_k8s_worker_01",
-      "target": "node_wait_k8s_worker_01",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_k8s_worker_01_bootstrap",
-      "source": "node_wait_k8s_worker_01",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_context_k8s_worker_02",
-      "source": "node_context",
-      "target": "node_provision_k8s_worker_02",
-      "type": "workflowEdge",
-      "mode": "parallel",
-      "order": 5,
-      "data": {
-        "mode": "parallel",
-        "order": 5
-      }
-    },
-    {
-      "id": "edge_k8s_worker_02_wait",
-      "source": "node_provision_k8s_worker_02",
-      "target": "node_wait_k8s_worker_02",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_k8s_worker_02_bootstrap",
-      "source": "node_wait_k8s_worker_02",
-      "target": "node_bootstrap",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_bootstrap_health",
-      "source": "node_bootstrap",
-      "target": "node_health",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    },
-    {
-      "id": "edge_health_end",
-      "source": "node_health",
-      "target": "node_end",
-      "type": "workflowEdge",
-      "mode": "sequential",
-      "order": 1,
-      "data": {
-        "mode": "sequential",
-        "order": 1
-      }
-    }
-  ]
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
 }

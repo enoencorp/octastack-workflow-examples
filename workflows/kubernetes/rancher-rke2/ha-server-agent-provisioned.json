@@ -1,0 +1,742 @@
+{
+  "nodes": [
+    {
+      "id": "node_trigger",
+      "type": "triggerNode",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "data": {
+        "label": "Rancher RKE2 HA provisioned",
+        "triggerType": "manual",
+        "enabled": true,
+        "variables": [
+          {
+            "id": "var-0",
+            "key": "cluster_name",
+            "source": "payload.cluster_name",
+            "value": "rke2-prod"
+          },
+          {
+            "id": "var-1",
+            "key": "rancher_hostname",
+            "source": "payload.rancher_hostname",
+            "value": "rancher.example.internal"
+          }
+        ],
+        "webhookPath": "",
+        "secretRef": "",
+        "cronExpr": "",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "node_context",
+      "type": "proxmoxConfigNode",
+      "position": {
+        "x": 80,
+        "y": 240
+      },
+      "data": {
+        "label": "Cluster Context",
+        "profileId": "replace-with-proxmox-profile-id"
+      }
+    },
+    {
+      "id": "node_provision_rke2_server_01",
+      "type": "provisionNode",
+      "position": {
+        "x": -400,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision rke2-server-01",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "rke2-server-01",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "RKE2_SERVER",
+        "cores": "4",
+        "memory": "8192",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "120",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.60.11/24",
+            "gw": "10.30.60.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "rancher.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.60.11/24",
+        "gw": "10.30.60.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "rancher.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_rke2_server_01",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": -400,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait rke2-server-01",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_rke2_server_02",
+      "type": "provisionNode",
+      "position": {
+        "x": -220,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision rke2-server-02",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "rke2-server-02",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "RKE2_SERVER",
+        "cores": "4",
+        "memory": "8192",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "120",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.60.12/24",
+            "gw": "10.30.60.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "rancher.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.60.12/24",
+        "gw": "10.30.60.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "rancher.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_rke2_server_02",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": -220,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait rke2-server-02",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_rke2_server_03",
+      "type": "provisionNode",
+      "position": {
+        "x": -40,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision rke2-server-03",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "rke2-server-03",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "RKE2_SERVER",
+        "cores": "4",
+        "memory": "8192",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "120",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.60.13/24",
+            "gw": "10.30.60.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "rancher.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.60.13/24",
+        "gw": "10.30.60.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "rancher.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_rke2_server_03",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": -40,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait rke2-server-03",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_rke2_agent_01",
+      "type": "provisionNode",
+      "position": {
+        "x": 140,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision rke2-agent-01",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "rke2-agent-01",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "RKE2_AGENT",
+        "cores": "4",
+        "memory": "8192",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "120",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.60.21/24",
+            "gw": "10.30.60.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "rancher.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.60.21/24",
+        "gw": "10.30.60.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "rancher.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_rke2_agent_01",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 140,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait rke2-agent-01",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_provision_rke2_agent_02",
+      "type": "provisionNode",
+      "position": {
+        "x": 320,
+        "y": 420
+      },
+      "data": {
+        "label": "Provision rke2-agent-02",
+        "node": "pve1",
+        "templateId": "9000",
+        "instanceName": "rke2-agent-02",
+        "vmId": "",
+        "autoVmid": true,
+        "environment": "PROD",
+        "serverType": "RKE2_AGENT",
+        "cores": "4",
+        "memory": "8192",
+        "machine": "q35",
+        "ostype": "l26",
+        "bios": "seabios",
+        "onboot": true,
+        "agent": true,
+        "targetStorage": "local-lvm",
+        "cloudInitStorage": "local-lvm",
+        "cicustom": "",
+        "disks": [
+          {
+            "id": "disk-0",
+            "slot": "scsi1",
+            "bus": "scsi",
+            "storage": "local-lvm",
+            "sizeGb": "120",
+            "cache": "",
+            "iothread": true,
+            "discard": true,
+            "ssd": true,
+            "backup": true
+          }
+        ],
+        "networks": [
+          {
+            "id": "net-0",
+            "slot": "net0",
+            "model": "virtio",
+            "bridge": "vmbr0",
+            "vlanTag": "",
+            "firewall": true,
+            "rateLimitMbps": "",
+            "macAddress": "",
+            "queues": "",
+            "ipAddress": "10.30.60.22/24",
+            "gw": "10.30.60.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "rancher.example.internal"
+          }
+        ],
+        "ipAddress": "10.30.60.22/24",
+        "gw": "10.30.60.1",
+        "dns1": "1.1.1.1",
+        "dns2": "8.8.8.8",
+        "domain": "rancher.example.internal"
+      }
+    },
+    {
+      "id": "node_wait_rke2_agent_02",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 320,
+        "y": 620
+      },
+      "data": {
+        "label": "Wait rke2-agent-02",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_bootstrap",
+      "type": "customNode",
+      "position": {
+        "x": 80,
+        "y": 840
+      },
+      "data": {
+        "label": "Bootstrap Rancher RKE2 HA",
+        "customNodeId": "",
+        "scriptType": "shell",
+        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rke2-rancher-ha.ini <<'INVENTORY'\n[rke2_server]\n10.30.60.11 node_name=rke2-server-01\n10.30.60.12 node_name=rke2-server-02\n10.30.60.13 node_name=rke2-server-03\n\n[rke2_agent]\n10.30.60.21 node_name=rke2-agent-01\n10.30.60.22 node_name=rke2-agent-02\nINVENTORY\ncat >/tmp/rke2-rancher-ha.yml <<'PLAYBOOK'\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_server:!rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_agent\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent sh -\n        systemctl enable --now rke2-agent\n\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        export KUBECONFIG=/etc/rancher/rke2/rke2.yaml\n        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\n        kubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\n        helm repo add jetstack https://charts.jetstack.io\n        helm repo add rancher-latest https://releases.rancher.com/server-charts/latest\n        helm repo update\n        helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\n        helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\nPLAYBOOK\nansible-playbook -i /tmp/rke2-rancher-ha.ini /tmp/rke2-rancher-ha.yml\n",
+        "sudo": true,
+        "method": "GET",
+        "path": "",
+        "body": "{}"
+      }
+    },
+    {
+      "id": "node_health",
+      "type": "configCommandNode",
+      "position": {
+        "x": 80,
+        "y": 1040
+      },
+      "data": {
+        "label": "Rancher RKE2 HA health check",
+        "command": "sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide",
+        "sudo": false
+      }
+    },
+    {
+      "id": "node_end",
+      "type": "endNode",
+      "position": {
+        "x": 80,
+        "y": 1220
+      },
+      "data": {
+        "label": "End"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_trigger_context",
+      "source": "node_trigger",
+      "target": "node_context",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_rke2_server_01",
+      "source": "node_context",
+      "target": "node_provision_rke2_server_01",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 1,
+      "data": {
+        "mode": "parallel",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_rke2_server_01_wait",
+      "source": "node_provision_rke2_server_01",
+      "target": "node_wait_rke2_server_01",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_rke2_server_01_bootstrap",
+      "source": "node_wait_rke2_server_01",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_rke2_server_02",
+      "source": "node_context",
+      "target": "node_provision_rke2_server_02",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 2,
+      "data": {
+        "mode": "parallel",
+        "order": 2
+      }
+    },
+    {
+      "id": "edge_rke2_server_02_wait",
+      "source": "node_provision_rke2_server_02",
+      "target": "node_wait_rke2_server_02",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_rke2_server_02_bootstrap",
+      "source": "node_wait_rke2_server_02",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_rke2_server_03",
+      "source": "node_context",
+      "target": "node_provision_rke2_server_03",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 3,
+      "data": {
+        "mode": "parallel",
+        "order": 3
+      }
+    },
+    {
+      "id": "edge_rke2_server_03_wait",
+      "source": "node_provision_rke2_server_03",
+      "target": "node_wait_rke2_server_03",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_rke2_server_03_bootstrap",
+      "source": "node_wait_rke2_server_03",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_rke2_agent_01",
+      "source": "node_context",
+      "target": "node_provision_rke2_agent_01",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 4,
+      "data": {
+        "mode": "parallel",
+        "order": 4
+      }
+    },
+    {
+      "id": "edge_rke2_agent_01_wait",
+      "source": "node_provision_rke2_agent_01",
+      "target": "node_wait_rke2_agent_01",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_rke2_agent_01_bootstrap",
+      "source": "node_wait_rke2_agent_01",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_context_rke2_agent_02",
+      "source": "node_context",
+      "target": "node_provision_rke2_agent_02",
+      "type": "workflowEdge",
+      "mode": "parallel",
+      "order": 5,
+      "data": {
+        "mode": "parallel",
+        "order": 5
+      }
+    },
+    {
+      "id": "edge_rke2_agent_02_wait",
+      "source": "node_provision_rke2_agent_02",
+      "target": "node_wait_rke2_agent_02",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_rke2_agent_02_bootstrap",
+      "source": "node_wait_rke2_agent_02",
+      "target": "node_bootstrap",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_bootstrap_health",
+      "source": "node_bootstrap",
+      "target": "node_health",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_health_end",
+      "source": "node_health",
+      "target": "node_end",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    }
+  ]
+}

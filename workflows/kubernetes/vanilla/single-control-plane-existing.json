@@ -1,0 +1,187 @@
+{
+  "nodes": [
+    {
+      "id": "node_trigger",
+      "type": "triggerNode",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "data": {
+        "label": "Vanilla Kubernetes single-node existing",
+        "triggerType": "manual",
+        "enabled": true,
+        "variables": [
+          {
+            "id": "var-0",
+            "key": "cluster_name",
+            "source": "payload.cluster_name",
+            "value": "k8s-prod"
+          },
+          {
+            "id": "var-1",
+            "key": "pod_cidr",
+            "source": "payload.pod_cidr",
+            "value": "192.168.0.0/16"
+          }
+        ],
+        "webhookPath": "",
+        "secretRef": "",
+        "cronExpr": "",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "node_server",
+      "type": "serverNode",
+      "position": {
+        "x": 80,
+        "y": 240
+      },
+      "data": {
+        "label": "Vanilla Kubernetes Host",
+        "hostname": "10.20.50.50",
+        "targets": [
+          {
+            "id": "target-0",
+            "source": "manual",
+            "host": "10.20.50.50",
+            "label": "Vanilla Kubernetes Host",
+            "ip": "10.20.50.50",
+            "name": "vanilla-kubernetes-host",
+            "node": "",
+            "vmid": "",
+            "status": "existing",
+            "type": "manual"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_wait",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 80,
+        "y": 400
+      },
+      "data": {
+        "label": "Wait for existing host",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_install",
+      "type": "customNode",
+      "position": {
+        "x": 80,
+        "y": 580
+      },
+      "data": {
+        "label": "Install Vanilla Kubernetes",
+        "customNodeId": "",
+        "scriptType": "shell",
+        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y apt-transport-https ca-certificates curl gpg\nsudo swapoff -a\nsudo modprobe br_netfilter\nsudo sysctl -w net.bridge.bridge-nf-call-iptables=1\nsudo apt-get install -y containerd\nsudo systemctl enable --now containerd\ncurl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\necho \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" | sudo tee /etc/apt/sources.list.d/kubernetes.list\nsudo apt-get update\nsudo apt-get install -y kubelet kubeadm kubectl\nsudo kubeadm init --pod-network-cidr=192.168.0.0/16\nmkdir -p \"$HOME/.kube\"\nsudo cp /etc/kubernetes/admin.conf \"$HOME/.kube/config\"\nsudo chown \"$(id -u):$(id -g)\" \"$HOME/.kube/config\"\nkubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n",
+        "sudo": true,
+        "method": "GET",
+        "path": "",
+        "body": "{}"
+      }
+    },
+    {
+      "id": "node_health",
+      "type": "configCommandNode",
+      "position": {
+        "x": 80,
+        "y": 780
+      },
+      "data": {
+        "label": "Vanilla Kubernetes health check",
+        "command": "kubectl get nodes -o wide && kubectl get pods -A",
+        "sudo": false
+      }
+    },
+    {
+      "id": "node_end",
+      "type": "endNode",
+      "position": {
+        "x": 80,
+        "y": 960
+      },
+      "data": {
+        "label": "End"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_trigger_server",
+      "source": "node_trigger",
+      "target": "node_server",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_server_wait",
+      "source": "node_server",
+      "target": "node_wait",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_wait_install",
+      "source": "node_wait",
+      "target": "node_install",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_install_health",
+      "source": "node_install",
+      "target": "node_health",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_health_end",
+      "source": "node_health",
+      "target": "node_end",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    }
+  ]
+}

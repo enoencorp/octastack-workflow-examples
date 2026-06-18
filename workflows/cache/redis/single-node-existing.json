@@ -1,0 +1,187 @@
+{
+  "nodes": [
+    {
+      "id": "node_trigger",
+      "type": "triggerNode",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "data": {
+        "label": "Redis single-node existing",
+        "triggerType": "manual",
+        "enabled": true,
+        "variables": [
+          {
+            "id": "var-0",
+            "key": "cluster_name",
+            "source": "payload.cluster_name",
+            "value": "redis-prod"
+          },
+          {
+            "id": "var-1",
+            "key": "environment",
+            "source": "payload.environment",
+            "value": "production"
+          }
+        ],
+        "webhookPath": "",
+        "secretRef": "",
+        "cronExpr": "",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "node_server",
+      "type": "serverNode",
+      "position": {
+        "x": 80,
+        "y": 240
+      },
+      "data": {
+        "label": "Redis Host",
+        "hostname": "10.20.20.50",
+        "targets": [
+          {
+            "id": "target-0",
+            "source": "manual",
+            "host": "10.20.20.50",
+            "label": "Redis Host",
+            "ip": "10.20.20.50",
+            "name": "redis-host",
+            "node": "",
+            "vmid": "",
+            "status": "existing",
+            "type": "manual"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_wait",
+      "type": "waitUntilUpNode",
+      "position": {
+        "x": 80,
+        "y": 400
+      },
+      "data": {
+        "label": "Wait for existing host",
+        "timeout": "20",
+        "interval": "10",
+        "probes": [
+          {
+            "id": "probe-0",
+            "type": "ssh",
+            "host": "",
+            "port": "22",
+            "label": "SSH reachability"
+          }
+        ]
+      }
+    },
+    {
+      "id": "node_install",
+      "type": "customNode",
+      "position": {
+        "x": 80,
+        "y": 580
+      },
+      "data": {
+        "label": "Install Redis",
+        "customNodeId": "",
+        "scriptType": "shell",
+        "scriptContent": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install -y redis-server\nsudo sed -i \"s/^bind .*/bind 0.0.0.0 ::1/\" /etc/redis/redis.conf\nsudo sed -i \"s/^supervised .*/supervised systemd/\" /etc/redis/redis.conf\nsudo systemctl enable --now redis-server\n",
+        "sudo": true,
+        "method": "GET",
+        "path": "",
+        "body": "{}"
+      }
+    },
+    {
+      "id": "node_health",
+      "type": "configCommandNode",
+      "position": {
+        "x": 80,
+        "y": 780
+      },
+      "data": {
+        "label": "Redis health check",
+        "command": "redis-cli -h 127.0.0.1 -p 6379 PING",
+        "sudo": false
+      }
+    },
+    {
+      "id": "node_end",
+      "type": "endNode",
+      "position": {
+        "x": 80,
+        "y": 960
+      },
+      "data": {
+        "label": "End"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_trigger_server",
+      "source": "node_trigger",
+      "target": "node_server",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_server_wait",
+      "source": "node_server",
+      "target": "node_wait",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_wait_install",
+      "source": "node_wait",
+      "target": "node_install",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_install_health",
+      "source": "node_install",
+      "target": "node_health",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    },
+    {
+      "id": "edge_health_end",
+      "source": "node_health",
+      "target": "node_end",
+      "type": "workflowEdge",
+      "mode": "sequential",
+      "order": 1,
+      "data": {
+        "mode": "sequential",
+        "order": 1
+      }
+    }
+  ]
+}

@@ -43,7 +43,7 @@
           "type": "proxmoxConfigNode",
           "position": {
             "x": 80,
-            "y": 240
+            "y": 360
           },
           "data": {
             "label": "Cluster Context",
@@ -54,8 +54,8 @@
           "id": "node_provision_etcd_01",
           "type": "provisionNode",
           "position": {
-            "x": -480,
-            "y": 420
+            "x": -1390,
+            "y": 640
           },
           "data": {
             "label": "Provision etcd-01",
@@ -119,8 +119,8 @@
           "id": "node_wait_etcd_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -480,
-            "y": 620
+            "x": -1390,
+            "y": 920
           },
           "data": {
             "label": "Wait etcd-01",
@@ -141,8 +141,8 @@
           "id": "node_provision_etcd_02",
           "type": "provisionNode",
           "position": {
-            "x": -300,
-            "y": 420
+            "x": -970,
+            "y": 640
           },
           "data": {
             "label": "Provision etcd-02",
@@ -206,8 +206,8 @@
           "id": "node_wait_etcd_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -300,
-            "y": 620
+            "x": -970,
+            "y": 920
           },
           "data": {
             "label": "Wait etcd-02",
@@ -228,8 +228,8 @@
           "id": "node_provision_etcd_03",
           "type": "provisionNode",
           "position": {
-            "x": -120,
-            "y": 420
+            "x": -550,
+            "y": 640
           },
           "data": {
             "label": "Provision etcd-03",
@@ -293,8 +293,8 @@
           "id": "node_wait_etcd_03",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -120,
-            "y": 620
+            "x": -550,
+            "y": 920
           },
           "data": {
             "label": "Wait etcd-03",
@@ -315,8 +315,8 @@
           "id": "node_provision_pg_01",
           "type": "provisionNode",
           "position": {
-            "x": 60,
-            "y": 420
+            "x": -130,
+            "y": 640
           },
           "data": {
             "label": "Provision pg-01",
@@ -380,8 +380,8 @@
           "id": "node_wait_pg_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 60,
-            "y": 620
+            "x": -130,
+            "y": 920
           },
           "data": {
             "label": "Wait pg-01",
@@ -402,8 +402,8 @@
           "id": "node_provision_pg_02",
           "type": "provisionNode",
           "position": {
-            "x": 240,
-            "y": 420
+            "x": 290,
+            "y": 640
           },
           "data": {
             "label": "Provision pg-02",
@@ -467,8 +467,8 @@
           "id": "node_wait_pg_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 240,
-            "y": 620
+            "x": 290,
+            "y": 920
           },
           "data": {
             "label": "Wait pg-02",
@@ -489,8 +489,8 @@
           "id": "node_provision_pg_03",
           "type": "provisionNode",
           "position": {
-            "x": 420,
-            "y": 420
+            "x": 710,
+            "y": 640
           },
           "data": {
             "label": "Provision pg-03",
@@ -554,8 +554,8 @@
           "id": "node_wait_pg_03",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 420,
-            "y": 620
+            "x": 710,
+            "y": 920
           },
           "data": {
             "label": "Wait pg-03",
@@ -576,8 +576,8 @@
           "id": "node_provision_pg_lb_01",
           "type": "provisionNode",
           "position": {
-            "x": 600,
-            "y": 420
+            "x": 1130,
+            "y": 640
           },
           "data": {
             "label": "Provision pg-lb-01",
@@ -641,8 +641,8 @@
           "id": "node_wait_pg_lb_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 600,
-            "y": 620
+            "x": 1130,
+            "y": 920
           },
           "data": {
             "label": "Wait pg-lb-01",
@@ -663,8 +663,8 @@
           "id": "node_provision_pg_lb_02",
           "type": "provisionNode",
           "position": {
-            "x": 780,
-            "y": 420
+            "x": 1550,
+            "y": 640
           },
           "data": {
             "label": "Provision pg-lb-02",
@@ -728,8 +728,8 @@
           "id": "node_wait_pg_lb_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 780,
-            "y": 620
+            "x": 1550,
+            "y": 920
           },
           "data": {
             "label": "Wait pg-lb-02",
@@ -751,7 +751,7 @@
           "type": "customNode",
           "position": {
             "x": 80,
-            "y": 840
+            "y": 1200
           },
           "data": {
             "label": "Bootstrap PostgreSQL Patroni etcd HA",
@@ -769,7 +769,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 80,
-            "y": 1040
+            "y": 1480
           },
           "data": {
             "label": "PostgreSQL Patroni etcd HA health check",
@@ -782,7 +782,7 @@
           "type": "endNode",
           "position": {
             "x": 80,
-            "y": 1220
+            "y": 1760
           },
           "data": {
             "label": "End"

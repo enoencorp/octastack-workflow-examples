@@ -56,6 +56,7 @@ The library is organized by operational domain, then by technology. Each technol
 
 - Every JSON file is an importable workflow package with `kind: "octastack.workflow.package"`, `version: 1`, and the graph nested under `workflow.graphData`.
 - Every workflow uses `triggerNode` as the only root entry point.
+- Nodes are generated with a layered layout: linear flows use wide vertical spacing, and HA fan-out branches are distributed horizontally so nodes do not overlap in the editor.
 - Provisioned examples use `profileId: "replace-with-proxmox-profile-id"`; replace it with the real Proxmox profile ID before importing.
 - Template VM IDs default to `9000`; adjust `templateId`, CPU, memory, storage, network bridge, VLAN, and static IP values per environment.
 - All example credentials and secrets use obvious placeholders such as `change-me` and `replace-with-rke2-token`.

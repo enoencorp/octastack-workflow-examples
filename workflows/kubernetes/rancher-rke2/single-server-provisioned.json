@@ -43,7 +43,7 @@
           "type": "proxmoxConfigNode",
           "position": {
             "x": 80,
-            "y": 240
+            "y": 360
           },
           "data": {
             "label": "Cluster Context",
@@ -55,7 +55,7 @@
           "type": "provisionNode",
           "position": {
             "x": 80,
-            "y": 400
+            "y": 640
           },
           "data": {
             "label": "Provision rke2-single-01",
@@ -120,7 +120,7 @@
           "type": "waitUntilUpNode",
           "position": {
             "x": 80,
-            "y": 600
+            "y": 920
           },
           "data": {
             "label": "Wait for provisioned host",
@@ -142,7 +142,7 @@
           "type": "customNode",
           "position": {
             "x": 80,
-            "y": 780
+            "y": 1200
           },
           "data": {
             "label": "Install Rancher RKE2",
@@ -160,7 +160,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 80,
-            "y": 980
+            "y": 1480
           },
           "data": {
             "label": "Rancher RKE2 health check",
@@ -173,7 +173,7 @@
           "type": "endNode",
           "position": {
             "x": 80,
-            "y": 1160
+            "y": 1760
           },
           "data": {
             "label": "End"

@@ -43,7 +43,7 @@
           "type": "proxmoxConfigNode",
           "position": {
             "x": 80,
-            "y": 240
+            "y": 360
           },
           "data": {
             "label": "Cluster Context",
@@ -54,8 +54,8 @@
           "id": "node_provision_prometheus_01",
           "type": "provisionNode",
           "position": {
-            "x": -480,
-            "y": 420
+            "x": -1180,
+            "y": 640
           },
           "data": {
             "label": "Provision prometheus-01",
@@ -119,8 +119,8 @@
           "id": "node_wait_prometheus_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -480,
-            "y": 620
+            "x": -1180,
+            "y": 920
           },
           "data": {
             "label": "Wait prometheus-01",
@@ -141,8 +141,8 @@
           "id": "node_provision_prometheus_02",
           "type": "provisionNode",
           "position": {
-            "x": -300,
-            "y": 420
+            "x": -760,
+            "y": 640
           },
           "data": {
             "label": "Provision prometheus-02",
@@ -206,8 +206,8 @@
           "id": "node_wait_prometheus_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -300,
-            "y": 620
+            "x": -760,
+            "y": 920
           },
           "data": {
             "label": "Wait prometheus-02",
@@ -228,8 +228,8 @@
           "id": "node_provision_alertmanager_01",
           "type": "provisionNode",
           "position": {
-            "x": -120,
-            "y": 420
+            "x": -340,
+            "y": 640
           },
           "data": {
             "label": "Provision alertmanager-01",
@@ -293,8 +293,8 @@
           "id": "node_wait_alertmanager_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -120,
-            "y": 620
+            "x": -340,
+            "y": 920
           },
           "data": {
             "label": "Wait alertmanager-01",
@@ -315,8 +315,8 @@
           "id": "node_provision_alertmanager_02",
           "type": "provisionNode",
           "position": {
-            "x": 60,
-            "y": 420
+            "x": 80,
+            "y": 640
           },
           "data": {
             "label": "Provision alertmanager-02",
@@ -380,8 +380,8 @@
           "id": "node_wait_alertmanager_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 60,
-            "y": 620
+            "x": 80,
+            "y": 920
           },
           "data": {
             "label": "Wait alertmanager-02",
@@ -402,8 +402,8 @@
           "id": "node_provision_alertmanager_03",
           "type": "provisionNode",
           "position": {
-            "x": 240,
-            "y": 420
+            "x": 500,
+            "y": 640
           },
           "data": {
             "label": "Provision alertmanager-03",
@@ -467,8 +467,8 @@
           "id": "node_wait_alertmanager_03",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 240,
-            "y": 620
+            "x": 500,
+            "y": 920
           },
           "data": {
             "label": "Wait alertmanager-03",
@@ -489,8 +489,8 @@
           "id": "node_provision_grafana_01",
           "type": "provisionNode",
           "position": {
-            "x": 420,
-            "y": 420
+            "x": 920,
+            "y": 640
           },
           "data": {
             "label": "Provision grafana-01",
@@ -554,8 +554,8 @@
           "id": "node_wait_grafana_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 420,
-            "y": 620
+            "x": 920,
+            "y": 920
           },
           "data": {
             "label": "Wait grafana-01",
@@ -576,8 +576,8 @@
           "id": "node_provision_grafana_02",
           "type": "provisionNode",
           "position": {
-            "x": 600,
-            "y": 420
+            "x": 1340,
+            "y": 640
           },
           "data": {
             "label": "Provision grafana-02",
@@ -641,8 +641,8 @@
           "id": "node_wait_grafana_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 600,
-            "y": 620
+            "x": 1340,
+            "y": 920
           },
           "data": {
             "label": "Wait grafana-02",
@@ -664,7 +664,7 @@
           "type": "customNode",
           "position": {
             "x": 80,
-            "y": 840
+            "y": 1200
           },
           "data": {
             "label": "Bootstrap Prometheus Grafana HA",
@@ -682,7 +682,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 80,
-            "y": 1040
+            "y": 1480
           },
           "data": {
             "label": "Prometheus Grafana HA health check",
@@ -695,7 +695,7 @@
           "type": "endNode",
           "position": {
             "x": 80,
-            "y": 1220
+            "y": 1760
           },
           "data": {
             "label": "End"

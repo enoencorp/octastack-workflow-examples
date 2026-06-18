@@ -43,7 +43,7 @@
           "type": "proxmoxConfigNode",
           "position": {
             "x": 80,
-            "y": 240
+            "y": 360
           },
           "data": {
             "label": "Cluster Context",
@@ -54,8 +54,8 @@
           "id": "node_provision_kafka_01",
           "type": "provisionNode",
           "position": {
-            "x": -240,
-            "y": 420
+            "x": -340,
+            "y": 640
           },
           "data": {
             "label": "Provision kafka-01",
@@ -119,8 +119,8 @@
           "id": "node_wait_kafka_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -240,
-            "y": 620
+            "x": -340,
+            "y": 920
           },
           "data": {
             "label": "Wait kafka-01",
@@ -141,8 +141,8 @@
           "id": "node_provision_kafka_02",
           "type": "provisionNode",
           "position": {
-            "x": -60,
-            "y": 420
+            "x": 80,
+            "y": 640
           },
           "data": {
             "label": "Provision kafka-02",
@@ -206,8 +206,8 @@
           "id": "node_wait_kafka_02",
           "type": "waitUntilUpNode",
           "position": {
-            "x": -60,
-            "y": 620
+            "x": 80,
+            "y": 920
           },
           "data": {
             "label": "Wait kafka-02",
@@ -228,8 +228,8 @@
           "id": "node_provision_kafka_03",
           "type": "provisionNode",
           "position": {
-            "x": 120,
-            "y": 420
+            "x": 500,
+            "y": 640
           },
           "data": {
             "label": "Provision kafka-03",
@@ -293,8 +293,8 @@
           "id": "node_wait_kafka_03",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 120,
-            "y": 620
+            "x": 500,
+            "y": 920
           },
           "data": {
             "label": "Wait kafka-03",
@@ -316,7 +316,7 @@
           "type": "customNode",
           "position": {
             "x": 80,
-            "y": 840
+            "y": 1200
           },
           "data": {
             "label": "Bootstrap Kafka KRaft HA",
@@ -334,7 +334,7 @@
           "type": "configCommandNode",
           "position": {
             "x": 80,
-            "y": 1040
+            "y": 1480
           },
           "data": {
             "label": "Kafka KRaft HA health check",
@@ -347,7 +347,7 @@
           "type": "endNode",
           "position": {
             "x": 80,
-            "y": 1220
+            "y": 1760
           },
           "data": {
             "label": "End"

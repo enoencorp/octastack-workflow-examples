@@ -9,6 +9,14 @@ const WORKFLOW_PACKAGE_VERSION = 1;
 const EXPORTED_AT = "2026-06-19T00:00:00Z";
 const PROFILE_ID = "replace-with-proxmox-profile-id";
 const TEMPLATE_ID = "9000";
+const LAYOUT = {
+  centerX: 80,
+  topY: 80,
+  verticalGap: 280,
+  branchGapX: 420,
+  nodeWidthBudget: 320,
+  nodeHeightBudget: 220
+};
 
 function text(value) {
   return value.trim().replace(/\n{3,}/g, "\n\n") + "\n";
@@ -164,17 +172,25 @@ function inventory(nodes) {
   return nodes.map((target) => `${target.ip} role=${target.role} name=${target.label}`).join("\n");
 }
 
+function layer(index) {
+  return LAYOUT.topY + index * LAYOUT.verticalGap;
+}
+
+function branchX(count, index) {
+  return Math.round(LAYOUT.centerX + (index - (count - 1) / 2) * LAYOUT.branchGapX);
+}
+
 function createSingleProvisionedWorkflow(stack) {
   const target = stack.single.target;
   const nodes = [
-    node("node_trigger", "triggerNode", 80, 80, triggerData(`${stack.displayName} single-node provisioned`, stack.variables)),
-    node("node_context", "proxmoxConfigNode", 80, 240, {
+    node("node_trigger", "triggerNode", LAYOUT.centerX, layer(0), triggerData(`${stack.displayName} single-node provisioned`, stack.variables)),
+    node("node_context", "proxmoxConfigNode", LAYOUT.centerX, layer(1), {
       label: "Cluster Context",
       profileId: PROFILE_ID
     }),
-    node("node_provision", "provisionNode", 80, 400, provisionData(target, stack)),
-    node("node_wait", "waitUntilUpNode", 80, 600, waitData("Wait for provisioned host")),
-    node("node_install", "customNode", 80, 780, {
+    node("node_provision", "provisionNode", LAYOUT.centerX, layer(2), provisionData(target, stack)),
+    node("node_wait", "waitUntilUpNode", LAYOUT.centerX, layer(3), waitData("Wait for provisioned host")),
+    node("node_install", "customNode", LAYOUT.centerX, layer(4), {
       label: `Install ${stack.displayName}`,
       customNodeId: "",
       scriptType: "shell",
@@ -184,12 +200,12 @@ function createSingleProvisionedWorkflow(stack) {
       path: "",
       body: "{}"
     }),
-    node("node_health", "configCommandNode", 80, 980, {
+    node("node_health", "configCommandNode", LAYOUT.centerX, layer(5), {
       label: `${stack.displayName} health check`,
       command: stack.single.health,
       sudo: false
     }),
-    node("node_end", "endNode", 80, 1160, { label: "End" })
+    node("node_end", "endNode", LAYOUT.centerX, layer(6), { label: "End" })
   ];
   const edges = [
     edge("edge_trigger_context", "node_trigger", "node_context"),
@@ -205,10 +221,10 @@ function createSingleProvisionedWorkflow(stack) {
 function createSingleExistingWorkflow(stack) {
   const target = stack.single.target;
   const nodes = [
-    node("node_trigger", "triggerNode", 80, 80, triggerData(`${stack.displayName} single-node existing`, stack.variables)),
-    node("node_server", "serverNode", 80, 240, serverData(`${stack.displayName} Host`, stack.single.existingHost ?? target.ip)),
-    node("node_wait", "waitUntilUpNode", 80, 400, waitData("Wait for existing host")),
-    node("node_install", "customNode", 80, 580, {
+    node("node_trigger", "triggerNode", LAYOUT.centerX, layer(0), triggerData(`${stack.displayName} single-node existing`, stack.variables)),
+    node("node_server", "serverNode", LAYOUT.centerX, layer(1), serverData(`${stack.displayName} Host`, stack.single.existingHost ?? target.ip)),
+    node("node_wait", "waitUntilUpNode", LAYOUT.centerX, layer(2), waitData("Wait for existing host")),
+    node("node_install", "customNode", LAYOUT.centerX, layer(3), {
       label: `Install ${stack.displayName}`,
       customNodeId: "",
       scriptType: "shell",
@@ -218,12 +234,12 @@ function createSingleExistingWorkflow(stack) {
       path: "",
       body: "{}"
     }),
-    node("node_health", "configCommandNode", 80, 780, {
+    node("node_health", "configCommandNode", LAYOUT.centerX, layer(4), {
       label: `${stack.displayName} health check`,
       command: stack.single.health,
       sudo: false
     }),
-    node("node_end", "endNode", 80, 960, { label: "End" })
+    node("node_end", "endNode", LAYOUT.centerX, layer(5), { label: "End" })
   ];
   const edges = [
     edge("edge_trigger_server", "node_trigger", "node_server"),
@@ -237,20 +253,19 @@ function createSingleExistingWorkflow(stack) {
 
 function createHaProvisionedWorkflow(stack) {
   const nodes = [
-    node("node_trigger", "triggerNode", 80, 80, triggerData(`${stack.ha.title} provisioned`, stack.variables)),
-    node("node_context", "proxmoxConfigNode", 80, 240, {
+    node("node_trigger", "triggerNode", LAYOUT.centerX, layer(0), triggerData(`${stack.ha.title} provisioned`, stack.variables)),
+    node("node_context", "proxmoxConfigNode", LAYOUT.centerX, layer(1), {
       label: "Cluster Context",
       profileId: PROFILE_ID
     })
   ];
   const edges = [edge("edge_trigger_context", "node_trigger", "node_context")];
-  const startX = Math.max(-480, -80 * stack.ha.nodes.length);
   stack.ha.nodes.forEach((target, index) => {
-    const x = startX + index * 180;
+    const x = branchX(stack.ha.nodes.length, index);
     const provisionId = `node_provision_${slug(target.label)}`;
     const waitId = `node_wait_${slug(target.label)}`;
-    nodes.push(node(provisionId, "provisionNode", x, 420, provisionData(target, stack)));
-    nodes.push(node(waitId, "waitUntilUpNode", x, 620, waitData(`Wait ${target.label}`)));
+    nodes.push(node(provisionId, "provisionNode", x, layer(2), provisionData(target, stack)));
+    nodes.push(node(waitId, "waitUntilUpNode", x, layer(3), waitData(`Wait ${target.label}`)));
     edges.push(edge(`edge_context_${slug(target.label)}`, "node_context", provisionId, {
       mode: "parallel",
       order: index + 1
@@ -258,7 +273,7 @@ function createHaProvisionedWorkflow(stack) {
     edges.push(edge(`edge_${slug(target.label)}_wait`, provisionId, waitId));
     edges.push(edge(`edge_${slug(target.label)}_bootstrap`, waitId, "node_bootstrap"));
   });
-  nodes.push(node("node_bootstrap", "customNode", 80, 840, {
+  nodes.push(node("node_bootstrap", "customNode", LAYOUT.centerX, layer(4), {
     label: `Bootstrap ${stack.ha.title}`,
     customNodeId: "",
     scriptType: "shell",
@@ -268,12 +283,12 @@ function createHaProvisionedWorkflow(stack) {
     path: "",
     body: "{}"
   }));
-  nodes.push(node("node_health", "configCommandNode", 80, 1040, {
+  nodes.push(node("node_health", "configCommandNode", LAYOUT.centerX, layer(5), {
     label: `${stack.ha.title} health check`,
     command: stack.ha.health,
     sudo: false
   }));
-  nodes.push(node("node_end", "endNode", 80, 1220, { label: "End" }));
+  nodes.push(node("node_end", "endNode", LAYOUT.centerX, layer(6), { label: "End" }));
   edges.push(edge("edge_bootstrap_health", "node_bootstrap", "node_health"));
   edges.push(edge("edge_health_end", "node_health", "node_end"));
   return { nodes, edges };
@@ -281,14 +296,14 @@ function createHaProvisionedWorkflow(stack) {
 
 function createHaExistingWorkflow(stack) {
   const nodes = [
-    node("node_trigger", "triggerNode", 80, 80, triggerData(`${stack.ha.title} existing`, stack.variables)),
-    node("node_runner", "serverNode", 80, 240, {
+    node("node_trigger", "triggerNode", LAYOUT.centerX, layer(0), triggerData(`${stack.ha.title} existing`, stack.variables)),
+    node("node_runner", "serverNode", LAYOUT.centerX, layer(1), {
       label: "Automation Runner",
       hostname: stack.ha.runnerHost,
       targets: [serverTarget("target-runner", "Automation Runner", stack.ha.runnerHost)]
     }),
-    node("node_wait_runner", "waitUntilUpNode", 80, 400, waitData("Wait for automation runner")),
-    node("node_bootstrap", "customNode", 80, 580, {
+    node("node_wait_runner", "waitUntilUpNode", LAYOUT.centerX, layer(2), waitData("Wait for automation runner")),
+    node("node_bootstrap", "customNode", LAYOUT.centerX, layer(3), {
       label: `Bootstrap ${stack.ha.title}`,
       customNodeId: "",
       scriptType: "shell",
@@ -298,12 +313,12 @@ function createHaExistingWorkflow(stack) {
       path: "",
       body: "{}"
     }),
-    node("node_health", "configCommandNode", 80, 780, {
+    node("node_health", "configCommandNode", LAYOUT.centerX, layer(4), {
       label: `${stack.ha.title} health check`,
       command: stack.ha.health,
       sudo: false
     }),
-    node("node_end", "endNode", 80, 960, { label: "End" })
+    node("node_end", "endNode", LAYOUT.centerX, layer(5), { label: "End" })
   ];
   const edges = [
     edge("edge_trigger_runner", "node_trigger", "node_runner"),
@@ -313,6 +328,27 @@ function createHaExistingWorkflow(stack) {
     edge("edge_health_end", "node_health", "node_end")
   ];
   return { nodes, edges };
+}
+
+function hasNumericPosition(node) {
+  return Number.isFinite(node?.position?.x) && Number.isFinite(node?.position?.y);
+}
+
+function validateNodeLayout(nodes, fileName) {
+  const errors = [];
+  const positioned = nodes.filter(hasNumericPosition);
+  for (let i = 0; i < positioned.length; i += 1) {
+    for (let j = i + 1; j < positioned.length; j += 1) {
+      const a = positioned[i];
+      const b = positioned[j];
+      const dx = Math.abs(a.position.x - b.position.x);
+      const dy = Math.abs(a.position.y - b.position.y);
+      if (dx < LAYOUT.nodeWidthBudget && dy < LAYOUT.nodeHeightBudget) {
+        errors.push(`${fileName}: nodes ${a.id} and ${b.id} are too close at (${a.position.x}, ${a.position.y}) and (${b.position.x}, ${b.position.y})`);
+      }
+    }
+  }
+  return errors;
 }
 
 function pgSingleInstall() {
@@ -1164,12 +1200,16 @@ function validateWorkflow(workflow, fileName) {
     if (!n.id || !n.type || !n.position || n.data === undefined) {
       errors.push(`${fileName}: node is missing id/type/position/data`);
     }
+    if (n.position && !hasNumericPosition(n)) {
+      errors.push(`${fileName}: node ${n.id} position must contain numeric x/y`);
+    }
     if (nodeIds.has(n.id)) {
       errors.push(`${fileName}: duplicate node id ${n.id}`);
     }
     nodeIds.add(n.id);
     nodesById.set(n.id, n);
   }
+  errors.push(...validateNodeLayout(workflow.nodes ?? [], fileName));
   if (![...nodesById.values()].some((n) => n.type === "triggerNode")) {
     errors.push(`${fileName}: missing triggerNode`);
   }
@@ -1353,6 +1393,7 @@ function makeReadme(entries) {
   lines.push("");
   lines.push("- Every JSON file is an importable workflow package with `kind: \"octastack.workflow.package\"`, `version: 1`, and the graph nested under `workflow.graphData`.");
   lines.push("- Every workflow uses `triggerNode` as the only root entry point.");
+  lines.push("- Nodes are generated with a layered layout: linear flows use wide vertical spacing, and HA fan-out branches are distributed horizontally so nodes do not overlap in the editor.");
   lines.push("- Provisioned examples use `profileId: \"replace-with-proxmox-profile-id\"`; replace it with the real Proxmox profile ID before importing.");
   lines.push("- Template VM IDs default to `9000`; adjust `templateId`, CPU, memory, storage, network bridge, VLAN, and static IP values per environment.");
   lines.push("- All example credentials and secrets use obvious placeholders such as `change-me` and `replace-with-rke2-token`.");

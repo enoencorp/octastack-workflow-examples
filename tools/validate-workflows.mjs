@@ -5,6 +5,8 @@ const ROOT = process.cwd();
 const WORKFLOW_ROOT = path.join(ROOT, "workflows");
 const WORKFLOW_PACKAGE_KIND = "octastack.workflow.package";
 const WORKFLOW_PACKAGE_VERSION = 1;
+const NODE_WIDTH_BUDGET = 320;
+const NODE_HEIGHT_BUDGET = 220;
 
 function walkJsonFiles(dir) {
   if (!fs.existsSync(dir)) {
@@ -21,6 +23,27 @@ function walkJsonFiles(dir) {
     }
   }
   return files.sort();
+}
+
+function hasNumericPosition(node) {
+  return Number.isFinite(node?.position?.x) && Number.isFinite(node?.position?.y);
+}
+
+function validateNodeLayout(nodes, fileName) {
+  const errors = [];
+  const positioned = nodes.filter(hasNumericPosition);
+  for (let i = 0; i < positioned.length; i += 1) {
+    for (let j = i + 1; j < positioned.length; j += 1) {
+      const a = positioned[i];
+      const b = positioned[j];
+      const dx = Math.abs(a.position.x - b.position.x);
+      const dy = Math.abs(a.position.y - b.position.y);
+      if (dx < NODE_WIDTH_BUDGET && dy < NODE_HEIGHT_BUDGET) {
+        errors.push(`${fileName}: nodes ${a.id} and ${b.id} are too close at (${a.position.x}, ${a.position.y}) and (${b.position.x}, ${b.position.y})`);
+      }
+    }
+  }
+  return errors;
 }
 
 function validateWorkflow(workflow, fileName) {
@@ -44,12 +67,16 @@ function validateWorkflow(workflow, fileName) {
     if (!node.id || !node.type || !node.position || node.data === undefined) {
       errors.push(`${fileName}: node is missing id/type/position/data`);
     }
+    if (node.position && !hasNumericPosition(node)) {
+      errors.push(`${fileName}: node ${node.id} position must contain numeric x/y`);
+    }
     if (nodeIds.has(node.id)) {
       errors.push(`${fileName}: duplicate node id ${node.id}`);
     }
     nodeIds.add(node.id);
     nodesById.set(node.id, node);
   }
+  errors.push(...validateNodeLayout(workflow.nodes, fileName));
 
   if (![...nodesById.values()].some((node) => node.type === "triggerNode")) {
     errors.push(`${fileName}: missing triggerNode`);

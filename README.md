@@ -9,6 +9,10 @@ The library is organized by operational domain, then by technology. Every techno
 - `*-provisioned.json`: starts with `proxmoxConfigNode`, provisions VMs through `provisionNode`, waits for reachability, then installs/configures the stack.
 - `*-existing.json`: skips VM creation and starts from `serverNode`. Single-node examples target the application host directly. HA examples fan out to the existing member nodes and run bash command steps on each active node context.
 
+## Topology documentation
+
+Generated Mermaid topology documents are available in [topologies/README.md](topologies/README.md). Each stack document includes the single-node topology, generated HA topology diagrams when available, inventory tables, IP allocation, and links back to the workflow JSON packages.
+
 ## IP address plan
 
 All generated examples use the parent network `10.0.0.0/16`. Each top-level workflow category receives a block inside that parent network, and each stack receives one `/24` from its category block.
@@ -378,6 +382,7 @@ Host conventions inside each stack `/24`:
 
 ## Directory guide
 
+- `topologies/`: generated Markdown documentation with Mermaid diagrams for every stack topology.
 - `workflows/cache/dragonflydb`: DragonflyDB examples.
 - `workflows/cache/memcached`: Memcached examples.
 - `workflows/cache/redis`: Redis examples.

@@ -3,6 +3,7 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const WORKFLOW_ROOT = path.join(ROOT, "workflows");
+const TOPOLOGY_ROOT = path.join(ROOT, "topologies");
 
 const WORKFLOW_PACKAGE_KIND = "octastack.workflow.package";
 const WORKFLOW_PACKAGE_VERSION = 1;
@@ -3062,6 +3063,242 @@ function workflowPackage(entry) {
   };
 }
 
+function uniqueStacksFromEntries(entries) {
+  const uniqueStacks = [];
+  const seenStacks = new Set();
+  for (const entry of entries) {
+    if (seenStacks.has(entry.stack.category)) {
+      continue;
+    }
+    seenStacks.add(entry.stack.category);
+    uniqueStacks.push(entry.stack);
+  }
+  return uniqueStacks;
+}
+
+function topologyDocRelativePath(stack) {
+  return path.posix.join("topologies", `${stack.category}.md`);
+}
+
+function topologyDocIndexLink(stack) {
+  return path.posix.relative("topologies", topologyDocRelativePath(stack));
+}
+
+function workflowRelativePath(entry) {
+  return path.posix.join("workflows", entry.stack.category, entry.fileName);
+}
+
+function workflowLinkFromTopologyDoc(stack, entry) {
+  const docDir = path.posix.dirname(topologyDocRelativePath(stack));
+  return path.posix.relative(docDir, workflowRelativePath(entry));
+}
+
+function markdownTableCell(value) {
+  return String(value).replaceAll("|", "\\|").replaceAll("\n", "<br>");
+}
+
+function mermaidText(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\n", " ");
+}
+
+function mermaidLabel(lines) {
+  return lines.map(mermaidText).join("<br/>");
+}
+
+function singleNodeTopologyMermaid(stack) {
+  const target = stack.single.target;
+  const lines = [
+    "flowchart LR",
+    `  workflow["${mermaidLabel(["OctaStack workflow", "provisioned or existing"])}"]`,
+    `  gateway["${mermaidLabel(["Gateway", stack.network.gateway])}"]`,
+    `  single["${mermaidLabel([target.label, target.role, target.ip])}"]`,
+    `  health["${mermaidLabel(["Health check", stack.displayName])}"]`,
+    "  workflow --> gateway",
+    "  gateway --> single",
+    "  single --> health"
+  ];
+  return lines.join("\n");
+}
+
+function haTopologyMermaid(stack, ha) {
+  const lines = [
+    "flowchart LR",
+    `  workflow["${mermaidLabel(["OctaStack workflow", "provisioned or existing"])}"]`,
+    `  gateway["${mermaidLabel(["Gateway", stack.network.gateway])}"]`,
+    `  subgraph stack_block["${mermaidText(`${ha.title} - ${stack.network.stackCidr}`)}"]`,
+    "    direction LR"
+  ];
+  const byRole = new Map();
+  ha.nodes.forEach((target, index) => {
+    if (!byRole.has(target.role)) {
+      byRole.set(target.role, []);
+    }
+    byRole.get(target.role).push({ ...target, nodeId: `n${index}` });
+  });
+  let roleIndex = 0;
+  for (const [role, targets] of byRole.entries()) {
+    lines.push(`    subgraph role_${roleIndex}["${mermaidText(role)}"]`);
+    lines.push("      direction TB");
+    for (const target of targets) {
+      lines.push(`      ${target.nodeId}["${mermaidLabel([target.label, target.ip])}"]`);
+    }
+    lines.push("    end");
+    roleIndex += 1;
+  }
+  lines.push("  end");
+  lines.push("  workflow --> gateway");
+  for (const target of ha.nodes) {
+    const nodeId = `n${ha.nodes.indexOf(target)}`;
+    lines.push(`  gateway --> ${nodeId}`);
+  }
+  for (const targets of byRole.values()) {
+    for (let index = 1; index < targets.length; index += 1) {
+      lines.push(`  ${targets[index - 1].nodeId} <-->|peer| ${targets[index].nodeId}`);
+    }
+  }
+  const firstByRole = [...byRole.values()].map((targets) => targets[0]).filter(Boolean);
+  for (let index = 1; index < firstByRole.length; index += 1) {
+    lines.push(`  ${firstByRole[index - 1].nodeId} -. service path .-> ${firstByRole[index].nodeId}`);
+  }
+  return lines.join("\n");
+}
+
+function workflowTable(entries, stack, predicate) {
+  const rows = entries.filter((entry) => entry.stack.category === stack.category && predicate(entry));
+  const lines = [
+    "| Pattern | Provisioning | Workflow |",
+    "| --- | --- | --- |"
+  ];
+  for (const entry of rows) {
+    const rel = workflowLinkFromTopologyDoc(stack, entry);
+    lines.push(`| ${entry.mode} | ${entry.provisioning} | [${entry.fileName}](${rel}) |`);
+  }
+  return lines.join("\n");
+}
+
+function inventoryTable(nodes) {
+  const lines = [
+    "| Node | Role | IP address | VM name | CPU | Memory MB | Disk GB |",
+    "| --- | --- | --- | --- | --- | --- | --- |"
+  ];
+  for (const nodeInfo of nodes) {
+    lines.push(`| ${markdownTableCell(nodeInfo.label)} | ${markdownTableCell(nodeInfo.role)} | \`${nodeInfo.ip}\` | ${markdownTableCell(nodeInfo.vmName)} | ${nodeInfo.cores ?? ""} | ${nodeInfo.memory ?? ""} | ${nodeInfo.diskGb ?? ""} |`);
+  }
+  return lines.join("\n");
+}
+
+function makeStackTopologyDoc(stack, entries) {
+  const lines = [];
+  const variants = stackHaVariants(stack);
+  lines.push(`# ${stack.displayName} Topology`);
+  lines.push("");
+  lines.push("This document is generated from `tools/generate-library.mjs`. It describes the logical topology shared by the provisioned and existing-infrastructure workflow variants.");
+  lines.push("");
+  lines.push("## Stack Summary");
+  lines.push("");
+  lines.push(`- Domain: \`${topLevelCategory(stack.category)}\``);
+  lines.push(`- Workflow path: \`workflows/${stack.category}\``);
+  lines.push(`- Stack network: \`${stack.network.stackCidr}\``);
+  lines.push(`- Gateway: \`${stack.network.gateway}\``);
+  lines.push(`- Single-node IP: \`${stack.single.target.ip}\``);
+  lines.push(`- HA status: ${variants.length ? "Generated" : "Not generated"}`);
+  if (!variants.length) {
+    lines.push(`- HA note: ${stack.haUnsupportedReason || "No built-in or catalog-safe HA topology is generated for this catalog profile."}`);
+  }
+  lines.push("");
+  lines.push("## Single-Node Topology");
+  lines.push("");
+  lines.push("```mermaid");
+  lines.push(singleNodeTopologyMermaid(stack));
+  lines.push("```");
+  lines.push("");
+  lines.push("### Single-Node Inventory");
+  lines.push("");
+  lines.push(inventoryTable([stack.single.target]));
+  lines.push("");
+  lines.push("### Single-Node Workflows");
+  lines.push("");
+  lines.push(workflowTable(entries, stack, (entry) => entry.mode === "single-node"));
+  lines.push("");
+  lines.push("## High-Availability Topologies");
+  lines.push("");
+  if (!variants.length) {
+    lines.push(stack.haUnsupportedReason || "No high-availability topology is generated for this stack.");
+    lines.push("");
+  }
+  for (const ha of variants) {
+    lines.push(`### ${ha.title}`);
+    lines.push("");
+    lines.push("```mermaid");
+    lines.push(haTopologyMermaid(stack, ha));
+    lines.push("```");
+    lines.push("");
+    lines.push("#### HA Inventory");
+    lines.push("");
+    lines.push(inventoryTable(ha.nodes));
+    lines.push("");
+    lines.push("#### HA Workflows");
+    lines.push("");
+    lines.push(workflowTable(entries, stack, (entry) => entry.ha?.title === ha.title));
+    lines.push("");
+  }
+  lines.push("## Addressing Rules");
+  lines.push("");
+  lines.push("- The stack receives one `/24` from the parent `10.0.0.0/16` plan.");
+  lines.push("- `.1` is the example gateway.");
+  lines.push("- `.11-.49` are reserved for HA members and grouped by role in blocks of ten.");
+  lines.push("- `.50` is reserved for the single-node target.");
+  lines.push("");
+  return lines.join("\n");
+}
+
+function makeTopologyIndex(entries) {
+  const lines = [];
+  const uniqueStacks = uniqueStacksFromEntries(entries);
+  lines.push("# Topology Documentation");
+  lines.push("");
+  lines.push("This directory contains generated Mermaid topology diagrams for every stack in the workflow library. Each stack document includes the single-node topology, generated HA topologies when available, inventory tables, and links back to the workflow JSON packages.");
+  lines.push("");
+  lines.push("## Network Plan");
+  lines.push("");
+  lines.push(`All diagrams use the parent network \`${ROOT_NETWORK_CIDR}\`. Each top-level domain receives a category block, and each stack receives one \`/24\` inside that block.`);
+  lines.push("");
+  lines.push("| Domain | Category block |");
+  lines.push("| --- | --- |");
+  for (const block of CATEGORY_IP_BLOCKS) {
+    lines.push(`| ${block.category} | \`${block.cidr}\` |`);
+  }
+  lines.push("");
+  lines.push("## Stack Index");
+  lines.push("");
+  lines.push("| Domain | Stack | Stack block | HA status | Topology document |");
+  lines.push("| --- | --- | --- | --- | --- |");
+  for (const stack of uniqueStacks) {
+    const variants = stackHaVariants(stack);
+    const docRel = topologyDocIndexLink(stack);
+    const haStatus = variants.length ? variants.map((ha) => ha.title).join(", ") : stack.haUnsupportedReason || "Not generated";
+    lines.push(`| ${topLevelCategory(stack.category)} | ${markdownTableCell(stack.displayName)} | \`${stack.network.stackCidr}\` | ${markdownTableCell(haStatus)} | [${stack.category}](${docRel}) |`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+function writeTopologyDocs(entries) {
+  fs.mkdirSync(TOPOLOGY_ROOT, { recursive: true });
+  fs.writeFileSync(path.join(TOPOLOGY_ROOT, "README.md"), makeTopologyIndex(entries));
+  for (const stack of uniqueStacksFromEntries(entries)) {
+    const rel = topologyDocRelativePath(stack);
+    const outPath = path.join(ROOT, rel);
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, makeStackTopologyDoc(stack, entries));
+  }
+}
+
 function makeReadme(entries) {
   const lines = [];
   const categories = [...new Set(entries.map((entry) => entry.stack.category))].sort();
@@ -3075,6 +3312,10 @@ function makeReadme(entries) {
   lines.push("");
   lines.push("- `*-provisioned.json`: starts with `proxmoxConfigNode`, provisions VMs through `provisionNode`, waits for reachability, then installs/configures the stack.");
   lines.push("- `*-existing.json`: skips VM creation and starts from `serverNode`. Single-node examples target the application host directly. HA examples fan out to the existing member nodes and run bash command steps on each active node context.");
+  lines.push("");
+  lines.push("## Topology documentation");
+  lines.push("");
+  lines.push("Generated Mermaid topology documents are available in [topologies/README.md](topologies/README.md). Each stack document includes the single-node topology, generated HA topology diagrams when available, inventory tables, IP allocation, and links back to the workflow JSON packages.");
   lines.push("");
   lines.push("## IP address plan");
   lines.push("");
@@ -3094,15 +3335,7 @@ function makeReadme(entries) {
   lines.push("");
   lines.push("| Category | Stack | Stack block | Gateway | Single-node IP | HA variants and member IPs |");
   lines.push("| --- | --- | --- | --- | --- | --- |");
-  const uniqueStacks = [];
-  const seenStacks = new Set();
-  for (const entry of entries) {
-    if (seenStacks.has(entry.stack.category)) {
-      continue;
-    }
-    seenStacks.add(entry.stack.category);
-    uniqueStacks.push(entry.stack);
-  }
+  const uniqueStacks = uniqueStacksFromEntries(entries);
   for (const stack of uniqueStacks) {
     const haSummary = stackHaVariants(stack)
       .map((ha) => `${ha.title}: ${ha.nodes.map((target) => `\`${target.label}:${target.ip}\``).join(", ")}`)
@@ -3130,6 +3363,7 @@ function makeReadme(entries) {
   lines.push("");
   lines.push("## Directory guide");
   lines.push("");
+  lines.push("- `topologies/`: generated Markdown documentation with Mermaid diagrams for every stack topology.");
   for (const category of categories) {
     const stacksInCategory = [...new Set(entries.filter((entry) => entry.stack.category === category).map((entry) => entry.stack.displayName))].join(", ");
     lines.push(`- \`workflows/${category}\`: ${stacksInCategory} examples.`);
@@ -3171,9 +3405,11 @@ function makeReadme(entries) {
 }
 
 fs.rmSync(WORKFLOW_ROOT, { recursive: true, force: true });
+fs.rmSync(TOPOLOGY_ROOT, { recursive: true, force: true });
 const entries = workflowEntries();
 for (const entry of entries) {
   writeWorkflowPackage(path.join(WORKFLOW_ROOT, entry.stack.category, entry.fileName), entry);
 }
+writeTopologyDocs(entries);
 fs.writeFileSync(path.join(ROOT, "README.md"), makeReadme(entries));
-console.log(`Generated ${entries.length} workflow examples.`);
+console.log(`Generated ${entries.length} workflow examples and ${uniqueStacksFromEntries(entries).length} topology documents.`);

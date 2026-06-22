@@ -47,14 +47,14 @@
           },
           "data": {
             "label": "Kafka Host",
-            "hostname": "10.20.30.50",
+            "hostname": "10.0.80.50",
             "targets": [
               {
                 "id": "target-0",
                 "source": "manual",
-                "host": "10.20.30.50",
+                "host": "10.0.80.50",
                 "label": "Kafka Host",
-                "ip": "10.20.30.50",
+                "ip": "10.0.80.50",
                 "name": "kafka-host",
                 "node": "",
                 "vmid": "",

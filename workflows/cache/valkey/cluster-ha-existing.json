@@ -1,0 +1,740 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Valkey Cluster HA existing",
+    "description": "Bootstrap and validate Valkey Cluster HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "Valkey Cluster HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "valkey"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_valkey_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "valkey-01",
+            "hostname": "10.0.66.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.66.11",
+                "label": "valkey-01",
+                "ip": "10.0.66.11",
+                "name": "valkey-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_valkey_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait valkey-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_valkey_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "valkey-02",
+            "hostname": "10.0.66.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.66.12",
+                "label": "valkey-02",
+                "ip": "10.0.66.12",
+                "name": "valkey-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_valkey_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait valkey-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_valkey_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "valkey-03",
+            "hostname": "10.0.66.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.66.13",
+                "label": "valkey-03",
+                "ip": "10.0.66.13",
+                "name": "valkey-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_valkey_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait valkey-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_valkey_04",
+          "type": "serverNode",
+          "position": {
+            "x": 2115,
+            "y": 885
+          },
+          "data": {
+            "label": "valkey-04",
+            "hostname": "10.0.66.14",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.66.14",
+                "label": "valkey-04",
+                "ip": "10.0.66.14",
+                "name": "valkey-04",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_valkey_04",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2115,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait valkey-04",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_valkey_05",
+          "type": "serverNode",
+          "position": {
+            "x": 2820,
+            "y": 885
+          },
+          "data": {
+            "label": "valkey-05",
+            "hostname": "10.0.66.15",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.66.15",
+                "label": "valkey-05",
+                "ip": "10.0.66.15",
+                "name": "valkey-05",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_valkey_05",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2820,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait valkey-05",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_valkey_06",
+          "type": "serverNode",
+          "position": {
+            "x": 3525,
+            "y": 885
+          },
+          "data": {
+            "label": "valkey-06",
+            "hostname": "10.0.66.16",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.66.16",
+                "label": "valkey-06",
+                "ip": "10.0.66.16",
+                "name": "valkey-06",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_valkey_06",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 3525,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait valkey-06",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1943,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare Valkey Cluster HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1943,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render Valkey Cluster HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[valkey_cluster_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.66.11 10.0.66.12 10.0.66.13 10.0.66.14 10.0.66.15 10.0.66.16 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.66.11) NODE_NAME='valkey-01'; NODE_ROLE='cache'; NODE_INDEX=1 ;;\n  10.0.66.12) NODE_NAME='valkey-02'; NODE_ROLE='cache'; NODE_INDEX=2 ;;\n  10.0.66.13) NODE_NAME='valkey-03'; NODE_ROLE='cache'; NODE_INDEX=3 ;;\n  10.0.66.14) NODE_NAME='valkey-04'; NODE_ROLE='cache'; NODE_INDEX=4 ;;\n  10.0.66.15) NODE_NAME='valkey-05'; NODE_ROLE='cache'; NODE_INDEX=5 ;;\n  10.0.66.16) NODE_NAME='valkey-06'; NODE_ROLE='cache'; NODE_INDEX=6 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/valkey_cluster_ha\ninstall -d -m 0750 /var/lib/octastack/valkey_cluster_ha\ncat >/opt/octastack/valkey_cluster_ha/.env <<EOF\nOCTASTACK_SERVICE=Valkey\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.66.11\nCLUSTER_PEERS=10.0.66.11,10.0.66.12,10.0.66.13,10.0.66.14,10.0.66.15,10.0.66.16\nSEED_IPS=10.0.66.11,10.0.66.12,10.0.66.13\n\nEOF\nchmod 0600 /opt/octastack/valkey_cluster_ha/.env\n\ncat >/opt/octastack/valkey_cluster_ha/compose.yml <<'COMPOSE'\nservices:\n  valkey:\n    image: valkey/valkey:8\n    container_name: octastack-valkey\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    command: >\n      valkey-server --bind 0.0.0.0 --protected-mode no --appendonly yes --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --cluster-announce-ip ${CURRENT_IP}\n    volumes:\n      - data:/data\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1943,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy Valkey Cluster HA node",
+            "command": "set -euo pipefail\nlog() { printf '[valkey_cluster_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/valkey_cluster_ha/compose.yml pull\ndocker compose -f /opt/octastack/valkey_cluster_ha/compose.yml up -d\ndocker compose -f /opt/octastack/valkey_cluster_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1943,
+            "y": 4815
+          },
+          "data": {
+            "label": "Initialize Valkey Cluster HA node",
+            "command": "set -euo pipefail\n\nlog() { printf '[valkey-cluster-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.66.11 10.0.66.12 10.0.66.13 10.0.66.14 10.0.66.15 10.0.66.16 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.66.11) NODE_NAME='valkey-01'; NODE_ROLE='cache'; NODE_INDEX=1 ;;\n  10.0.66.12) NODE_NAME='valkey-02'; NODE_ROLE='cache'; NODE_INDEX=2 ;;\n  10.0.66.13) NODE_NAME='valkey-03'; NODE_ROLE='cache'; NODE_INDEX=3 ;;\n  10.0.66.14) NODE_NAME='valkey-04'; NODE_ROLE='cache'; NODE_INDEX=4 ;;\n  10.0.66.15) NODE_NAME='valkey-05'; NODE_ROLE='cache'; NODE_INDEX=5 ;;\n  10.0.66.16) NODE_NAME='valkey-06'; NODE_ROLE='cache'; NODE_INDEX=6 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ncontainer_ready=0\nfor attempt in $(seq 1 60); do\n  if docker exec octastack-valkey sh -lc \"valkey-cli ping\" >/dev/null 2>&1; then\n    container_ready=1\n    break\n  fi\n  sleep 5\ndone\nif [ \"$container_ready\" = \"1\" ]; then\n  log \"container octastack-valkey is ready\"\nelse\ndocker logs octastack-valkey --tail=120 || true\necho \"container octastack-valkey did not become ready\" >&2\nexit 1\nfi\n\nif [ \"$NODE_INDEX\" = \"1\" ]; then\n  sleep 15\n  docker exec octastack-valkey valkey-cli --cluster create 10.0.66.11:6379 10.0.66.12:6379 10.0.66.13:6379 10.0.66.14:6379 10.0.66.15:6379 10.0.66.16:6379 --cluster-replicas 1 --cluster-yes || true\nfi\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1943,
+            "y": 5220
+          },
+          "data": {
+            "label": "Document Valkey Cluster HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/valkey_cluster_ha-topology.md <<'EOF'\n# Valkey Cluster HA\n\nMembers:\n- valkey-01: 10.0.66.11 (cache)\n- valkey-02: 10.0.66.12 (cache)\n- valkey-03: 10.0.66.13 (cache)\n- valkey-04: 10.0.66.14 (cache)\n- valkey-05: 10.0.66.15 (cache)\n- valkey-06: 10.0.66.16 (cache)\n\nSix Valkey members run native cluster mode as three primaries plus three replicas with generated cluster announce IPs.\nEOF\ncat /tmp/valkey_cluster_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1943,
+            "y": 5625
+          },
+          "data": {
+            "label": "Validate Valkey Cluster HA node",
+            "command": "docker exec octastack-valkey valkey-cli cluster nodes\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1943,
+            "y": 6200
+          },
+          "data": {
+            "label": "Valkey Cluster HA health check",
+            "command": "docker exec octastack-valkey valkey-cli ping",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 1993,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_valkey_01",
+          "source": "node_trigger",
+          "target": "node_server_valkey_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_valkey_01_wait",
+          "source": "node_server_valkey_01",
+          "target": "node_wait_valkey_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_valkey_02",
+          "source": "node_trigger",
+          "target": "node_server_valkey_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_valkey_02_wait",
+          "source": "node_server_valkey_02",
+          "target": "node_wait_valkey_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_valkey_03",
+          "source": "node_trigger",
+          "target": "node_server_valkey_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_valkey_03_wait",
+          "source": "node_server_valkey_03",
+          "target": "node_wait_valkey_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_valkey_04",
+          "source": "node_trigger",
+          "target": "node_server_valkey_04",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_valkey_04_wait",
+          "source": "node_server_valkey_04",
+          "target": "node_wait_valkey_04",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_valkey_05",
+          "source": "node_trigger",
+          "target": "node_server_valkey_05",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 5,
+          "data": {
+            "mode": "parallel",
+            "order": 5
+          }
+        },
+        {
+          "id": "edge_valkey_05_wait",
+          "source": "node_server_valkey_05",
+          "target": "node_wait_valkey_05",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_valkey_06",
+          "source": "node_trigger",
+          "target": "node_server_valkey_06",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 6,
+          "data": {
+            "mode": "parallel",
+            "order": 6
+          }
+        },
+        {
+          "id": "edge_valkey_06_wait",
+          "source": "node_server_valkey_06",
+          "target": "node_wait_valkey_06",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_valkey_01_bootstrap",
+          "source": "node_wait_valkey_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_valkey_02_bootstrap",
+          "source": "node_wait_valkey_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_valkey_03_bootstrap",
+          "source": "node_wait_valkey_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_valkey_04_bootstrap",
+          "source": "node_wait_valkey_04",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_valkey_05_bootstrap",
+          "source": "node_wait_valkey_05",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_valkey_06_bootstrap",
+          "source": "node_wait_valkey_06",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

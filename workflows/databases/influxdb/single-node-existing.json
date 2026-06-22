@@ -47,14 +47,14 @@
           },
           "data": {
             "label": "InfluxDB Host",
-            "hostname": "10.21.91.50",
+            "hostname": "10.0.12.50",
             "targets": [
               {
                 "id": "target-0",
                 "source": "manual",
-                "host": "10.21.91.50",
+                "host": "10.0.12.50",
                 "label": "InfluxDB Host",
-                "ip": "10.21.91.50",
+                "ip": "10.0.12.50",
                 "name": "influxdb-host",
                 "node": "",
                 "vmid": "",
@@ -95,7 +95,7 @@
           },
           "data": {
             "label": "Prepare InfluxDB runtime",
-            "command": "set -euo pipefail\nif command -v docker >/dev/null 2>&1; then\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
             "sudo": true
           }
         },

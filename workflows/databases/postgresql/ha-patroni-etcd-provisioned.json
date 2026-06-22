@@ -101,15 +101,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.11/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.11/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.11/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.11/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -188,15 +188,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.12/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.12/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.12/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.12/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -275,15 +275,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.13/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.13/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.13/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.13/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -362,15 +362,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.21/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.21/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.21/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.21/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -449,15 +449,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.22/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.22/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.22/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.22/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -536,15 +536,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.23/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.23/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.23/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.23/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -623,15 +623,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.31/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.31/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.31/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.31/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -710,15 +710,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.32/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.32/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.32/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.32/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -755,7 +755,7 @@
           },
           "data": {
             "label": "Render PostgreSQL Patroni etcd HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/postgresql_patroni_etcd_ha\ncat >/opt/octastack/postgresql_patroni_etcd_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/postgresql-ha.ini <<'INVENTORY'\n[etcd]\n10.30.10.11 node_name=etcd-01\n10.30.10.12 node_name=etcd-02\n10.30.10.13 node_name=etcd-03\n\n[postgres]\n10.30.10.21 node_name=pg-01\n10.30.10.22 node_name=pg-02\n10.30.10.23 node_name=pg-03\n\n[load_balancer]\n10.30.10.31 node_name=pg-lb-01\n10.30.10.32 node_name=pg-lb-02\nINVENTORY\ncat >/tmp/postgresql-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [curl, jq, chrony]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: chrony\n        state: started\n        enabled: true\n\n- hosts: etcd\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: etcd\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/default/etcd\n        mode: \"0644\"\n        content: |\n          ETCD_NAME=\"{{ inventory_hostname }}\"\n          ETCD_LISTEN_CLIENT_URLS=\"http://0.0.0.0:2379\"\n          ETCD_ADVERTISE_CLIENT_URLS=\"http://{{ inventory_hostname }}:2379\"\n    - ansible.builtin.service:\n        name: etcd\n        state: restarted\n        enabled: true\n\n- hosts: postgres\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [postgresql, postgresql-contrib, python3-pip, patroni]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/patroni.yml\n        mode: \"0640\"\n        content: |\n          scope: octastack-postgres\n          namespace: /service/\n          name: \"{{ inventory_hostname }}\"\n          restapi:\n            listen: 0.0.0.0:8008\n            connect_address: \"{{ inventory_hostname }}:8008\"\n          etcd3:\n            hosts: 10.30.10.11:2379,10.30.10.12:2379,10.30.10.13:2379\n          bootstrap:\n            dcs:\n              ttl: 30\n              loop_wait: 10\n              retry_timeout: 10\n              maximum_lag_on_failover: 1048576\n              postgresql:\n                use_pg_rewind: true\n            initdb:\n              - encoding: UTF8\n              - data-checksums\n          postgresql:\n            listen: 0.0.0.0:5432\n            connect_address: \"{{ inventory_hostname }}:5432\"\n            data_dir: /var/lib/postgresql/patroni\n            authentication:\n              superuser:\n                username: postgres\n                password: change-me\n              replication:\n                username: replicator\n                password: change-me\n    - ansible.builtin.service:\n        name: patroni\n        state: restarted\n        enabled: true\n\n- hosts: load_balancer\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [haproxy, keepalived]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/haproxy/haproxy.cfg\n        mode: \"0644\"\n        content: |\n          global\n            daemon\n            maxconn 4096\n          defaults\n            mode tcp\n            timeout connect 5s\n            timeout client 30s\n            timeout server 30s\n          listen postgres_rw\n            bind *:5432\n            option httpchk GET /primary\n            server pg-01 10.30.10.21:5432 check port 8008\n            server pg-02 10.30.10.22:5432 check port 8008\n            server pg-03 10.30.10.23:5432 check port 8008\n    - ansible.builtin.service:\n        name: haproxy\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/postgresql-ha.ini /tmp/postgresql-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/postgresql_patroni_etcd_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/postgresql_patroni_etcd_ha\ncat >/opt/octastack/postgresql_patroni_etcd_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[postgresql-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.0.11 10.0.0.12 10.0.0.13 10.0.0.21 10.0.0.22 10.0.0.23 10.0.0.31 10.0.0.32 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.0.11) NODE_NAME='etcd-01'; NODE_ROLE='etcd'; NODE_INDEX=1 ;;\n  10.0.0.12) NODE_NAME='etcd-02'; NODE_ROLE='etcd'; NODE_INDEX=2 ;;\n  10.0.0.13) NODE_NAME='etcd-03'; NODE_ROLE='etcd'; NODE_INDEX=3 ;;\n  10.0.0.21) NODE_NAME='pg-01'; NODE_ROLE='postgres'; NODE_INDEX=4 ;;\n  10.0.0.22) NODE_NAME='pg-02'; NODE_ROLE='postgres'; NODE_INDEX=5 ;;\n  10.0.0.23) NODE_NAME='pg-03'; NODE_ROLE='postgres'; NODE_INDEX=6 ;;\n  10.0.0.31) NODE_NAME='pg-lb-01'; NODE_ROLE='load_balancer'; NODE_INDEX=7 ;;\n  10.0.0.32) NODE_NAME='pg-lb-02'; NODE_ROLE='load_balancer'; NODE_INDEX=8 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y curl jq chrony\nsystemctl enable --now chrony\n\nif [ \"$NODE_ROLE\" = \"etcd\" ]; then\n  log \"configuring etcd member\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y etcd\n  cat >/etc/default/etcd <<EOF\nETCD_NAME=\"$NODE_NAME\"\nETCD_LISTEN_CLIENT_URLS=\"http://0.0.0.0:2379\"\nETCD_ADVERTISE_CLIENT_URLS=\"http://$CURRENT_IP:2379\"\nEOF\n  systemctl restart etcd\n  systemctl enable etcd\nelif [ \"$NODE_ROLE\" = \"postgres\" ]; then\n  log \"configuring Patroni PostgreSQL member\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib python3-pip patroni\n  cat >/etc/patroni.yml <<EOF\nscope: octastack-postgres\nnamespace: /service/\nname: \"$NODE_NAME\"\nrestapi:\n  listen: 0.0.0.0:8008\n  connect_address: \"$CURRENT_IP:8008\"\netcd3:\n  hosts: 10.0.0.11:2379,10.0.0.12:2379,10.0.0.13:2379\nbootstrap:\n  dcs:\n    ttl: 30\n    loop_wait: 10\n    retry_timeout: 10\n    maximum_lag_on_failover: 1048576\n    postgresql:\n      use_pg_rewind: true\n  initdb:\n    - encoding: UTF8\n    - data-checksums\npostgresql:\n  listen: 0.0.0.0:5432\n  connect_address: \"$CURRENT_IP:5432\"\n  data_dir: /var/lib/postgresql/patroni\n  authentication:\n    superuser:\n      username: postgres\n      password: change-me\n    replication:\n      username: replicator\n      password: change-me\nEOF\n  systemctl restart patroni\n  systemctl enable patroni\nelif [ \"$NODE_ROLE\" = \"load_balancer\" ]; then\n  log \"configuring HAProxy PostgreSQL frontend\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y haproxy keepalived\n  cat >/etc/haproxy/haproxy.cfg <<'EOF'\nglobal\n  daemon\n  maxconn 4096\ndefaults\n  mode tcp\n  timeout connect 5s\n  timeout client 30s\n  timeout server 30s\nlisten postgres_rw\n  bind *:5432\n  option httpchk GET /primary\n  server pg-01 10.0.0.21:5432 check port 8008\n  server pg-02 10.0.0.22:5432 check port 8008\n  server pg-03 10.0.0.23:5432 check port 8008\nEOF\n  systemctl restart haproxy\n  systemctl enable haproxy\nelse\n  log \"no PostgreSQL HA action for role $NODE_ROLE\"\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/postgresql_patroni_etcd_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -807,7 +807,7 @@
           },
           "data": {
             "label": "PostgreSQL Patroni etcd HA health check",
-            "command": "curl -fsS http://10.30.10.21:8008/health && curl -fsS http://10.30.10.31:5432 || true",
+            "command": "curl -fsS http://10.0.0.21:8008/health && curl -fsS http://10.0.0.31:5432 || true",
             "sudo": false
           }
         },

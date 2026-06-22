@@ -1,0 +1,948 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Redis Cluster HA provisioned",
+    "description": "Provision Redis Cluster HA nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "Redis Cluster HA provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "cluster_name",
+                "source": "payload.cluster_name",
+                "value": "redis-prod"
+              },
+              {
+                "id": "var-1",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 105,
+            "y": 465
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
+          }
+        },
+        {
+          "id": "node_provision_redis_cluster_01",
+          "type": "provisionNode",
+          "position": {
+            "x": 855,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision redis-cluster-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "redis-cluster-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "REDIS",
+            "cores": "2",
+            "memory": "4096",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "50",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.64.11/24",
+                "gw": "10.0.64.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "cache.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.64.11/24",
+            "gw": "10.0.64.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "cache.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_redis_cluster_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 855,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait redis-cluster-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_redis_cluster_02",
+          "type": "provisionNode",
+          "position": {
+            "x": 1560,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision redis-cluster-02",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "redis-cluster-02",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "REDIS",
+            "cores": "2",
+            "memory": "4096",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "50",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.64.12/24",
+                "gw": "10.0.64.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "cache.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.64.12/24",
+            "gw": "10.0.64.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "cache.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_redis_cluster_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1560,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait redis-cluster-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_redis_cluster_03",
+          "type": "provisionNode",
+          "position": {
+            "x": 2265,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision redis-cluster-03",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "redis-cluster-03",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "REDIS",
+            "cores": "2",
+            "memory": "4096",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "50",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.64.13/24",
+                "gw": "10.0.64.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "cache.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.64.13/24",
+            "gw": "10.0.64.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "cache.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_redis_cluster_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2265,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait redis-cluster-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_redis_cluster_04",
+          "type": "provisionNode",
+          "position": {
+            "x": 2970,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision redis-cluster-04",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "redis-cluster-04",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "REDIS",
+            "cores": "2",
+            "memory": "4096",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "50",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.64.14/24",
+                "gw": "10.0.64.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "cache.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.64.14/24",
+            "gw": "10.0.64.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "cache.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_redis_cluster_04",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2970,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait redis-cluster-04",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_redis_cluster_05",
+          "type": "provisionNode",
+          "position": {
+            "x": 3675,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision redis-cluster-05",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "redis-cluster-05",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "REDIS",
+            "cores": "2",
+            "memory": "4096",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "50",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.64.15/24",
+                "gw": "10.0.64.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "cache.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.64.15/24",
+            "gw": "10.0.64.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "cache.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_redis_cluster_05",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 3675,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait redis-cluster-05",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_redis_cluster_06",
+          "type": "provisionNode",
+          "position": {
+            "x": 4380,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision redis-cluster-06",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "redis-cluster-06",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "REDIS",
+            "cores": "2",
+            "memory": "4096",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "50",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.64.16/24",
+                "gw": "10.0.64.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "cache.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.64.16/24",
+            "gw": "10.0.64.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "cache.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_redis_cluster_06",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 4380,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait redis-cluster-06",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 2798,
+            "y": 5000
+          },
+          "data": {
+            "label": "Render Redis Cluster HA installer",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/redis_cluster_ha\ncat >/opt/octastack/redis_cluster_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[redis-cluster-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.64.11 10.0.64.12 10.0.64.13 10.0.64.14 10.0.64.15 10.0.64.16 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.64.11) NODE_NAME='redis-cluster-01'; NODE_ROLE='redis'; NODE_INDEX=1 ;;\n  10.0.64.12) NODE_NAME='redis-cluster-02'; NODE_ROLE='redis'; NODE_INDEX=2 ;;\n  10.0.64.13) NODE_NAME='redis-cluster-03'; NODE_ROLE='redis'; NODE_INDEX=3 ;;\n  10.0.64.14) NODE_NAME='redis-cluster-04'; NODE_ROLE='redis'; NODE_INDEX=4 ;;\n  10.0.64.15) NODE_NAME='redis-cluster-05'; NODE_ROLE='redis'; NODE_INDEX=5 ;;\n  10.0.64.16) NODE_NAME='redis-cluster-06'; NODE_ROLE='redis'; NODE_INDEX=6 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\nwait_for_tcp() {\n  host=\"$1\"\n  port=\"$2\"\n  timeout=\"${3:-180}\"\n  start=\"$(date +%s)\"\n  while ! timeout 2 bash -c \"cat < /dev/null > /dev/tcp/$host/$port\" >/dev/null 2>&1; do\n    now=\"$(date +%s)\"\n    if [ \"$((now - start))\" -ge \"$timeout\" ]; then\n      log \"timeout waiting for $host:$port\"\n      return 1\n    fi\n    sleep 5\n  done\n}\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y redis-server\ncat >/etc/redis/redis.conf <<EOF\nbind 0.0.0.0\nprotected-mode no\nport 6379\nappendonly yes\ndir /var/lib/redis\ncluster-enabled yes\ncluster-config-file nodes.conf\ncluster-node-timeout 5000\ncluster-announce-ip $CURRENT_IP\nEOF\nsystemctl restart redis-server\nsystemctl enable redis-server\nif [ \"$NODE_INDEX\" = \"1\" ]; then\n  for peer in 10.0.64.11 10.0.64.12 10.0.64.13 10.0.64.14 10.0.64.15 10.0.64.16; do\n    wait_for_tcp \"$peer\" 6379 240\n  done\n  yes yes | redis-cli --cluster create 10.0.64.11:6379 10.0.64.12:6379 10.0.64.13:6379 10.0.64.14:6379 10.0.64.15:6379 10.0.64.16:6379 --cluster-replicas 1 || true\n  redis-cli cluster nodes\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/redis_cluster_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 2798,
+            "y": 5405
+          },
+          "data": {
+            "label": "Review Redis Cluster HA installer",
+            "command": "set -euo pipefail\nbash -n /opt/octastack/redis_cluster_ha/install.sh\nwc -l /opt/octastack/redis_cluster_ha/install.sh\nsed -n '1,120p' /opt/octastack/redis_cluster_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 2798,
+            "y": 5810
+          },
+          "data": {
+            "label": "Execute Redis Cluster HA installer",
+            "command": "set -euo pipefail\n/opt/octastack/redis_cluster_ha/install.sh\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 2798,
+            "y": 6215
+          },
+          "data": {
+            "label": "Collect Redis Cluster HA runtime status",
+            "command": "set -euo pipefail\nsystemctl --failed --no-pager || true\nif command -v docker >/dev/null 2>&1; then docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}' || true; fi\nif command -v kubectl >/dev/null 2>&1; then kubectl get nodes -o wide || true; kubectl get pods -A || true; fi\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 2798,
+            "y": 6620
+          },
+          "data": {
+            "label": "Redis Cluster HA health check",
+            "command": "redis-cli -h 10.0.64.11 -p 6379 cluster info",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 2848,
+            "y": 7025
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_redis_cluster_01",
+          "source": "node_context",
+          "target": "node_provision_redis_cluster_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_cluster_01_wait",
+          "source": "node_provision_redis_cluster_01",
+          "target": "node_wait_redis_cluster_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_redis_cluster_02",
+          "source": "node_context",
+          "target": "node_provision_redis_cluster_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_redis_cluster_02_wait",
+          "source": "node_provision_redis_cluster_02",
+          "target": "node_wait_redis_cluster_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_redis_cluster_03",
+          "source": "node_context",
+          "target": "node_provision_redis_cluster_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_redis_cluster_03_wait",
+          "source": "node_provision_redis_cluster_03",
+          "target": "node_wait_redis_cluster_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_redis_cluster_04",
+          "source": "node_context",
+          "target": "node_provision_redis_cluster_04",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_redis_cluster_04_wait",
+          "source": "node_provision_redis_cluster_04",
+          "target": "node_wait_redis_cluster_04",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_redis_cluster_05",
+          "source": "node_context",
+          "target": "node_provision_redis_cluster_05",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 5,
+          "data": {
+            "mode": "parallel",
+            "order": 5
+          }
+        },
+        {
+          "id": "edge_redis_cluster_05_wait",
+          "source": "node_provision_redis_cluster_05",
+          "target": "node_wait_redis_cluster_05",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_redis_cluster_06",
+          "source": "node_context",
+          "target": "node_provision_redis_cluster_06",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 6,
+          "data": {
+            "mode": "parallel",
+            "order": 6
+          }
+        },
+        {
+          "id": "edge_redis_cluster_06_wait",
+          "source": "node_provision_redis_cluster_06",
+          "target": "node_wait_redis_cluster_06",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_cluster_01_bootstrap",
+          "source": "node_wait_redis_cluster_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_cluster_02_bootstrap",
+          "source": "node_wait_redis_cluster_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_cluster_03_bootstrap",
+          "source": "node_wait_redis_cluster_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_cluster_04_bootstrap",
+          "source": "node_wait_redis_cluster_04",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_cluster_05_bootstrap",
+          "source": "node_wait_redis_cluster_05",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_cluster_06_bootstrap",
+          "source": "node_wait_redis_cluster_06",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_4",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

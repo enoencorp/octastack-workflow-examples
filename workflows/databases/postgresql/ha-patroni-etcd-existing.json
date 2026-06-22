@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T00:00:00Z",
   "workflow": {
     "name": "PostgreSQL Patroni etcd HA existing",
-    "description": "Bootstrap and validate PostgreSQL Patroni etcd HA from an existing automation runner and target inventory.",
+    "description": "Bootstrap and validate PostgreSQL Patroni etcd HA across existing member nodes with bash command steps.",
     "graphData": {
       "nodes": [
         {
@@ -39,23 +39,23 @@
           }
         },
         {
-          "id": "node_runner",
+          "id": "node_server_etcd_01",
           "type": "serverNode",
           "position": {
             "x": 0,
             "y": 885
           },
           "data": {
-            "label": "Automation Runner",
-            "hostname": "10.10.0.21",
+            "label": "etcd-01",
+            "hostname": "10.0.0.11",
             "targets": [
               {
-                "id": "target-runner",
+                "id": "target-0",
                 "source": "manual",
-                "host": "10.10.0.21",
-                "label": "Automation Runner",
-                "ip": "10.10.0.21",
-                "name": "automation-runner",
+                "host": "10.0.0.11",
+                "label": "etcd-01",
+                "ip": "10.0.0.11",
+                "name": "etcd-01",
                 "node": "",
                 "vmid": "",
                 "status": "existing",
@@ -65,14 +65,350 @@
           }
         },
         {
-          "id": "node_wait_runner",
+          "id": "node_wait_etcd_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 885,
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait etcd-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_etcd_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
             "y": 885
           },
           "data": {
-            "label": "Wait for automation runner",
+            "label": "etcd-02",
+            "hostname": "10.0.0.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.0.12",
+                "label": "etcd-02",
+                "ip": "10.0.0.12",
+                "name": "etcd-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_etcd_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait etcd-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_etcd_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "etcd-03",
+            "hostname": "10.0.0.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.0.13",
+                "label": "etcd-03",
+                "ip": "10.0.0.13",
+                "name": "etcd-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_etcd_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait etcd-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_pg_01",
+          "type": "serverNode",
+          "position": {
+            "x": 2115,
+            "y": 885
+          },
+          "data": {
+            "label": "pg-01",
+            "hostname": "10.0.0.21",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.0.21",
+                "label": "pg-01",
+                "ip": "10.0.0.21",
+                "name": "pg-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_pg_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2115,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait pg-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_pg_02",
+          "type": "serverNode",
+          "position": {
+            "x": 2820,
+            "y": 885
+          },
+          "data": {
+            "label": "pg-02",
+            "hostname": "10.0.0.22",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.0.22",
+                "label": "pg-02",
+                "ip": "10.0.0.22",
+                "name": "pg-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_pg_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2820,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait pg-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_pg_03",
+          "type": "serverNode",
+          "position": {
+            "x": 3525,
+            "y": 885
+          },
+          "data": {
+            "label": "pg-03",
+            "hostname": "10.0.0.23",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.0.23",
+                "label": "pg-03",
+                "ip": "10.0.0.23",
+                "name": "pg-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_pg_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 3525,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait pg-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_pg_lb_01",
+          "type": "serverNode",
+          "position": {
+            "x": 4230,
+            "y": 885
+          },
+          "data": {
+            "label": "pg-lb-01",
+            "hostname": "10.0.0.31",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.0.31",
+                "label": "pg-lb-01",
+                "ip": "10.0.0.31",
+                "name": "pg-lb-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_pg_lb_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 4230,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait pg-lb-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_pg_lb_02",
+          "type": "serverNode",
+          "position": {
+            "x": 4935,
+            "y": 885
+          },
+          "data": {
+            "label": "pg-lb-02",
+            "hostname": "10.0.0.32",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.0.32",
+                "label": "pg-lb-02",
+                "ip": "10.0.0.32",
+                "name": "pg-lb-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_pg_lb_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 4935,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait pg-lb-02",
             "timeout": "20",
             "interval": "10",
             "probes": [
@@ -90,12 +426,12 @@
           "id": "node_step_1",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2300
+            "x": 2648,
+            "y": 3600
           },
           "data": {
             "label": "Render PostgreSQL Patroni etcd HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/postgresql_patroni_etcd_ha\ncat >/opt/octastack/postgresql_patroni_etcd_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/postgresql-ha.ini <<'INVENTORY'\n[etcd]\n10.30.10.11 node_name=etcd-01\n10.30.10.12 node_name=etcd-02\n10.30.10.13 node_name=etcd-03\n\n[postgres]\n10.30.10.21 node_name=pg-01\n10.30.10.22 node_name=pg-02\n10.30.10.23 node_name=pg-03\n\n[load_balancer]\n10.30.10.31 node_name=pg-lb-01\n10.30.10.32 node_name=pg-lb-02\nINVENTORY\ncat >/tmp/postgresql-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [curl, jq, chrony]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: chrony\n        state: started\n        enabled: true\n\n- hosts: etcd\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: etcd\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/default/etcd\n        mode: \"0644\"\n        content: |\n          ETCD_NAME=\"{{ inventory_hostname }}\"\n          ETCD_LISTEN_CLIENT_URLS=\"http://0.0.0.0:2379\"\n          ETCD_ADVERTISE_CLIENT_URLS=\"http://{{ inventory_hostname }}:2379\"\n    - ansible.builtin.service:\n        name: etcd\n        state: restarted\n        enabled: true\n\n- hosts: postgres\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [postgresql, postgresql-contrib, python3-pip, patroni]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/patroni.yml\n        mode: \"0640\"\n        content: |\n          scope: octastack-postgres\n          namespace: /service/\n          name: \"{{ inventory_hostname }}\"\n          restapi:\n            listen: 0.0.0.0:8008\n            connect_address: \"{{ inventory_hostname }}:8008\"\n          etcd3:\n            hosts: 10.30.10.11:2379,10.30.10.12:2379,10.30.10.13:2379\n          bootstrap:\n            dcs:\n              ttl: 30\n              loop_wait: 10\n              retry_timeout: 10\n              maximum_lag_on_failover: 1048576\n              postgresql:\n                use_pg_rewind: true\n            initdb:\n              - encoding: UTF8\n              - data-checksums\n          postgresql:\n            listen: 0.0.0.0:5432\n            connect_address: \"{{ inventory_hostname }}:5432\"\n            data_dir: /var/lib/postgresql/patroni\n            authentication:\n              superuser:\n                username: postgres\n                password: change-me\n              replication:\n                username: replicator\n                password: change-me\n    - ansible.builtin.service:\n        name: patroni\n        state: restarted\n        enabled: true\n\n- hosts: load_balancer\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [haproxy, keepalived]\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/haproxy/haproxy.cfg\n        mode: \"0644\"\n        content: |\n          global\n            daemon\n            maxconn 4096\n          defaults\n            mode tcp\n            timeout connect 5s\n            timeout client 30s\n            timeout server 30s\n          listen postgres_rw\n            bind *:5432\n            option httpchk GET /primary\n            server pg-01 10.30.10.21:5432 check port 8008\n            server pg-02 10.30.10.22:5432 check port 8008\n            server pg-03 10.30.10.23:5432 check port 8008\n    - ansible.builtin.service:\n        name: haproxy\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/postgresql-ha.ini /tmp/postgresql-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/postgresql_patroni_etcd_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/postgresql_patroni_etcd_ha\ncat >/opt/octastack/postgresql_patroni_etcd_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[postgresql-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.0.11 10.0.0.12 10.0.0.13 10.0.0.21 10.0.0.22 10.0.0.23 10.0.0.31 10.0.0.32 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.0.11) NODE_NAME='etcd-01'; NODE_ROLE='etcd'; NODE_INDEX=1 ;;\n  10.0.0.12) NODE_NAME='etcd-02'; NODE_ROLE='etcd'; NODE_INDEX=2 ;;\n  10.0.0.13) NODE_NAME='etcd-03'; NODE_ROLE='etcd'; NODE_INDEX=3 ;;\n  10.0.0.21) NODE_NAME='pg-01'; NODE_ROLE='postgres'; NODE_INDEX=4 ;;\n  10.0.0.22) NODE_NAME='pg-02'; NODE_ROLE='postgres'; NODE_INDEX=5 ;;\n  10.0.0.23) NODE_NAME='pg-03'; NODE_ROLE='postgres'; NODE_INDEX=6 ;;\n  10.0.0.31) NODE_NAME='pg-lb-01'; NODE_ROLE='load_balancer'; NODE_INDEX=7 ;;\n  10.0.0.32) NODE_NAME='pg-lb-02'; NODE_ROLE='load_balancer'; NODE_INDEX=8 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y curl jq chrony\nsystemctl enable --now chrony\n\nif [ \"$NODE_ROLE\" = \"etcd\" ]; then\n  log \"configuring etcd member\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y etcd\n  cat >/etc/default/etcd <<EOF\nETCD_NAME=\"$NODE_NAME\"\nETCD_LISTEN_CLIENT_URLS=\"http://0.0.0.0:2379\"\nETCD_ADVERTISE_CLIENT_URLS=\"http://$CURRENT_IP:2379\"\nEOF\n  systemctl restart etcd\n  systemctl enable etcd\nelif [ \"$NODE_ROLE\" = \"postgres\" ]; then\n  log \"configuring Patroni PostgreSQL member\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib python3-pip patroni\n  cat >/etc/patroni.yml <<EOF\nscope: octastack-postgres\nnamespace: /service/\nname: \"$NODE_NAME\"\nrestapi:\n  listen: 0.0.0.0:8008\n  connect_address: \"$CURRENT_IP:8008\"\netcd3:\n  hosts: 10.0.0.11:2379,10.0.0.12:2379,10.0.0.13:2379\nbootstrap:\n  dcs:\n    ttl: 30\n    loop_wait: 10\n    retry_timeout: 10\n    maximum_lag_on_failover: 1048576\n    postgresql:\n      use_pg_rewind: true\n  initdb:\n    - encoding: UTF8\n    - data-checksums\npostgresql:\n  listen: 0.0.0.0:5432\n  connect_address: \"$CURRENT_IP:5432\"\n  data_dir: /var/lib/postgresql/patroni\n  authentication:\n    superuser:\n      username: postgres\n      password: change-me\n    replication:\n      username: replicator\n      password: change-me\nEOF\n  systemctl restart patroni\n  systemctl enable patroni\nelif [ \"$NODE_ROLE\" = \"load_balancer\" ]; then\n  log \"configuring HAProxy PostgreSQL frontend\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y haproxy keepalived\n  cat >/etc/haproxy/haproxy.cfg <<'EOF'\nglobal\n  daemon\n  maxconn 4096\ndefaults\n  mode tcp\n  timeout connect 5s\n  timeout client 30s\n  timeout server 30s\nlisten postgres_rw\n  bind *:5432\n  option httpchk GET /primary\n  server pg-01 10.0.0.21:5432 check port 8008\n  server pg-02 10.0.0.22:5432 check port 8008\n  server pg-03 10.0.0.23:5432 check port 8008\nEOF\n  systemctl restart haproxy\n  systemctl enable haproxy\nelse\n  log \"no PostgreSQL HA action for role $NODE_ROLE\"\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/postgresql_patroni_etcd_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -103,8 +439,8 @@
           "id": "node_step_2",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2705
+            "x": 2648,
+            "y": 4005
           },
           "data": {
             "label": "Review PostgreSQL Patroni etcd HA installer",
@@ -116,8 +452,8 @@
           "id": "node_step_3",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3110
+            "x": 2648,
+            "y": 4410
           },
           "data": {
             "label": "Execute PostgreSQL Patroni etcd HA installer",
@@ -129,8 +465,8 @@
           "id": "node_step_4",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3515
+            "x": 2648,
+            "y": 4815
           },
           "data": {
             "label": "Collect PostgreSQL Patroni etcd HA runtime status",
@@ -142,12 +478,12 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 5000
+            "x": 2648,
+            "y": 6200
           },
           "data": {
             "label": "PostgreSQL Patroni etcd HA health check",
-            "command": "curl -fsS http://10.30.10.21:8008/health && curl -fsS http://10.30.10.31:5432 || true",
+            "command": "curl -fsS http://10.0.0.21:8008/health && curl -fsS http://10.0.0.31:5432 || true",
             "sudo": false
           }
         },
@@ -155,8 +491,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 230,
-            "y": 5405
+            "x": 2698,
+            "y": 6605
           },
           "data": {
             "label": "End"
@@ -165,9 +501,21 @@
       ],
       "edges": [
         {
-          "id": "edge_trigger_runner",
+          "id": "edge_trigger_etcd_01",
           "source": "node_trigger",
-          "target": "node_runner",
+          "target": "node_server_etcd_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_01_wait",
+          "source": "node_server_etcd_01",
+          "target": "node_wait_etcd_01",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -177,9 +525,21 @@
           }
         },
         {
-          "id": "edge_runner_wait",
-          "source": "node_runner",
-          "target": "node_wait_runner",
+          "id": "edge_trigger_etcd_02",
+          "source": "node_trigger",
+          "target": "node_server_etcd_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_etcd_02_wait",
+          "source": "node_server_etcd_02",
+          "target": "node_wait_etcd_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -189,9 +549,141 @@
           }
         },
         {
-          "id": "edge_step_1",
-          "source": "node_wait_runner",
-          "target": "node_step_1",
+          "id": "edge_trigger_etcd_03",
+          "source": "node_trigger",
+          "target": "node_server_etcd_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_etcd_03_wait",
+          "source": "node_server_etcd_03",
+          "target": "node_wait_etcd_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_pg_01",
+          "source": "node_trigger",
+          "target": "node_server_pg_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_pg_01_wait",
+          "source": "node_server_pg_01",
+          "target": "node_wait_pg_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_pg_02",
+          "source": "node_trigger",
+          "target": "node_server_pg_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 5,
+          "data": {
+            "mode": "parallel",
+            "order": 5
+          }
+        },
+        {
+          "id": "edge_pg_02_wait",
+          "source": "node_server_pg_02",
+          "target": "node_wait_pg_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_pg_03",
+          "source": "node_trigger",
+          "target": "node_server_pg_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 6,
+          "data": {
+            "mode": "parallel",
+            "order": 6
+          }
+        },
+        {
+          "id": "edge_pg_03_wait",
+          "source": "node_server_pg_03",
+          "target": "node_wait_pg_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_pg_lb_01",
+          "source": "node_trigger",
+          "target": "node_server_pg_lb_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 7,
+          "data": {
+            "mode": "parallel",
+            "order": 7
+          }
+        },
+        {
+          "id": "edge_pg_lb_01_wait",
+          "source": "node_server_pg_lb_01",
+          "target": "node_wait_pg_lb_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_pg_lb_02",
+          "source": "node_trigger",
+          "target": "node_server_pg_lb_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 8,
+          "data": {
+            "mode": "parallel",
+            "order": 8
+          }
+        },
+        {
+          "id": "edge_pg_lb_02_wait",
+          "source": "node_server_pg_lb_02",
+          "target": "node_wait_pg_lb_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -228,6 +720,102 @@
           "id": "edge_step_4",
           "source": "node_step_3",
           "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_01_bootstrap",
+          "source": "node_wait_etcd_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_02_bootstrap",
+          "source": "node_wait_etcd_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_03_bootstrap",
+          "source": "node_wait_etcd_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_pg_01_bootstrap",
+          "source": "node_wait_pg_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_pg_02_bootstrap",
+          "source": "node_wait_pg_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_pg_03_bootstrap",
+          "source": "node_wait_pg_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_pg_lb_01_bootstrap",
+          "source": "node_wait_pg_lb_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_pg_lb_02_bootstrap",
+          "source": "node_wait_pg_lb_02",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,

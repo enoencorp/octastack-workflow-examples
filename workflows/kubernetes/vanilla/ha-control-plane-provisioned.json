@@ -101,15 +101,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.50.11/24",
-                "gw": "10.30.50.1",
+                "ipAddress": "10.0.96.11/24",
+                "gw": "10.0.96.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "k8s.example.internal"
               }
             ],
-            "ipAddress": "10.30.50.11/24",
-            "gw": "10.30.50.1",
+            "ipAddress": "10.0.96.11/24",
+            "gw": "10.0.96.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
@@ -188,15 +188,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.50.12/24",
-                "gw": "10.30.50.1",
+                "ipAddress": "10.0.96.12/24",
+                "gw": "10.0.96.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "k8s.example.internal"
               }
             ],
-            "ipAddress": "10.30.50.12/24",
-            "gw": "10.30.50.1",
+            "ipAddress": "10.0.96.12/24",
+            "gw": "10.0.96.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
@@ -275,15 +275,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.50.13/24",
-                "gw": "10.30.50.1",
+                "ipAddress": "10.0.96.13/24",
+                "gw": "10.0.96.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "k8s.example.internal"
               }
             ],
-            "ipAddress": "10.30.50.13/24",
-            "gw": "10.30.50.1",
+            "ipAddress": "10.0.96.13/24",
+            "gw": "10.0.96.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
@@ -362,15 +362,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.50.21/24",
-                "gw": "10.30.50.1",
+                "ipAddress": "10.0.96.21/24",
+                "gw": "10.0.96.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "k8s.example.internal"
               }
             ],
-            "ipAddress": "10.30.50.21/24",
-            "gw": "10.30.50.1",
+            "ipAddress": "10.0.96.21/24",
+            "gw": "10.0.96.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
@@ -449,15 +449,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.50.22/24",
-                "gw": "10.30.50.1",
+                "ipAddress": "10.0.96.22/24",
+                "gw": "10.0.96.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "k8s.example.internal"
               }
             ],
-            "ipAddress": "10.30.50.22/24",
-            "gw": "10.30.50.1",
+            "ipAddress": "10.0.96.22/24",
+            "gw": "10.0.96.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "k8s.example.internal"
@@ -494,7 +494,7 @@
           },
           "data": {
             "label": "Render Vanilla Kubernetes HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/vanilla_kubernetes_ha\ncat >/opt/octastack/vanilla_kubernetes_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/vanilla-k8s-ha.ini <<'INVENTORY'\n[control_plane]\n10.30.50.11 node_name=k8s-cp-01\n10.30.50.12 node_name=k8s-cp-02\n10.30.50.13 node_name=k8s-cp-03\n\n[worker]\n10.30.50.21 node_name=k8s-worker-01\n10.30.50.22 node_name=k8s-worker-02\nINVENTORY\ncat >/tmp/vanilla-k8s-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        swapoff -a\n        modprobe br_netfilter\n        sysctl -w net.bridge.bridge-nf-call-iptables=1\n        apt-get update\n        apt-get install -y containerd apt-transport-https ca-certificates curl gpg\n        systemctl enable --now containerd\n    - ansible.builtin.shell: |\n        mkdir -p /etc/apt/keyrings\n        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\n        echo \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" > /etc/apt/sources.list.d/kubernetes.list\n        apt-get update\n        apt-get install -y kubelet kubeadm kubectl\n\n- hosts: control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: kubeadm init --control-plane-endpoint \"10.30.50.10:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n    - ansible.builtin.shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n\n- hosts: control_plane:!control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join additional control plane nodes using the kubeadm join command printed by the first control plane.\"\n\n- hosts: worker\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join worker nodes using the kubeadm join command printed by the first control plane.\"\nPLAYBOOK\nansible-playbook -i /tmp/vanilla-k8s-ha.ini /tmp/vanilla-k8s-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/vanilla_kubernetes_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/vanilla_kubernetes_ha\ncat >/opt/octastack/vanilla_kubernetes_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[vanilla-k8s-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.96.11 10.0.96.12 10.0.96.13 10.0.96.21 10.0.96.22 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.96.11) NODE_NAME='k8s-cp-01'; NODE_ROLE='control_plane'; NODE_INDEX=1 ;;\n  10.0.96.12) NODE_NAME='k8s-cp-02'; NODE_ROLE='control_plane'; NODE_INDEX=2 ;;\n  10.0.96.13) NODE_NAME='k8s-cp-03'; NODE_ROLE='control_plane'; NODE_INDEX=3 ;;\n  10.0.96.21) NODE_NAME='k8s-worker-01'; NODE_ROLE='worker'; NODE_INDEX=4 ;;\n  10.0.96.22) NODE_NAME='k8s-worker-02'; NODE_ROLE='worker'; NODE_INDEX=5 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https ca-certificates curl gpg containerd\nswapoff -a\nmodprobe br_netfilter\nsysctl -w net.bridge.bridge-nf-call-iptables=1\nsystemctl enable --now containerd\nmkdir -p /etc/apt/keyrings\ncurl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\necho \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" >/etc/apt/sources.list.d/kubernetes.list\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y kubelet kubeadm kubectl\nif [ \"$CURRENT_IP\" = \"10.0.96.11\" ]; then\n  log \"initializing first control plane\"\n  kubeadm init --control-plane-endpoint \"10.0.96.11:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n  kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\nelif [ \"$NODE_ROLE\" = \"control_plane\" ]; then\n  log \"join this control plane with the kubeadm join command printed by k8s-cp-01\"\nelse\n  log \"join this worker with the kubeadm join command printed by k8s-cp-01\"\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/vanilla_kubernetes_ha/install.sh\n",
             "sudo": true
           }
         },

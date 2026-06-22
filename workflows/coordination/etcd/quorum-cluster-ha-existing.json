@@ -1,0 +1,463 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "etcd Quorum Cluster HA existing",
+    "description": "Bootstrap and validate etcd Quorum Cluster HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "etcd Quorum Cluster HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "etcd"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_etcd_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "etcd-01",
+            "hostname": "10.0.160.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.160.11",
+                "label": "etcd-01",
+                "ip": "10.0.160.11",
+                "name": "etcd-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_etcd_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait etcd-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_etcd_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "etcd-02",
+            "hostname": "10.0.160.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.160.12",
+                "label": "etcd-02",
+                "ip": "10.0.160.12",
+                "name": "etcd-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_etcd_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait etcd-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_etcd_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "etcd-03",
+            "hostname": "10.0.160.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.160.13",
+                "label": "etcd-03",
+                "ip": "10.0.160.13",
+                "name": "etcd-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_etcd_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait etcd-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare etcd Quorum Cluster HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render etcd Quorum Cluster HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[etcd_quorum_cluster_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.160.11 10.0.160.12 10.0.160.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.160.11) NODE_NAME='etcd-01'; NODE_ROLE='etcd'; NODE_INDEX=1 ;;\n  10.0.160.12) NODE_NAME='etcd-02'; NODE_ROLE='etcd'; NODE_INDEX=2 ;;\n  10.0.160.13) NODE_NAME='etcd-03'; NODE_ROLE='etcd'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/etcd_quorum_cluster_ha\ninstall -d -m 0750 /var/lib/octastack/etcd_quorum_cluster_ha\ncat >/opt/octastack/etcd_quorum_cluster_ha/.env <<EOF\nOCTASTACK_SERVICE=etcd\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.160.11\nCLUSTER_PEERS=10.0.160.11,10.0.160.12,10.0.160.13\nSEED_IPS=10.0.160.11,10.0.160.12,10.0.160.13\nETCD_INITIAL_CLUSTER=etcd-01=http://10.0.160.11:2380,etcd-02=http://10.0.160.12:2380,etcd-03=http://10.0.160.13:2380\nEOF\nchmod 0600 /opt/octastack/etcd_quorum_cluster_ha/.env\n\ncat >/opt/octastack/etcd_quorum_cluster_ha/compose.yml <<'COMPOSE'\nservices:\n  etcd:\n    image: quay.io/coreos/etcd:v3.5.16\n    container_name: octastack-etcd\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    command: >\n      etcd\n      --name=${OCTASTACK_NODE_NAME}\n      --data-dir=/etcd-data\n      --listen-peer-urls=http://0.0.0.0:2380\n      --listen-client-urls=http://0.0.0.0:2379\n      --initial-advertise-peer-urls=http://${CURRENT_IP}:2380\n      --advertise-client-urls=http://${CURRENT_IP}:2379\n      --initial-cluster=${ETCD_INITIAL_CLUSTER}\n      --initial-cluster-state=new\n    volumes:\n      - data:/etcd-data\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy etcd Quorum Cluster HA node",
+            "command": "set -euo pipefail\nlog() { printf '[etcd_quorum_cluster_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/etcd_quorum_cluster_ha/compose.yml pull\ndocker compose -f /opt/octastack/etcd_quorum_cluster_ha/compose.yml up -d\ndocker compose -f /opt/octastack/etcd_quorum_cluster_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4815
+          },
+          "data": {
+            "label": "Document etcd Quorum Cluster HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/etcd_quorum_cluster_ha-topology.md <<'EOF'\n# etcd Quorum Cluster HA\n\nMembers:\n- etcd-01: 10.0.160.11 (etcd)\n- etcd-02: 10.0.160.12 (etcd)\n- etcd-03: 10.0.160.13 (etcd)\n\nThree etcd members form an odd-number quorum with generated peer and client advertise URLs.\nEOF\ncat /tmp/etcd_quorum_cluster_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5220
+          },
+          "data": {
+            "label": "Validate etcd Quorum Cluster HA node",
+            "command": "docker exec octastack-etcd etcdctl endpoint status --cluster -w table\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 6200
+          },
+          "data": {
+            "label": "etcd Quorum Cluster HA health check",
+            "command": "docker exec octastack-etcd etcdctl endpoint health",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 935,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_etcd_01",
+          "source": "node_trigger",
+          "target": "node_server_etcd_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_01_wait",
+          "source": "node_server_etcd_01",
+          "target": "node_wait_etcd_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_etcd_02",
+          "source": "node_trigger",
+          "target": "node_server_etcd_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_etcd_02_wait",
+          "source": "node_server_etcd_02",
+          "target": "node_wait_etcd_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_etcd_03",
+          "source": "node_trigger",
+          "target": "node_server_etcd_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_etcd_03_wait",
+          "source": "node_server_etcd_03",
+          "target": "node_wait_etcd_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_01_bootstrap",
+          "source": "node_wait_etcd_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_02_bootstrap",
+          "source": "node_wait_etcd_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_etcd_03_bootstrap",
+          "source": "node_wait_etcd_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_5",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

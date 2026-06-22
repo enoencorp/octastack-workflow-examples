@@ -38,11 +38,11 @@ const LAYOUT = {
     endY: 6605
   },
   haExisting: {
-    runner: { x: 0, y: 885 },
-    wait: { x: 885, y: 885 },
-    bootstrap: { x: 180, y: 2300 },
-    health: { x: 180, y: 5000 },
-    end: { x: 230, y: 5405 }
+    server: { x: 0, y: 885 },
+    wait: { x: 0, y: 2300 },
+    bootstrap: { x: 180, y: 3600 },
+    health: { x: 180, y: 6200 },
+    end: { x: 230, y: 6605 }
   },
   footprints: {
     triggerNode: { width: 520, height: 380 },
@@ -56,6 +56,25 @@ const LAYOUT = {
     default: { width: 420, height: 320 }
   }
 };
+
+const ROOT_NETWORK_CIDR = "10.0.0.0/16";
+const CATEGORY_IP_BLOCKS = [
+  { category: "databases", cidr: "10.0.0.0/18", firstThirdOctet: 0, stackCapacity: 64 },
+  { category: "cache", cidr: "10.0.64.0/20", firstThirdOctet: 64, stackCapacity: 16 },
+  { category: "messaging", cidr: "10.0.80.0/20", firstThirdOctet: 80, stackCapacity: 16 },
+  { category: "kubernetes", cidr: "10.0.96.0/20", firstThirdOctet: 96, stackCapacity: 16 },
+  { category: "monitoring", cidr: "10.0.112.0/20", firstThirdOctet: 112, stackCapacity: 16 },
+  { category: "search", cidr: "10.0.128.0/20", firstThirdOctet: 128, stackCapacity: 16 },
+  { category: "storage", cidr: "10.0.144.0/20", firstThirdOctet: 144, stackCapacity: 16 },
+  { category: "coordination", cidr: "10.0.160.0/20", firstThirdOctet: 160, stackCapacity: 16 },
+  { category: "networking", cidr: "10.0.176.0/20", firstThirdOctet: 176, stackCapacity: 16 },
+  { category: "observability", cidr: "10.0.192.0/20", firstThirdOctet: 192, stackCapacity: 16 },
+  { category: "devops", cidr: "10.0.208.0/20", firstThirdOctet: 208, stackCapacity: 16 },
+  { category: "identity", cidr: "10.0.224.0/22", firstThirdOctet: 224, stackCapacity: 4 },
+  { category: "security", cidr: "10.0.228.0/22", firstThirdOctet: 228, stackCapacity: 4 },
+  { category: "vector", cidr: "10.0.232.0/21", firstThirdOctet: 232, stackCapacity: 8 },
+  { category: "web", cidr: "10.0.240.0/21", firstThirdOctet: 240, stackCapacity: 8 }
+];
 
 function text(value) {
   return value.trim().replace(/\n{3,}/g, "\n\n") + "\n";
@@ -103,6 +122,7 @@ function serverData(label, host) {
 
 function provisionData(target, stack) {
   const diskSize = target.diskGb ?? stack.defaultDiskGb ?? "40";
+  const prefix = target.prefix ?? 24;
   return {
     label: `Provision ${target.label}`,
     node: target.proxmoxNode ?? "pve1",
@@ -147,14 +167,14 @@ function provisionData(target, stack) {
         rateLimitMbps: "",
         macAddress: "",
         queues: "",
-        ipAddress: `${target.ip}/24`,
+        ipAddress: `${target.ip}/${prefix}`,
         gw: stack.gateway,
         dns1: "1.1.1.1",
         dns2: "8.8.8.8",
         domain: stack.domain
       }
     ],
-    ipAddress: `${target.ip}/24`,
+    ipAddress: `${target.ip}/${prefix}`,
     gw: stack.gateway,
     dns1: "1.1.1.1",
     dns2: "8.8.8.8",
@@ -249,6 +269,149 @@ function branchX(index, startX = LAYOUT.branchStartX) {
 
 function branchCenterX(count, startX = LAYOUT.branchStartX) {
   return Math.round(startX + ((count - 1) * LAYOUT.branchGapX) / 2);
+}
+
+function stackHaVariants(stack) {
+  return stack.haVariants ?? (stack.ha ? [stack.ha] : []);
+}
+
+function topLevelCategory(category) {
+  return category.split("/")[0];
+}
+
+function categoryIpBlock(category) {
+  const topLevel = topLevelCategory(category);
+  const block = CATEGORY_IP_BLOCKS.find((entry) => entry.category === topLevel);
+  if (!block) {
+    throw new Error(`Missing IP block for category ${topLevel}`);
+  }
+  return block;
+}
+
+function replaceIpReferences(value, replacements) {
+  let result = value;
+  for (const [oldIp, newIp] of replacements.entries()) {
+    result = result.replaceAll(oldIp, newIp);
+  }
+  return result;
+}
+
+function replaceOwnStringProperties(target, replacements) {
+  for (const key of Object.keys(target)) {
+    const descriptor = Object.getOwnPropertyDescriptor(target, key);
+    if (descriptor?.value && typeof descriptor.value === "string") {
+      target[key] = replaceIpReferences(descriptor.value, replacements);
+    }
+  }
+}
+
+function applyNetworkPlan(stacksToPlan) {
+  const categoryUsage = new Map();
+  for (const stack of stacksToPlan) {
+    const block = categoryIpBlock(stack.category);
+    const used = categoryUsage.get(block.category) ?? 0;
+    if (used >= block.stackCapacity) {
+      throw new Error(`${block.category} exceeds ${block.cidr} stack capacity`);
+    }
+    categoryUsage.set(block.category, used + 1);
+
+    const thirdOctet = block.firstThirdOctet + used;
+    const gateway = `10.0.${thirdOctet}.1`;
+    const stackCidr = `10.0.${thirdOctet}.0/24`;
+    const replacements = new Map();
+    const replaceIp = (oldIp, newIp) => {
+      if (oldIp && oldIp !== newIp) {
+        replacements.set(oldIp, newIp);
+      }
+      return newIp;
+    };
+
+    stack.gateway = replaceIp(stack.gateway, gateway);
+    stack.network = {
+      rootCidr: ROOT_NETWORK_CIDR,
+      category: block.category,
+      categoryCidr: block.cidr,
+      stackCidr,
+      gateway
+    };
+
+    stack.single.target.ip = replaceIp(stack.single.target.ip, `10.0.${thirdOctet}.50`);
+    stack.single.target.prefix = 24;
+    stack.single.existingHost = replaceIp(stack.single.existingHost, stack.single.target.ip);
+
+    for (const ha of stackHaVariants(stack)) {
+      const roleOffsets = new Map();
+      const roleCounts = new Map();
+      for (const target of ha.nodes) {
+        if (!roleOffsets.has(target.role)) {
+          roleOffsets.set(target.role, 10 + roleOffsets.size * 10);
+        }
+        const count = (roleCounts.get(target.role) ?? 0) + 1;
+        roleCounts.set(target.role, count);
+        target.ip = replaceIp(target.ip, `10.0.${thirdOctet}.${roleOffsets.get(target.role) + count}`);
+        target.prefix = 24;
+      }
+    }
+
+    replaceOwnStringProperties(stack, replacements);
+    replaceOwnStringProperties(stack.single, replacements);
+    replaceOwnStringProperties(stack.single.target, replacements);
+    for (const ha of stackHaVariants(stack)) {
+      replaceOwnStringProperties(ha, replacements);
+      for (const target of ha.nodes) {
+        replaceOwnStringProperties(target, replacements);
+      }
+    }
+  }
+}
+
+function nodeDetectionScript(title, nodes) {
+  const expectedIps = nodes.map((target) => target.ip).join(" ");
+  const cases = nodes
+    .map((target, index) => `  ${target.ip}) NODE_NAME='${shellQuote(target.label)}'; NODE_ROLE='${shellQuote(target.role)}'; NODE_INDEX=${index + 1} ;;`)
+    .join("\n");
+  return `
+log() { printf '[${title}] %s\\n' "$*"; }
+detect_current_ip() {
+  for candidate in $(hostname -I 2>/dev/null); do
+    case " ${expectedIps} " in
+      *" $candidate "*) printf '%s' "$candidate"; return 0 ;;
+    esac
+  done
+  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,"/"); print a[1]; exit}'
+}
+CURRENT_IP="\${OCTASTACK_NODE_IP:-$(detect_current_ip)}"
+NODE_NAME="$(hostname -s)"
+NODE_ROLE="unknown"
+NODE_INDEX=0
+case "$CURRENT_IP" in
+${cases}
+esac
+if [ "$NODE_ROLE" = "unknown" ]; then
+  log "unable to match current host IP ($CURRENT_IP) to the generated topology"
+  exit 1
+fi
+log "running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)"
+`;
+}
+
+function waitForTcpScript() {
+  return `
+wait_for_tcp() {
+  host="$1"
+  port="$2"
+  timeout="\${3:-180}"
+  start="$(date +%s)"
+  while ! timeout 2 bash -c "cat < /dev/null > /dev/tcp/$host/$port" >/dev/null 2>&1; do
+    now="$(date +%s)"
+    if [ "$((now - start))" -ge "$timeout" ]; then
+      log "timeout waiting for $host:$port"
+      return 1
+    fi
+    sleep 5
+  done
+}
+`;
 }
 
 function createSingleProvisionedWorkflow(stack) {
@@ -358,16 +521,16 @@ function createSingleExistingWorkflow(stack) {
   return { nodes, edges };
 }
 
-function createHaProvisionedWorkflow(stack) {
+function createHaProvisionedWorkflow(stack, ha) {
   const nodes = [
-    node("node_trigger", "triggerNode", LAYOUT.trigger.x, LAYOUT.trigger.y, triggerData(`${stack.ha.title} provisioned`, stack.variables)),
+    node("node_trigger", "triggerNode", LAYOUT.trigger.x, LAYOUT.trigger.y, triggerData(`${ha.title} provisioned`, stack.variables)),
     node("node_context", "proxmoxConfigNode", LAYOUT.context.x, LAYOUT.context.y, {
       label: "Cluster Context",
       profileId: PROFILE_ID
     })
   ];
   const edges = [edge("edge_trigger_context", "node_trigger", "node_context")];
-  stack.ha.nodes.forEach((target, index) => {
+  ha.nodes.forEach((target, index) => {
     const x = branchX(index, LAYOUT.provisionBranchStartX);
     const provisionId = `node_provision_${slug(target.label)}`;
     const waitId = `node_wait_${slug(target.label)}`;
@@ -379,14 +542,14 @@ function createHaProvisionedWorkflow(stack) {
     }));
     edges.push(edge(`edge_${slug(target.label)}_wait`, provisionId, waitId));
   });
-  const centerX = branchCenterX(stack.ha.nodes.length, LAYOUT.provisionBranchStartX);
+  const centerX = branchCenterX(ha.nodes.length, LAYOUT.provisionBranchStartX);
   let previousId = "node_bootstrap";
   let firstBootstrapId = "node_bootstrap";
   let healthY = LAYOUT.haProvisioned.healthY;
   let endY = LAYOUT.haProvisioned.endY;
 
-  if (stack.ha.steps?.length) {
-    const stepResult = appendCommandSteps(nodes, edges, "", stack.ha.steps, {
+  if (ha.steps?.length) {
+    const stepResult = appendCommandSteps(nodes, edges, "", ha.steps, {
       idPrefix: "node_step",
       edgePrefix: "edge_step",
       x: centerX + LAYOUT.commandInsetX,
@@ -398,10 +561,10 @@ function createHaProvisionedWorkflow(stack) {
     endY = healthY + 405;
   } else {
     nodes.push(node("node_bootstrap", "customNode", centerX, LAYOUT.haProvisioned.bootstrapY, {
-      label: `Bootstrap ${stack.ha.title}`,
+      label: `Bootstrap ${ha.title}`,
       customNodeId: "",
       scriptType: "shell",
-      scriptContent: stack.ha.install,
+      scriptContent: ha.install,
       sudo: true,
       method: "GET",
       path: "",
@@ -409,12 +572,12 @@ function createHaProvisionedWorkflow(stack) {
     }));
   }
 
-  for (const target of stack.ha.nodes) {
+  for (const target of ha.nodes) {
     edges.push(edge(`edge_${slug(target.label)}_bootstrap`, `node_wait_${slug(target.label)}`, firstBootstrapId));
   }
   nodes.push(node("node_health", "configCommandNode", centerX + LAYOUT.commandInsetX, healthY, {
-    label: `${stack.ha.title} health check`,
-    command: stack.ha.health,
+    label: `${ha.title} health check`,
+    command: ha.health,
     sudo: false
   }));
   nodes.push(node("node_end", "endNode", centerX + LAYOUT.commandInsetX + 50, endY, { label: "End" }));
@@ -423,55 +586,62 @@ function createHaProvisionedWorkflow(stack) {
   return { nodes, edges };
 }
 
-function createHaExistingWorkflow(stack) {
+function createHaExistingWorkflow(stack, ha) {
   const nodes = [
-    node("node_trigger", "triggerNode", LAYOUT.trigger.x, LAYOUT.trigger.y, triggerData(`${stack.ha.title} existing`, stack.variables)),
-    node("node_runner", "serverNode", LAYOUT.haExisting.runner.x, LAYOUT.haExisting.runner.y, {
-      label: "Automation Runner",
-      hostname: stack.ha.runnerHost,
-      targets: [serverTarget("target-runner", "Automation Runner", stack.ha.runnerHost)]
-    }),
-    node("node_wait_runner", "waitUntilUpNode", LAYOUT.haExisting.wait.x, LAYOUT.haExisting.wait.y, waitData("Wait for automation runner"))
+    node("node_trigger", "triggerNode", LAYOUT.trigger.x, LAYOUT.trigger.y, triggerData(`${ha.title} existing`, stack.variables))
   ];
-  const edges = [
-    edge("edge_trigger_runner", "node_trigger", "node_runner"),
-    edge("edge_runner_wait", "node_runner", "node_wait_runner")
-  ];
-  let previousId = "node_wait_runner";
+  const edges = [];
+  ha.nodes.forEach((target, index) => {
+    const x = branchX(index);
+    const serverId = `node_server_${slug(target.label)}`;
+    const waitId = `node_wait_${slug(target.label)}`;
+    nodes.push(node(serverId, "serverNode", x, LAYOUT.haExisting.server.y, serverData(target.label, target.ip)));
+    nodes.push(node(waitId, "waitUntilUpNode", x, LAYOUT.haExisting.wait.y, waitData(`Wait ${target.label}`)));
+    edges.push(edge(`edge_trigger_${slug(target.label)}`, "node_trigger", serverId, {
+      mode: "parallel",
+      order: index + 1
+    }));
+    edges.push(edge(`edge_${slug(target.label)}_wait`, serverId, waitId));
+  });
+  const centerX = branchCenterX(ha.nodes.length);
+  let previousId = "node_bootstrap";
+  let firstBootstrapId = "node_bootstrap";
   let healthY = LAYOUT.haExisting.health.y;
   let endY = LAYOUT.haExisting.end.y;
 
-  if (stack.ha.steps?.length) {
-    const stepResult = appendCommandSteps(nodes, edges, "node_wait_runner", stack.ha.steps, {
+  if (ha.steps?.length) {
+    const stepResult = appendCommandSteps(nodes, edges, "", ha.steps, {
       idPrefix: "node_step",
       edgePrefix: "edge_step",
-      x: LAYOUT.haExisting.bootstrap.x,
+      x: centerX + LAYOUT.commandInsetX,
       y: LAYOUT.haExisting.bootstrap.y
     });
+    firstBootstrapId = stepResult.firstId;
     previousId = stepResult.lastId;
     healthY = Math.max(healthY, stepResult.nextY);
     endY = healthY + 405;
   } else {
-    nodes.push(node("node_bootstrap", "customNode", LAYOUT.haExisting.bootstrap.x, LAYOUT.haExisting.bootstrap.y, {
-      label: `Bootstrap ${stack.ha.title}`,
+    nodes.push(node("node_bootstrap", "customNode", centerX, LAYOUT.haExisting.bootstrap.y, {
+      label: `Bootstrap ${ha.title}`,
       customNodeId: "",
       scriptType: "shell",
-      scriptContent: stack.ha.install,
+      scriptContent: ha.install,
       sudo: true,
       method: "GET",
       path: "",
       body: "{}"
     }));
-    edges.push(edge("edge_wait_bootstrap", "node_wait_runner", "node_bootstrap"));
-    previousId = "node_bootstrap";
+  }
+  for (const target of ha.nodes) {
+    edges.push(edge(`edge_${slug(target.label)}_bootstrap`, `node_wait_${slug(target.label)}`, firstBootstrapId));
   }
 
-  nodes.push(node("node_health", "configCommandNode", LAYOUT.haExisting.health.x, healthY, {
-    label: `${stack.ha.title} health check`,
-    command: stack.ha.health,
+  nodes.push(node("node_health", "configCommandNode", centerX + LAYOUT.commandInsetX, healthY, {
+    label: `${ha.title} health check`,
+    command: ha.health,
     sudo: false
   }));
-  nodes.push(node("node_end", "endNode", LAYOUT.haExisting.end.x, endY, { label: "End" }));
+  nodes.push(node("node_end", "endNode", centerX + LAYOUT.commandInsetX + 50, endY, { label: "End" }));
   edges.push(edge("edge_bootstrap_health", previousId, "node_health"));
   edges.push(edge("edge_health_end", "node_health", "node_end"));
   return { nodes, edges };
@@ -522,7 +692,7 @@ sudo apt-get update
 sudo apt-get install -y postgresql postgresql-contrib
 sudo sed -i "s/^#listen_addresses.*/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf
 sudo tee -a /etc/postgresql/*/main/pg_hba.conf >/dev/null <<'EOF'
-host all all 10.0.0.0/8 scram-sha-256
+host all all 10.0.0.0/16 scram-sha-256
 EOF
 sudo systemctl enable --now postgresql
 sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='app_user'" | grep -q 1 || sudo -u postgres psql -c "CREATE ROLE app_user LOGIN PASSWORD 'change-me';"
@@ -531,124 +701,87 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='app_db'" | g
 }
 
 function pgHaInstall(nodes) {
+  const etcdHosts = nodes.filter((n) => n.role === "etcd");
+  const postgresHosts = nodes.filter((n) => n.role === "postgres");
+  const loadBalancers = nodes.filter((n) => n.role === "load_balancer");
+  const etcdEndpoints = etcdHosts.map((n) => `${n.ip}:2379`).join(",");
+  const haproxyServers = postgresHosts.map((n) => `  server ${n.label} ${n.ip}:5432 check port 8008`).join("\n");
   return text(`
 set -euo pipefail
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
-cat >/tmp/postgresql-ha.ini <<'INVENTORY'
-[etcd]
-${nodes.filter((n) => n.role === "etcd").map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
+${nodeDetectionScript("postgresql-ha", nodes)}
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y curl jq chrony
+systemctl enable --now chrony
 
-[postgres]
-${nodes.filter((n) => n.role === "postgres").map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-
-[load_balancer]
-${nodes.filter((n) => n.role === "load_balancer").map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-INVENTORY
-cat >/tmp/postgresql-ha.yml <<'PLAYBOOK'
-- hosts: all
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: [curl, jq, chrony]
-        state: present
-        update_cache: true
-    - ansible.builtin.service:
-        name: chrony
-        state: started
-        enabled: true
-
-- hosts: etcd
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: etcd
-        state: present
-    - ansible.builtin.copy:
-        dest: /etc/default/etcd
-        mode: "0644"
-        content: |
-          ETCD_NAME="{{ inventory_hostname }}"
-          ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
-          ETCD_ADVERTISE_CLIENT_URLS="http://{{ inventory_hostname }}:2379"
-    - ansible.builtin.service:
-        name: etcd
-        state: restarted
-        enabled: true
-
-- hosts: postgres
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: [postgresql, postgresql-contrib, python3-pip, patroni]
-        state: present
-    - ansible.builtin.copy:
-        dest: /etc/patroni.yml
-        mode: "0640"
-        content: |
-          scope: octastack-postgres
-          namespace: /service/
-          name: "{{ inventory_hostname }}"
-          restapi:
-            listen: 0.0.0.0:8008
-            connect_address: "{{ inventory_hostname }}:8008"
-          etcd3:
-            hosts: ${nodes.filter((n) => n.role === "etcd").map((n) => `${n.ip}:2379`).join(",")}
-          bootstrap:
-            dcs:
-              ttl: 30
-              loop_wait: 10
-              retry_timeout: 10
-              maximum_lag_on_failover: 1048576
-              postgresql:
-                use_pg_rewind: true
-            initdb:
-              - encoding: UTF8
-              - data-checksums
-          postgresql:
-            listen: 0.0.0.0:5432
-            connect_address: "{{ inventory_hostname }}:5432"
-            data_dir: /var/lib/postgresql/patroni
-            authentication:
-              superuser:
-                username: postgres
-                password: change-me
-              replication:
-                username: replicator
-                password: change-me
-    - ansible.builtin.service:
-        name: patroni
-        state: restarted
-        enabled: true
-
-- hosts: load_balancer
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: [haproxy, keepalived]
-        state: present
-    - ansible.builtin.copy:
-        dest: /etc/haproxy/haproxy.cfg
-        mode: "0644"
-        content: |
-          global
-            daemon
-            maxconn 4096
-          defaults
-            mode tcp
-            timeout connect 5s
-            timeout client 30s
-            timeout server 30s
-          listen postgres_rw
-            bind *:5432
-            option httpchk GET /primary
-${nodes.filter((n) => n.role === "postgres").map((n) => `            server ${n.label} ${n.ip}:5432 check port 8008`).join("\n")}
-    - ansible.builtin.service:
-        name: haproxy
-        state: restarted
-        enabled: true
-PLAYBOOK
-ansible-playbook -i /tmp/postgresql-ha.ini /tmp/postgresql-ha.yml
+if [ "$NODE_ROLE" = "etcd" ]; then
+  log "configuring etcd member"
+  DEBIAN_FRONTEND=noninteractive apt-get install -y etcd
+  cat >/etc/default/etcd <<EOF
+ETCD_NAME="$NODE_NAME"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+ETCD_ADVERTISE_CLIENT_URLS="http://$CURRENT_IP:2379"
+EOF
+  systemctl restart etcd
+  systemctl enable etcd
+elif [ "$NODE_ROLE" = "postgres" ]; then
+  log "configuring Patroni PostgreSQL member"
+  DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib python3-pip patroni
+  cat >/etc/patroni.yml <<EOF
+scope: octastack-postgres
+namespace: /service/
+name: "$NODE_NAME"
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: "$CURRENT_IP:8008"
+etcd3:
+  hosts: ${etcdEndpoints}
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: "$CURRENT_IP:5432"
+  data_dir: /var/lib/postgresql/patroni
+  authentication:
+    superuser:
+      username: postgres
+      password: change-me
+    replication:
+      username: replicator
+      password: change-me
+EOF
+  systemctl restart patroni
+  systemctl enable patroni
+elif [ "$NODE_ROLE" = "load_balancer" ]; then
+  log "configuring HAProxy PostgreSQL frontend"
+  DEBIAN_FRONTEND=noninteractive apt-get install -y haproxy keepalived
+  cat >/etc/haproxy/haproxy.cfg <<'EOF'
+global
+  daemon
+  maxconn 4096
+defaults
+  mode tcp
+  timeout connect 5s
+  timeout client 30s
+  timeout server 30s
+listen postgres_rw
+  bind *:5432
+  option httpchk GET /primary
+${haproxyServers}
+EOF
+  systemctl restart haproxy
+  systemctl enable haproxy
+else
+  log "no PostgreSQL HA action for role $NODE_ROLE"
+fi
 `);
 }
 
@@ -665,53 +798,69 @@ sudo systemctl enable --now redis-server
 
 function redisHaInstall(nodes) {
   const redisHosts = nodes.filter((n) => n.role === "redis");
+  const primary = redisHosts[0];
   return text(`
 set -euo pipefail
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
-cat >/tmp/redis-sentinel.ini <<'INVENTORY'
-[redis]
-${redisHosts.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-INVENTORY
-cat >/tmp/redis-sentinel.yml <<'PLAYBOOK'
-- hosts: redis
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: redis-server
-        state: present
-        update_cache: true
-    - ansible.builtin.copy:
-        dest: /etc/redis/redis.conf
-        mode: "0644"
-        content: |
-          bind 0.0.0.0
-          protected-mode no
-          port 6379
-          appendonly yes
-          dir /var/lib/redis
-    - ansible.builtin.lineinfile:
-        path: /etc/redis/redis.conf
-        line: "replicaof ${redisHosts[0].ip} 6379"
-      when: inventory_hostname != "${redisHosts[0].ip}"
-    - ansible.builtin.copy:
-        dest: /etc/redis/sentinel.conf
-        mode: "0644"
-        content: |
-          port 26379
-          sentinel monitor redis-ha ${redisHosts[0].ip} 6379 2
-          sentinel down-after-milliseconds redis-ha 5000
-          sentinel failover-timeout redis-ha 60000
-          sentinel parallel-syncs redis-ha 1
-    - ansible.builtin.service:
-        name: redis-server
-        state: restarted
-        enabled: true
-    - ansible.builtin.shell: redis-server /etc/redis/sentinel.conf --sentinel
-      async: 45
-      poll: 0
-PLAYBOOK
-ansible-playbook -i /tmp/redis-sentinel.ini /tmp/redis-sentinel.yml
+${nodeDetectionScript("redis-ha", redisHosts)}
+${waitForTcpScript()}
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server
+cat >/etc/redis/redis.conf <<EOF
+bind 0.0.0.0
+protected-mode no
+port 6379
+appendonly yes
+dir /var/lib/redis
+EOF
+if [ "$CURRENT_IP" != "${primary.ip}" ]; then
+  log "waiting for primary ${primary.ip}:6379"
+  wait_for_tcp "${primary.ip}" 6379 180
+  echo "replicaof ${primary.ip} 6379" >>/etc/redis/redis.conf
+fi
+cat >/etc/redis/sentinel.conf <<EOF
+port 26379
+sentinel monitor redis-ha ${primary.ip} 6379 2
+sentinel down-after-milliseconds redis-ha 5000
+sentinel failover-timeout redis-ha 60000
+sentinel parallel-syncs redis-ha 1
+EOF
+systemctl restart redis-server
+systemctl enable redis-server
+pkill -f 'redis-server .*sentinel.conf' || true
+install -d -m 0755 /var/log/redis
+nohup redis-server /etc/redis/sentinel.conf --sentinel >/var/log/redis/sentinel.log 2>&1 &
+log "redis and sentinel started"
+`);
+}
+
+function redisClusterInstall(nodes) {
+  const redisHosts = nodes.filter((n) => n.role === "redis");
+  return text(`
+set -euo pipefail
+${nodeDetectionScript("redis-cluster-ha", redisHosts)}
+${waitForTcpScript()}
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y redis-server
+cat >/etc/redis/redis.conf <<EOF
+bind 0.0.0.0
+protected-mode no
+port 6379
+appendonly yes
+dir /var/lib/redis
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 5000
+cluster-announce-ip $CURRENT_IP
+EOF
+systemctl restart redis-server
+systemctl enable redis-server
+if [ "$NODE_INDEX" = "1" ]; then
+  for peer in ${redisHosts.map((node) => node.ip).join(" ")}; do
+    wait_for_tcp "$peer" 6379 240
+  done
+  yes yes | redis-cli --cluster create ${redisHosts.map((node) => `${node.ip}:6379`).join(" ")} --cluster-replicas 1 || true
+  redis-cli cluster nodes
+fi
 `);
 }
 
@@ -744,75 +893,50 @@ sudo systemctl enable --now kafka
 
 function kafkaHaInstall(nodes) {
   const brokers = nodes.filter((n) => n.role === "broker");
+  const controllers = brokers.map((n, i) => `${i + 1}@${n.ip}:9093`).join(",");
   return text(`
 set -euo pipefail
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
-cat >/tmp/kafka-kraft.ini <<'INVENTORY'
-[brokers]
-${brokers.map((n, i) => `${n.ip} node_id=${i + 1} node_name=${n.label}`).join("\n")}
-INVENTORY
-cat >/tmp/kafka-kraft.yml <<'PLAYBOOK'
-- hosts: brokers
-  become: true
-  vars:
-    kafka_version: "3.7.0"
-    cluster_id: "MkU3OEVBNTcwNTJENDM2Qk"
-    controllers: "${brokers.map((n, i) => `${i + 1}@${n.ip}:9093`).join(",")}"
-  tasks:
-    - ansible.builtin.apt:
-        name: [openjdk-17-jre-headless, curl, tar]
-        state: present
-        update_cache: true
-    - ansible.builtin.user:
-        name: kafka
-        system: true
-        create_home: true
-        home: /opt/kafka
-    - ansible.builtin.shell: |
-        curl -fsSL https://archive.apache.org/dist/kafka/{{ kafka_version }}/kafka_2.13-{{ kafka_version }}.tgz -o /tmp/kafka.tgz
-        tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka
-        chown -R kafka:kafka /opt/kafka
-    - ansible.builtin.copy:
-        dest: /opt/kafka/config/kraft/server.properties
-        owner: kafka
-        group: kafka
-        mode: "0644"
-        content: |
-          process.roles=broker,controller
-          node.id={{ node_id }}
-          controller.quorum.voters={{ controllers }}
-          listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-          advertised.listeners=PLAINTEXT://{{ inventory_hostname }}:9092
-          controller.listener.names=CONTROLLER
-          listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-          log.dirs=/var/lib/kafka
-          offsets.topic.replication.factor=3
-          transaction.state.log.replication.factor=3
-          transaction.state.log.min.isr=2
-          min.insync.replicas=2
-    - ansible.builtin.shell: /opt/kafka/bin/kafka-storage.sh format -t {{ cluster_id }} -c /opt/kafka/config/kraft/server.properties --ignore-formatted
-      become_user: kafka
-    - ansible.builtin.copy:
-        dest: /etc/systemd/system/kafka.service
-        mode: "0644"
-        content: |
-          [Unit]
-          Description=Apache Kafka KRaft
-          After=network-online.target
-          [Service]
-          User=kafka
-          ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties
-          Restart=always
-          [Install]
-          WantedBy=multi-user.target
-    - ansible.builtin.systemd:
-        name: kafka
-        state: restarted
-        enabled: true
-        daemon_reload: true
-PLAYBOOK
-ansible-playbook -i /tmp/kafka-kraft.ini /tmp/kafka-kraft.yml
+${nodeDetectionScript("kafka-ha", brokers)}
+KAFKA_VERSION="3.7.0"
+KAFKA_CLUSTER_ID="MkU3OEVBNTcwNTJENDM2Qk"
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jre-headless curl tar
+useradd -r -m -U -d /opt/kafka kafka || true
+curl -fsSL "https://archive.apache.org/dist/kafka/$KAFKA_VERSION/kafka_2.13-$KAFKA_VERSION.tgz" -o /tmp/kafka.tgz
+tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka
+chown -R kafka:kafka /opt/kafka
+install -d -o kafka -g kafka -m 0750 /var/lib/kafka
+cat >/opt/kafka/config/kraft/server.properties <<EOF
+process.roles=broker,controller
+node.id=$NODE_INDEX
+controller.quorum.voters=${controllers}
+listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+advertised.listeners=PLAINTEXT://$CURRENT_IP:9092
+controller.listener.names=CONTROLLER
+listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+log.dirs=/var/lib/kafka
+offsets.topic.replication.factor=3
+transaction.state.log.replication.factor=3
+transaction.state.log.min.isr=2
+min.insync.replicas=2
+EOF
+chown kafka:kafka /opt/kafka/config/kraft/server.properties
+sudo -u kafka /opt/kafka/bin/kafka-storage.sh format -t "$KAFKA_CLUSTER_ID" -c /opt/kafka/config/kraft/server.properties --ignore-formatted
+cat >/etc/systemd/system/kafka.service <<'EOF'
+[Unit]
+Description=Apache Kafka KRaft
+After=network-online.target
+[Service]
+User=kafka
+ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties
+Restart=always
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl restart kafka
+systemctl enable kafka
+log "kafka broker/controller started"
 `);
 }
 
@@ -830,46 +954,32 @@ sudo rabbitmqctl set_permissions -p / app_user ".*" ".*" ".*"
 
 function rabbitHaInstall(nodes) {
   const members = nodes.filter((n) => n.role === "rabbitmq");
+  const primary = members[0];
   return text(`
 set -euo pipefail
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
-cat >/tmp/rabbitmq-ha.ini <<'INVENTORY'
-[rabbitmq]
-${members.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-INVENTORY
-cat >/tmp/rabbitmq-ha.yml <<'PLAYBOOK'
-- hosts: rabbitmq
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: rabbitmq-server
-        state: present
-        update_cache: true
-    - ansible.builtin.copy:
-        dest: /var/lib/rabbitmq/.erlang.cookie
-        owner: rabbitmq
-        group: rabbitmq
-        mode: "0400"
-        content: "OCTASTACKRABBITMQCOOKIE"
-    - ansible.builtin.service:
-        name: rabbitmq-server
-        state: restarted
-        enabled: true
-    - ansible.builtin.shell: rabbitmq-plugins enable rabbitmq_management
-    - ansible.builtin.shell: |
-        rabbitmqctl stop_app
-        rabbitmqctl reset
-        rabbitmqctl join_cluster rabbit@${members[0].ip}
-        rabbitmqctl start_app
-      when: inventory_hostname != "${members[0].ip}"
-    - ansible.builtin.shell: |
-        rabbitmqctl set_policy ha-quorum "^ha\\." '{"queue-type":"quorum"}' --apply-to queues
-        rabbitmqctl add_user app_user change-me || true
-        rabbitmqctl set_permissions -p / app_user ".*" ".*" ".*"
-      when: inventory_hostname == "${members[0].ip}"
-PLAYBOOK
-ansible-playbook -i /tmp/rabbitmq-ha.ini /tmp/rabbitmq-ha.yml
+${nodeDetectionScript("rabbitmq-ha", members)}
+${waitForTcpScript()}
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y rabbitmq-server
+printf '%s' 'OCTASTACKRABBITMQCOOKIE' >/var/lib/rabbitmq/.erlang.cookie
+chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
+chmod 0400 /var/lib/rabbitmq/.erlang.cookie
+systemctl restart rabbitmq-server
+systemctl enable rabbitmq-server
+rabbitmq-plugins enable rabbitmq_management
+if [ "$CURRENT_IP" != "${primary.ip}" ]; then
+  log "waiting for primary RabbitMQ ${primary.ip}:5672"
+  wait_for_tcp "${primary.ip}" 5672 180
+  rabbitmqctl stop_app
+  rabbitmqctl reset
+  rabbitmqctl join_cluster rabbit@${primary.ip}
+  rabbitmqctl start_app
+else
+  rabbitmqctl set_policy ha-quorum "^ha\\." '{"queue-type":"quorum"}' --apply-to queues
+  rabbitmqctl add_user app_user change-me || true
+  rabbitmqctl set_permissions -p / app_user ".*" ".*" ".*"
+fi
+log "rabbitmq member configured"
 `);
 }
 
@@ -898,54 +1008,30 @@ kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/
 function vanillaHaInstall(nodes) {
   const controlPlanes = nodes.filter((n) => n.role === "control_plane");
   const workers = nodes.filter((n) => n.role === "worker");
+  const primary = controlPlanes[0];
   return text(`
 set -euo pipefail
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
-cat >/tmp/vanilla-k8s-ha.ini <<'INVENTORY'
-[control_plane]
-${controlPlanes.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-
-[worker]
-${workers.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-INVENTORY
-cat >/tmp/vanilla-k8s-ha.yml <<'PLAYBOOK'
-- hosts: all
-  become: true
-  tasks:
-    - ansible.builtin.shell: |
-        swapoff -a
-        modprobe br_netfilter
-        sysctl -w net.bridge.bridge-nf-call-iptables=1
-        apt-get update
-        apt-get install -y containerd apt-transport-https ca-certificates curl gpg
-        systemctl enable --now containerd
-    - ansible.builtin.shell: |
-        mkdir -p /etc/apt/keyrings
-        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
-        apt-get update
-        apt-get install -y kubelet kubeadm kubectl
-
-- hosts: control_plane[0]
-  become: true
-  tasks:
-    - ansible.builtin.shell: kubeadm init --control-plane-endpoint "10.30.50.10:6443" --upload-certs --pod-network-cidr=192.168.0.0/16
-    - ansible.builtin.shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
-
-- hosts: control_plane:!control_plane[0]
-  become: true
-  tasks:
-    - ansible.builtin.debug:
-        msg: "Join additional control plane nodes using the kubeadm join command printed by the first control plane."
-
-- hosts: worker
-  become: true
-  tasks:
-    - ansible.builtin.debug:
-        msg: "Join worker nodes using the kubeadm join command printed by the first control plane."
-PLAYBOOK
-ansible-playbook -i /tmp/vanilla-k8s-ha.ini /tmp/vanilla-k8s-ha.yml
+${nodeDetectionScript("vanilla-k8s-ha", [...controlPlanes, ...workers])}
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https ca-certificates curl gpg containerd
+swapoff -a
+modprobe br_netfilter
+sysctl -w net.bridge.bridge-nf-call-iptables=1
+systemctl enable --now containerd
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" >/etc/apt/sources.list.d/kubernetes.list
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y kubelet kubeadm kubectl
+if [ "$CURRENT_IP" = "${primary.ip}" ]; then
+  log "initializing first control plane"
+  kubeadm init --control-plane-endpoint "${primary.ip}:6443" --upload-certs --pod-network-cidr=192.168.0.0/16
+  kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
+elif [ "$NODE_ROLE" = "control_plane" ]; then
+  log "join this control plane with the kubeadm join command printed by ${primary.label}"
+else
+  log "join this worker with the kubeadm join command printed by ${primary.label}"
+fi
 `);
 }
 
@@ -971,59 +1057,44 @@ helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system 
 function rke2HaInstall(nodes) {
   const servers = nodes.filter((n) => n.role === "rke2_server");
   const agents = nodes.filter((n) => n.role === "rke2_agent");
+  const primary = servers[0];
   return text(`
 set -euo pipefail
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
-cat >/tmp/rke2-rancher-ha.ini <<'INVENTORY'
-[rke2_server]
-${servers.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-
-[rke2_agent]
-${agents.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-INVENTORY
-cat >/tmp/rke2-rancher-ha.yml <<'PLAYBOOK'
-- hosts: rke2_server[0]
-  become: true
-  tasks:
-    - ansible.builtin.shell: |
-        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -
-        systemctl enable --now rke2-server
-
-- hosts: rke2_server:!rke2_server[0]
-  become: true
-  tasks:
-    - ansible.builtin.shell: |
-        mkdir -p /etc/rancher/rke2
-        echo "server: https://${servers[0].ip}:9345" > /etc/rancher/rke2/config.yaml
-        echo "token: replace-with-rke2-token" >> /etc/rancher/rke2/config.yaml
-        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -
-        systemctl enable --now rke2-server
-
-- hosts: rke2_agent
-  become: true
-  tasks:
-    - ansible.builtin.shell: |
-        mkdir -p /etc/rancher/rke2
-        echo "server: https://${servers[0].ip}:9345" > /etc/rancher/rke2/config.yaml
-        echo "token: replace-with-rke2-token" >> /etc/rancher/rke2/config.yaml
-        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent sh -
-        systemctl enable --now rke2-agent
-
-- hosts: rke2_server[0]
-  become: true
-  tasks:
-    - ansible.builtin.shell: |
-        export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
-        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-        kubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -
-        helm repo add jetstack https://charts.jetstack.io
-        helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
-        helm repo update
-        helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
-        helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me
-PLAYBOOK
-ansible-playbook -i /tmp/rke2-rancher-ha.ini /tmp/rke2-rancher-ha.yml
+${nodeDetectionScript("rke2-ha", [...servers, ...agents])}
+${waitForTcpScript()}
+if [ "$CURRENT_IP" = "${primary.ip}" ]; then
+  log "installing first RKE2 server"
+  curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -
+  systemctl enable --now rke2-server
+  export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+  curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  kubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -
+  helm repo add jetstack https://charts.jetstack.io
+  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+  helm repo update
+  helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
+  helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me
+elif [ "$NODE_ROLE" = "rke2_server" ]; then
+  log "joining RKE2 server to ${primary.ip}"
+  wait_for_tcp "${primary.ip}" 9345 300
+  mkdir -p /etc/rancher/rke2
+  {
+    echo "server: https://${primary.ip}:9345"
+    echo "token: replace-with-rke2-token"
+  } >/etc/rancher/rke2/config.yaml
+  curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -
+  systemctl enable --now rke2-server
+else
+  log "joining RKE2 agent to ${primary.ip}"
+  wait_for_tcp "${primary.ip}" 9345 300
+  mkdir -p /etc/rancher/rke2
+  {
+    echo "server: https://${primary.ip}:9345"
+    echo "token: replace-with-rke2-token"
+  } >/etc/rancher/rke2/config.yaml
+  curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent sh -
+  systemctl enable --now rke2-agent
+fi
 `);
 }
 
@@ -1053,65 +1124,35 @@ function monitoringHaInstall(nodes) {
   const grafanas = nodes.filter((n) => n.role === "grafana");
   return text(`
 set -euo pipefail
-sudo apt-get update
-sudo apt-get install -y ansible sshpass
-cat >/tmp/monitoring-ha.ini <<'INVENTORY'
-[prometheus]
-${prometheus.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-
-[alertmanager]
-${alertmanagers.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-
-[grafana]
-${grafanas.map((n) => `${n.ip} node_name=${n.label}`).join("\n")}
-INVENTORY
-cat >/tmp/monitoring-ha.yml <<'PLAYBOOK'
-- hosts: prometheus
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: [prometheus, prometheus-node-exporter]
-        state: present
-        update_cache: true
-    - ansible.builtin.service:
-        name: "{{ item }}"
-        state: restarted
-        enabled: true
-      loop: [prometheus, prometheus-node-exporter]
-
-- hosts: alertmanager
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: prometheus-alertmanager
-        state: present
-    - ansible.builtin.copy:
-        dest: /etc/prometheus/alertmanager.yml
-        mode: "0644"
-        content: |
-          global:
-            resolve_timeout: 5m
-          route:
-            receiver: default
-          receivers:
-            - name: default
-    - ansible.builtin.service:
-        name: prometheus-alertmanager
-        state: restarted
-        enabled: true
-
-- hosts: grafana
-  become: true
-  tasks:
-    - ansible.builtin.apt:
-        name: grafana
-        state: present
-    - ansible.builtin.service:
-        name: grafana-server
-        state: restarted
-        enabled: true
-PLAYBOOK
-ansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml
+${nodeDetectionScript("monitoring-ha", [...prometheus, ...alertmanagers, ...grafanas])}
+apt-get update
+if [ "$NODE_ROLE" = "prometheus" ]; then
+  log "installing Prometheus node"
+  DEBIAN_FRONTEND=noninteractive apt-get install -y prometheus prometheus-node-exporter
+  systemctl restart prometheus prometheus-node-exporter
+  systemctl enable prometheus prometheus-node-exporter
+elif [ "$NODE_ROLE" = "alertmanager" ]; then
+  log "installing Alertmanager node"
+  DEBIAN_FRONTEND=noninteractive apt-get install -y prometheus-alertmanager
+  install -d -m 0755 /etc/prometheus
+  cat >/etc/prometheus/alertmanager.yml <<'EOF'
+global:
+  resolve_timeout: 5m
+route:
+  receiver: default
+receivers:
+  - name: default
+EOF
+  systemctl restart prometheus-alertmanager
+  systemctl enable prometheus-alertmanager
+elif [ "$NODE_ROLE" = "grafana" ]; then
+  log "installing Grafana node"
+  DEBIAN_FRONTEND=noninteractive apt-get install -y grafana
+  systemctl restart grafana-server
+  systemctl enable grafana-server
+else
+  log "no monitoring action for role $NODE_ROLE"
+fi
 `);
 }
 
@@ -1219,16 +1260,21 @@ function composeManifest(def) {
 function containerRuntimeInstallCommand() {
   return `
 set -euo pipefail
+log() { printf '[container-runtime] %s\\n' "$*"; }
 if command -v docker >/dev/null 2>&1; then
+  log "docker is already installed"
   docker --version
   exit 0
 fi
 if command -v apt-get >/dev/null 2>&1; then
+  log "installing docker with apt"
   apt-get update
   DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin
 elif command -v dnf >/dev/null 2>&1; then
+  log "installing docker with dnf"
   dnf install -y docker docker-compose-plugin
 elif command -v yum >/dev/null 2>&1; then
+  log "installing docker with yum"
   yum install -y docker docker-compose-plugin
 else
   echo "Unsupported package manager. Install Docker manually." >&2
@@ -1299,75 +1345,46 @@ docker logs octastack-${def.serviceName} --tail=80 || true
 function containerHaSteps(def, nodes) {
   const serviceSlug = slug(def.displayName);
   const manifest = composeManifest(def);
+  const envText = Object.entries(def.env ?? {}).map(([key, value]) => `${key}=${value}`).join("\n") || `OCTASTACK_SERVICE=${def.displayName}`;
   return [
     {
-      label: `Prepare ${def.displayName} inventory`,
+      label: `Prepare ${def.displayName} node runtime`,
+      command: containerRuntimeInstallCommand()
+    },
+    {
+      label: `Create ${def.displayName} node directories`,
       command: `
 set -euo pipefail
-apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
-cat >/tmp/${serviceSlug}-inventory.ini <<'INVENTORY'
-[${serviceSlug}]
-${inventory(nodes)}
-INVENTORY
+log() { printf '[${serviceSlug}] %s\\n' "$*"; }
+install -d -m 0750 /opt/octastack/${serviceSlug}
+install -d -m 0750 /var/lib/octastack/${serviceSlug}
+cat >/opt/octastack/${serviceSlug}/.env <<'EOF'
+${envText}
+EOF
+chmod 0600 /opt/octastack/${serviceSlug}/.env
+log "directories and environment file prepared"
 `
     },
     {
-      label: `Install ${def.displayName} container runtime`,
+      label: `Render ${def.displayName} node compose`,
       command: `
 set -euo pipefail
-cat >/tmp/${serviceSlug}-runtime.yml <<'PLAYBOOK'
-- hosts: ${serviceSlug}
-  become: true
-  tasks:
-    - ansible.builtin.shell: |
-        if command -v docker >/dev/null 2>&1; then
-          docker --version
-          exit 0
-        fi
-        if command -v apt-get >/dev/null 2>&1; then
-          apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin
-        elif command -v dnf >/dev/null 2>&1; then
-          dnf install -y docker docker-compose-plugin
-        elif command -v yum >/dev/null 2>&1; then
-          yum install -y docker docker-compose-plugin
-        fi
-        systemctl enable --now docker
-PLAYBOOK
-ansible-playbook -i /tmp/${serviceSlug}-inventory.ini /tmp/${serviceSlug}-runtime.yml
+log() { printf '[${serviceSlug}] %s\\n' "$*"; }
+cat >/opt/octastack/${serviceSlug}/compose.yml <<'COMPOSE'
+${manifest}
+COMPOSE
+log "compose manifest rendered"
 `
     },
     {
-      label: `Render ${def.displayName} cluster manifests`,
+      label: `Deploy ${def.displayName} node`,
       command: `
 set -euo pipefail
-cat >/tmp/${serviceSlug}-deploy.yml <<'PLAYBOOK'
-- hosts: ${serviceSlug}
-  become: true
-  tasks:
-    - ansible.builtin.file:
-        path: /opt/octastack/${serviceSlug}
-        state: directory
-        mode: "0750"
-    - ansible.builtin.copy:
-        dest: /opt/octastack/${serviceSlug}/compose.yml
-        mode: "0640"
-        content: |
-${manifest.split("\n").map((line) => `          ${line}`).join("\n")}
-PLAYBOOK
-`
-    },
-    {
-      label: `Deploy ${def.displayName} cluster`,
-      command: `
-set -euo pipefail
-cat >>/tmp/${serviceSlug}-deploy.yml <<'PLAYBOOK'
-    - ansible.builtin.shell: docker compose -f /opt/octastack/${serviceSlug}/compose.yml pull
-    - ansible.builtin.shell: docker compose -f /opt/octastack/${serviceSlug}/compose.yml up -d
-    - ansible.builtin.shell: docker compose -f /opt/octastack/${serviceSlug}/compose.yml ps
-PLAYBOOK
-ansible-playbook -i /tmp/${serviceSlug}-inventory.ini /tmp/${serviceSlug}-deploy.yml
+log() { printf '[${serviceSlug}] %s\\n' "$*"; }
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml pull
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml up -d
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml ps
+log "container deployed"
 `
     },
     {
@@ -1389,10 +1406,994 @@ cat /tmp/${serviceSlug}-topology.md
       label: `Validate ${def.displayName} cluster`,
       command: def.haValidateCommand ?? `
 set -euo pipefail
-ansible -i /tmp/${serviceSlug}-inventory.ini ${serviceSlug} -b -m shell -a 'docker ps --format "{{.Names}} {{.Status}}"'
+log() { printf '[${serviceSlug}] %s\\n' "$*"; }
+docker ps --filter name=octastack-${def.serviceName} --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'
+docker logs octastack-${def.serviceName} --tail=80 || true
+log "local node validation complete"
 `
     }
   ];
+}
+
+function topologyDocumentCommand(title, serviceSlug, nodes, summary) {
+  return `
+set -euo pipefail
+cat >/tmp/${serviceSlug}-topology.md <<'EOF'
+# ${title}
+
+Members:
+${nodes.map((n) => `- ${n.label}: ${n.ip} (${n.role})`).join("\n")}
+
+${summary}
+EOF
+cat /tmp/${serviceSlug}-topology.md
+`;
+}
+
+function clusteredComposeHaSteps(def, nodes, variant) {
+  const serviceSlug = slug(variant.title ?? def.displayName);
+  const renderCommand = variant.renderCommand(def, nodes, variant, serviceSlug);
+  const steps = [
+    {
+      label: `Prepare ${variant.title} node runtime`,
+      command: containerRuntimeInstallCommand()
+    },
+    {
+      label: `Render ${variant.title} node configuration`,
+      command: renderCommand
+    },
+    {
+      label: `Deploy ${variant.title} node`,
+      command: `
+set -euo pipefail
+log() { printf '[${serviceSlug}] %s\\n' "$*"; }
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml pull
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml up -d
+docker compose -f /opt/octastack/${serviceSlug}/compose.yml ps
+      log "node deployment complete"
+`
+    }
+  ];
+  if (variant.postDeployCommand) {
+    steps.push({
+      label: `Initialize ${variant.title} node`,
+      command: variant.postDeployCommand(def, nodes, variant, serviceSlug)
+    });
+  }
+  steps.push(
+    {
+      label: `Document ${variant.title} topology`,
+      command: topologyDocumentCommand(variant.title, serviceSlug, nodes, variant.summary ?? "Enterprise HA topology generated for this technology.")
+    },
+    {
+      label: `Validate ${variant.title} node`,
+      command: variant.validateCommand ?? `
+set -euo pipefail
+log() { printf '[${serviceSlug}] %s\\n' "$*"; }
+docker ps --filter name=octastack-${def.serviceName} --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'
+docker logs octastack-${def.serviceName} --tail=80 || true
+log "local validation complete"
+`
+    }
+  );
+  return steps;
+}
+
+function renderClusterComposeCommand(def, nodes, variant, serviceSlug, composeBody) {
+  const baseEnv = variant.includeDefEnv === false ? {} : def.env ?? {};
+  const envText = Object.entries(baseEnv).map(([key, value]) => `${key}=${value}`).join("\n") || `OCTASTACK_SERVICE=${def.displayName}`;
+  const firstNode = nodes[0];
+  const clusterPeers = nodes.map((node) => node.ip).join(",");
+  const seedIps = nodes.slice(0, Math.min(nodes.length, 3)).map((node) => node.ip).join(",");
+  const extraEnvText = typeof variant.extraEnvText === "function" ? variant.extraEnvText(def, nodes, variant) : variant.extraEnvText ?? "";
+  const preComposeShell = typeof variant.preComposeShell === "function" ? variant.preComposeShell(def, nodes, variant, serviceSlug) : variant.preComposeShell ?? "";
+  const preComposeFiles = typeof variant.preComposeFiles === "function" ? variant.preComposeFiles(def, nodes, variant, serviceSlug) : variant.preComposeFiles ?? "";
+  return `
+set -euo pipefail
+${nodeDetectionScript(serviceSlug, nodes)}
+${preComposeShell}
+install -d -m 0750 /opt/octastack/${serviceSlug}
+install -d -m 0750 /var/lib/octastack/${serviceSlug}
+cat >/opt/octastack/${serviceSlug}/.env <<EOF
+${envText}
+OCTASTACK_NODE_NAME=$NODE_NAME
+OCTASTACK_NODE_ROLE=$NODE_ROLE
+OCTASTACK_NODE_INDEX=$NODE_INDEX
+CURRENT_IP=$CURRENT_IP
+FIRST_NODE_IP=${firstNode.ip}
+CLUSTER_PEERS=${clusterPeers}
+SEED_IPS=${seedIps}
+${extraEnvText}
+EOF
+chmod 0600 /opt/octastack/${serviceSlug}/.env
+${preComposeFiles}
+cat >/opt/octastack/${serviceSlug}/compose.yml <<'COMPOSE'
+${composeBody}
+COMPOSE
+log "configuration rendered"
+`;
+}
+
+function clusterComposeVariant(options) {
+  return {
+    title: options.title,
+    filePrefix: options.filePrefix,
+    nodeGroups: options.nodeGroups,
+    haCount: options.haCount,
+    haCores: options.haCores,
+    haMemory: options.haMemory,
+    haDiskGb: options.haDiskGb,
+    summary: options.summary,
+    supportNote: options.summary,
+    extraEnvText: options.extraEnvText,
+    preComposeShell: options.preComposeShell,
+    preComposeFiles: options.preComposeFiles,
+    postDeployCommand: options.postDeployCommand,
+    validateCommand: options.validateCommand,
+    health: options.health,
+    includeDefEnv: options.includeDefEnv,
+    steps: clusteredComposeHaSteps,
+    renderCommand(def, nodes, variant, serviceSlug) {
+      return renderClusterComposeCommand(def, nodes, variant, serviceSlug, options.composeBody(def, nodes, variant, serviceSlug));
+    }
+  };
+}
+
+function indentLines(text, spaces) {
+  const prefix = " ".repeat(spaces);
+  return String(text).trim().split("\n").map((line) => `${prefix}${line}`).join("\n");
+}
+
+function composeCommandBlock(command) {
+  if (!command) {
+    return "";
+  }
+  return ["    command: >", indentLines(command, 6)].join("\n");
+}
+
+function composeEnvironmentBlock(environment = {}) {
+  const entries = Object.entries(environment);
+  if (!entries.length) {
+    return "";
+  }
+  return [
+    "    environment:",
+    ...entries.map(([key, value]) => `      ${key}: "${String(value).replaceAll('"', '\\"')}"`)
+  ].join("\n");
+}
+
+function composeVolumeBlock(volumes = []) {
+  if (!volumes.length) {
+    return "";
+  }
+  return ["    volumes:", ...volumes.map((volume) => `      - ${volume}`)].join("\n");
+}
+
+function composePortBlock(ports = []) {
+  if (!ports.length) {
+    return "";
+  }
+  return ["    ports:", ...ports.map((port) => `      - "${port}"`)].join("\n");
+}
+
+function composeNamedVolumes(volumes = []) {
+  const namedVolumes = [...new Set(volumes.map((volume) => volume.split(":")[0]).filter((name) => name && !name.startsWith("/") && !name.startsWith(".")))];
+  if (!namedVolumes.length) {
+    return "";
+  }
+  return ["volumes:", ...namedVolumes.map((name) => `  ${name}: {}`)].join("\n");
+}
+
+function haComposeService(def, options = {}) {
+  const serviceName = options.serviceName ?? def.serviceName;
+  const image = options.image ?? def.image;
+  const volumes = options.volumes ?? def.volumes ?? [];
+  const serviceLines = [
+    "services:",
+    `  ${serviceName}:`,
+    `    image: ${image}`,
+    `    container_name: octastack-${serviceName}`,
+    "    restart: unless-stopped"
+  ];
+  if (options.networkModeHost ?? true) {
+    serviceLines.push("    network_mode: host");
+  } else if (options.ports?.length ?? def.ports?.length) {
+    serviceLines.push(composePortBlock(options.ports ?? def.ports));
+  }
+  if (options.privileged) {
+    serviceLines.push("    privileged: true");
+  }
+  if (options.capAdd?.length) {
+    serviceLines.push("    cap_add:");
+    serviceLines.push(...options.capAdd.map((capability) => `      - ${capability}`));
+  }
+  if (options.ulimits) {
+    serviceLines.push("    ulimits:");
+    for (const [key, value] of Object.entries(options.ulimits)) {
+      serviceLines.push(`      ${key}: ${value}`);
+    }
+  }
+  if (options.envFile ?? true) {
+    serviceLines.push("    env_file:");
+    serviceLines.push("      - .env");
+  }
+  const environmentBlock = composeEnvironmentBlock(options.environment ?? {});
+  if (environmentBlock) {
+    serviceLines.push(environmentBlock);
+  }
+  const commandBlock = composeCommandBlock(options.command);
+  if (commandBlock) {
+    serviceLines.push(commandBlock);
+  }
+  const volumeBlock = composeVolumeBlock(volumes);
+  if (volumeBlock) {
+    serviceLines.push(volumeBlock);
+  }
+  if (options.extraServiceLines?.length) {
+    serviceLines.push(...options.extraServiceLines);
+  }
+  const namedVolumes = composeNamedVolumes(volumes);
+  if (namedVolumes) {
+    serviceLines.push(namedVolumes);
+  }
+  return serviceLines.filter(Boolean).join("\n");
+}
+
+function singleRoleClusterVariant(options) {
+  return clusterComposeVariant({
+    ...options,
+    composeBody(def, nodes, variant) {
+      const resolve = (value) => (typeof value === "function" ? value(def, nodes, variant) : value);
+      return haComposeService(def, {
+        image: resolve(options.image),
+        command: resolve(options.command),
+        environment: resolve(options.environment),
+        volumes: resolve(options.volumes) ?? def.volumes,
+        ports: resolve(options.ports),
+        networkModeHost: resolve(options.networkModeHost),
+        privileged: resolve(options.privileged),
+        capAdd: resolve(options.capAdd),
+        ulimits: resolve(options.ulimits),
+        extraServiceLines: resolve(options.extraServiceLines)
+      });
+    }
+  });
+}
+
+function roleBasedClusterVariant(options) {
+  return clusterComposeVariant({
+    ...options,
+    preComposeShell(def, nodes, variant, serviceSlug) {
+      const roleCases = Object.entries(options.roles).map(([role, profile]) => {
+        const command = typeof profile.command === "function" ? profile.command(def, nodes, variant, serviceSlug) : profile.command;
+        const quotedCommand = String(command).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+        return `${role}) ROLE_IMAGE="${profile.image}"; ROLE_COMMAND="${quotedCommand}" ;;`;
+      }).join("\n  ");
+      const extraShell = typeof options.preComposeShell === "function" ? options.preComposeShell(def, nodes, variant, serviceSlug) : options.preComposeShell ?? "";
+      return `
+${extraShell}
+ROLE_IMAGE=""
+ROLE_COMMAND=""
+case "$NODE_ROLE" in
+  ${roleCases}
+  *) log "unsupported role $NODE_ROLE"; exit 1 ;;
+esac
+`;
+    },
+    extraEnvText(def, nodes, variant) {
+      const extra = typeof options.extraEnvText === "function" ? options.extraEnvText(def, nodes, variant) : options.extraEnvText ?? "";
+      return `ROLE_IMAGE=$ROLE_IMAGE\nROLE_COMMAND=$ROLE_COMMAND\n${extra}`;
+    },
+    composeBody(def) {
+      return haComposeService(def, {
+        image: "${ROLE_IMAGE}",
+        command: "${ROLE_COMMAND}",
+        volumes: options.volumes ?? def.volumes,
+        environment: options.environment,
+        capAdd: options.capAdd,
+        privileged: options.privileged
+      });
+    }
+  });
+}
+
+function firstNodeOnlyScript(serviceSlug, body) {
+  if (!body) {
+    return "";
+  }
+  return `
+set -euo pipefail
+if [ "$NODE_INDEX" != "1" ]; then
+  log "cluster initialization is handled by the first member"
+  exit 0
+fi
+${body}
+`;
+}
+
+function waitForContainerCommand(containerName, probeCommand) {
+  return `
+container_ready=0
+for attempt in $(seq 1 60); do
+  if docker exec ${containerName} sh -lc ${JSON.stringify(probeCommand)} >/dev/null 2>&1; then
+    container_ready=1
+    break
+  fi
+  sleep 5
+done
+if [ "$container_ready" = "1" ]; then
+  log "container ${containerName} is ready"
+else
+docker logs ${containerName} --tail=120 || true
+echo "container ${containerName} did not become ready" >&2
+exit 1
+fi
+`;
+}
+
+function mysqlGroupReplicationVariant() {
+  return singleRoleClusterVariant({
+    title: "MySQL Group Replication HA",
+    filePrefix: "group-replication-ha",
+    summary: "Three MySQL members run native Group Replication with GTID, row-based binary logging, and a deterministic primary bootstrap.",
+    haCount: 3,
+    command: `
+mysqld
+--server-id=\${OCTASTACK_NODE_INDEX}
+--report-host=\${CURRENT_IP}
+--gtid-mode=ON
+--enforce-gtid-consistency=ON
+--binlog-checksum=NONE
+--log-bin=mysql-bin
+--log-slave-updates=ON
+--binlog-format=ROW
+--transaction-write-set-extraction=XXHASH64
+--loose-group-replication-group-name=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+--loose-group-replication-start-on-boot=OFF
+--loose-group-replication-local-address=\${CURRENT_IP}:33061
+--loose-group-replication-group-seeds=\${MYSQL_GROUP_SEEDS}
+--loose-group-replication-ip-allowlist=10.0.0.0/16
+`,
+    extraEnvText: (_def, nodes) => `MYSQL_GROUP_SEEDS=${nodes.map((node) => `${node.ip}:33061`).join(",")}`,
+    postDeployCommand: (_def, nodes) => `
+set -euo pipefail
+${nodeDetectionScript("mysql-group-replication-ha", nodes)}
+${waitForContainerCommand("octastack-mysql", "mysqladmin ping -uroot -pchange-me")}
+if [ "$NODE_INDEX" = "1" ]; then
+  docker exec octastack-mysql mysql -uroot -pchange-me <<'SQL'
+SET SQL_LOG_BIN=0;
+CREATE USER IF NOT EXISTS 'repl'@'%' IDENTIFIED BY 'change-me';
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+GRANT CONNECTION_ADMIN, BACKUP_ADMIN, GROUP_REPLICATION_STREAM ON *.* TO 'repl'@'%';
+FLUSH PRIVILEGES;
+SET SQL_LOG_BIN=1;
+INSTALL PLUGIN group_replication SONAME 'group_replication.so';
+SET GLOBAL group_replication_bootstrap_group=ON;
+START GROUP_REPLICATION USER='repl', PASSWORD='change-me';
+SET GLOBAL group_replication_bootstrap_group=OFF;
+SQL
+else
+  sleep 20
+  docker exec octastack-mysql mysql -uroot -pchange-me <<'SQL'
+INSTALL PLUGIN group_replication SONAME 'group_replication.so';
+START GROUP_REPLICATION USER='repl', PASSWORD='change-me';
+SQL
+fi
+`,
+    validateCommand: `
+set -euo pipefail
+docker exec octastack-mysql mysql -uroot -pchange-me -e "SELECT MEMBER_HOST, MEMBER_STATE, MEMBER_ROLE FROM performance_schema.replication_group_members;"
+`,
+    health: "docker exec octastack-mysql mysqladmin ping -uroot -pchange-me"
+  });
+}
+
+function mariadbGaleraVariant() {
+  return singleRoleClusterVariant({
+    title: "MariaDB Galera HA",
+    filePrefix: "galera-ha",
+    summary: "Three MariaDB members form a synchronous Galera cluster with one deterministic bootstrap member and two joining members.",
+    haCount: 3,
+    preComposeShell: `
+if [ "$NODE_INDEX" = "1" ]; then
+  GALERA_BOOTSTRAP="--wsrep-new-cluster"
+else
+  GALERA_BOOTSTRAP=""
+fi
+`,
+    extraEnvText: (_def, nodes) => `GALERA_BOOTSTRAP=$GALERA_BOOTSTRAP\nGALERA_CLUSTER_ADDRESS=gcomm://${nodes.map((node) => node.ip).join(",")}`,
+    command: `
+mariadbd
+--bind-address=0.0.0.0
+--binlog-format=ROW
+--default-storage-engine=InnoDB
+--innodb-autoinc-lock-mode=2
+--wsrep-on=ON
+--wsrep-provider=/usr/lib/galera/libgalera_smm.so
+--wsrep-cluster-name=octastack-mariadb
+--wsrep-cluster-address=\${GALERA_CLUSTER_ADDRESS}
+--wsrep-node-address=\${CURRENT_IP}
+--wsrep-node-name=\${OCTASTACK_NODE_NAME}
+\${GALERA_BOOTSTRAP}
+`,
+    validateCommand: `
+set -euo pipefail
+docker exec octastack-mariadb mariadb -uroot -pchange-me -e "SHOW STATUS LIKE 'wsrep_cluster_size'; SHOW STATUS LIKE 'wsrep_local_state_comment';"
+`,
+    health: "docker exec octastack-mariadb mariadb-admin ping -uroot -pchange-me"
+  });
+}
+
+function mongodbReplicaSetVariant() {
+  return singleRoleClusterVariant({
+    title: "MongoDB Replica Set HA",
+    filePrefix: "replica-set-ha",
+    summary: "Three MongoDB members form a replica set with a shared keyfile, deterministic member list, and first-member initiation.",
+    haCount: 3,
+    volumes: ["data:/data/db", "/opt/octastack/mongodb_replica_set_ha/keyfile:/etc/mongo-keyfile:ro"],
+    preComposeFiles: `
+install -m 0400 /dev/stdin /opt/octastack/mongodb_replica_set_ha/keyfile <<'KEY'
+octastack-mongodb-replica-set-shared-key-change-me
+KEY
+`,
+    command: "mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile",
+    postDeployCommand: (_def, nodes) => `
+set -euo pipefail
+${nodeDetectionScript("mongodb-replica-set-ha", nodes)}
+${waitForContainerCommand("octastack-mongodb", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'")}
+if [ "$NODE_INDEX" != "1" ]; then
+  log "replica set initiation is handled by the first member"
+  exit 0
+fi
+docker exec octastack-mongodb mongosh -u root -p change-me --authenticationDatabase admin <<'JS'
+rs.initiate({
+  _id: "rs0",
+  members: [
+${nodes.map((node, index) => `    { _id: ${index}, host: "${node.ip}:27017" }`).join(",\n")}
+  ]
+});
+JS
+`,
+    validateCommand: "docker exec octastack-mongodb mongosh -u root -p change-me --authenticationDatabase admin --quiet --eval 'rs.status().members.map(m => `${m.name} ${m.stateStr}`).join(\"\\n\")'",
+    health: "docker exec octastack-mongodb mongosh -u root -p change-me --authenticationDatabase admin --quiet --eval 'db.adminCommand({ ping: 1 })'"
+  });
+}
+
+function cassandraRingVariant() {
+  return singleRoleClusterVariant({
+    title: "Cassandra Native Ring HA",
+    filePrefix: "native-ring-ha",
+    summary: "Three Cassandra members form a native gossip ring using generated seed nodes and rack/datacenter settings.",
+    haCount: 3,
+    environment: {
+      CASSANDRA_CLUSTER_NAME: "octastack-cassandra",
+      CASSANDRA_SEEDS: "${SEED_IPS}",
+      CASSANDRA_LISTEN_ADDRESS: "${CURRENT_IP}",
+      CASSANDRA_BROADCAST_ADDRESS: "${CURRENT_IP}",
+      CASSANDRA_RPC_ADDRESS: "0.0.0.0",
+      CASSANDRA_BROADCAST_RPC_ADDRESS: "${CURRENT_IP}",
+      CASSANDRA_ENDPOINT_SNITCH: "GossipingPropertyFileSnitch",
+      CASSANDRA_DC: "dc1",
+      CASSANDRA_RACK: "rack1"
+    },
+    validateCommand: "docker exec octastack-cassandra nodetool status",
+    health: "docker exec octastack-cassandra nodetool status"
+  });
+}
+
+function scyllaRingVariant() {
+  return singleRoleClusterVariant({
+    title: "ScyllaDB Native Ring HA",
+    filePrefix: "native-ring-ha",
+    summary: "Three ScyllaDB members form a native ring with generated seeds and per-node broadcast addresses.",
+    haCount: 3,
+    command: "--smp 2 --memory 4G --overprovisioned 1 --seeds=\${SEED_IPS} --listen-address=\${CURRENT_IP} --rpc-address=0.0.0.0 --broadcast-address=\${CURRENT_IP} --broadcast-rpc-address=\${CURRENT_IP}",
+    validateCommand: "docker exec octastack-scylladb nodetool status",
+    health: "docker exec octastack-scylladb nodetool status"
+  });
+}
+
+function clickHouseKeeperVariant() {
+  return singleRoleClusterVariant({
+    title: "ClickHouse Replicated Keeper HA",
+    filePrefix: "replicated-keeper-ha",
+    summary: "Three ClickHouse members run replicated MergeTree-ready cluster configuration with embedded ClickHouse Keeper quorum.",
+    haCount: 3,
+    preComposeFiles: (_def, nodes) => `
+cat >/opt/octastack/clickhouse_replicated_keeper_ha/cluster.xml <<EOF
+<clickhouse>
+  <keeper_server>
+    <tcp_port>9181</tcp_port>
+    <server_id>\${NODE_INDEX}</server_id>
+    <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
+    <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
+    <coordination_settings>
+      <operation_timeout_ms>10000</operation_timeout_ms>
+      <session_timeout_ms>30000</session_timeout_ms>
+      <raft_logs_level>warning</raft_logs_level>
+    </coordination_settings>
+    <raft_configuration>
+${nodes.map((node, index) => `      <server><id>${index + 1}</id><hostname>${node.ip}</hostname><port>9234</port></server>`).join("\n")}
+    </raft_configuration>
+  </keeper_server>
+  <zookeeper>
+${nodes.map((node) => `    <node><host>${node.ip}</host><port>9181</port></node>`).join("\n")}
+  </zookeeper>
+  <remote_servers>
+    <octastack_cluster>
+${nodes.map((node) => `      <shard><replica><host>${node.ip}</host><port>9000</port></replica></shard>`).join("\n")}
+    </octastack_cluster>
+  </remote_servers>
+  <macros>
+    <cluster>octastack_cluster</cluster>
+    <shard>\${NODE_INDEX}</shard>
+    <replica>\${OCTASTACK_NODE_NAME}</replica>
+  </macros>
+  <listen_host>0.0.0.0</listen_host>
+</clickhouse>
+EOF
+`,
+    volumes: ["data:/var/lib/clickhouse", "/opt/octastack/clickhouse_replicated_keeper_ha/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml:ro"],
+    validateCommand: "curl -fsS 'http://127.0.0.1:8123/ping' && docker exec octastack-clickhouse clickhouse-client --query=\"SELECT * FROM system.clusters WHERE cluster = 'octastack_cluster'\"",
+    health: "curl -fsS 'http://127.0.0.1:8123/ping'"
+  });
+}
+
+function cockroachClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "CockroachDB Native Cluster HA",
+    filePrefix: "native-cluster-ha",
+    summary: "Three CockroachDB members run a native replicated SQL cluster with deterministic join addresses and first-member initialization.",
+    haCount: 3,
+    command: "start --insecure --advertise-addr=\${CURRENT_IP} --listen-addr=0.0.0.0:26257 --http-addr=0.0.0.0:8080 --join=\${CLUSTER_PEERS} --store=/cockroach/cockroach-data",
+    postDeployCommand: (_def, nodes) => `
+set -euo pipefail
+${nodeDetectionScript("cockroachdb-native-cluster-ha", nodes)}
+if [ "$NODE_INDEX" = "1" ]; then
+  sleep 15
+  docker exec octastack-cockroachdb cockroach init --insecure --host=127.0.0.1:26257 || true
+fi
+`,
+    validateCommand: "docker exec octastack-cockroachdb cockroach node status --insecure --host=127.0.0.1:26257",
+    health: "docker exec octastack-cockroachdb cockroach sql --insecure --execute='select 1'"
+  });
+}
+
+function yugabyteClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "YugabyteDB RF3 Cluster HA",
+    filePrefix: "rf3-cluster-ha",
+    summary: "Three YugabyteDB members run a replication-factor-three cluster with generated advertise and join addresses.",
+    haCount: 3,
+    command: "bin/yugabyted start --foreground --base_dir=/root/var --advertise_address=\${CURRENT_IP} --join=\${FIRST_NODE_IP}",
+    validateCommand: "docker exec octastack-yugabytedb bin/yugabyted status || true",
+    health: "docker exec octastack-yugabytedb bin/ysqlsh -h 127.0.0.1 -c 'select 1;'"
+  });
+}
+
+function rethinkdbClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "RethinkDB Native Cluster HA",
+    filePrefix: "native-cluster-ha",
+    summary: "Three RethinkDB members form a native cluster; non-primary members join the generated first member.",
+    haCount: 3,
+    preComposeShell: `
+if [ "$NODE_INDEX" = "1" ]; then
+  RETHINK_JOIN_ARG=""
+else
+  RETHINK_JOIN_ARG="--join \${FIRST_NODE_IP}:29015"
+fi
+`,
+    extraEnvText: "RETHINK_JOIN_ARG=$RETHINK_JOIN_ARG",
+    command: "rethinkdb --bind all --canonical-address \${CURRENT_IP} \${RETHINK_JOIN_ARG}",
+    validateCommand: "curl -fsS http://127.0.0.1:8080/",
+    health: "curl -fsS http://127.0.0.1:8080/"
+  });
+}
+
+function etcdClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "etcd Quorum Cluster HA",
+    filePrefix: "quorum-cluster-ha",
+    summary: "Three etcd members form an odd-number quorum with generated peer and client advertise URLs.",
+    haCount: 3,
+    extraEnvText: (_def, nodes) => `ETCD_INITIAL_CLUSTER=${nodes.map((node) => `${node.label}=http://${node.ip}:2380`).join(",")}`,
+    command: `
+etcd
+--name=\${OCTASTACK_NODE_NAME}
+--data-dir=/etcd-data
+--listen-peer-urls=http://0.0.0.0:2380
+--listen-client-urls=http://0.0.0.0:2379
+--initial-advertise-peer-urls=http://\${CURRENT_IP}:2380
+--advertise-client-urls=http://\${CURRENT_IP}:2379
+--initial-cluster=\${ETCD_INITIAL_CLUSTER}
+--initial-cluster-state=new
+`,
+    validateCommand: "docker exec octastack-etcd etcdctl endpoint status --cluster -w table",
+    health: "docker exec octastack-etcd etcdctl endpoint health"
+  });
+}
+
+function consulClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "Consul Server Quorum HA",
+    filePrefix: "server-quorum-ha",
+    summary: "Three Consul server members form a Raft quorum and expose the UI/client API on every member.",
+    haCount: 3,
+    command: (_def, nodes) => `agent -server -bootstrap-expect=3 -node=\${OCTASTACK_NODE_NAME} -bind=\${CURRENT_IP} -client=0.0.0.0 ${nodes.map((node) => `-retry-join=${node.ip}`).join(" ")} -ui`,
+    validateCommand: "docker exec octastack-consul consul operator raft list-peers || true",
+    health: "curl -fsS http://127.0.0.1:8500/v1/status/leader"
+  });
+}
+
+function natsJetStreamClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "NATS JetStream Cluster HA",
+    filePrefix: "jetstream-cluster-ha",
+    summary: "Three NATS members form a JetStream-enabled cluster with generated route peers and persistent storage.",
+    haCount: 3,
+    preComposeFiles: (_def, nodes) => `
+cat >/opt/octastack/nats_jetstream_cluster_ha/nats.conf <<NATS
+server_name: \${OCTASTACK_NODE_NAME}
+listen: 0.0.0.0:4222
+http: 0.0.0.0:8222
+jetstream {
+  store_dir: /data/jetstream
+}
+cluster {
+  name: octastack-nats
+  listen: 0.0.0.0:6222
+  routes: [
+${nodes.map((node) => `    nats-route://${node.ip}:6222`).join(",\n")}
+  ]
+}
+NATS
+`,
+    volumes: ["data:/data", "/opt/octastack/nats_jetstream_cluster_ha/nats.conf:/etc/nats/nats.conf:ro"],
+    command: "-c /etc/nats/nats.conf",
+    validateCommand: "curl -fsS http://127.0.0.1:8222/healthz",
+    health: "curl -fsS http://127.0.0.1:8222/healthz"
+  });
+}
+
+function redpandaClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "Redpanda Native Cluster HA",
+    filePrefix: "native-cluster-ha",
+    summary: "Three Redpanda brokers run a native Raft-backed Kafka-compatible cluster with generated seed servers.",
+    haCount: 3,
+    preComposeShell: `
+REDPANDA_NODE_ID=$((NODE_INDEX - 1))
+`,
+    extraEnvText: (_def, nodes) => `REDPANDA_NODE_ID=$REDPANDA_NODE_ID\nREDPANDA_SEEDS=${nodes.map((node) => `${node.ip}:33145`).join(",")}`,
+    command: `
+redpanda start
+--overprovisioned
+--smp 1
+--memory 2G
+--reserve-memory 0M
+--node-id=\${REDPANDA_NODE_ID}
+--check=false
+--kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+--advertise-kafka-addr=internal://\${CURRENT_IP}:9092,external://\${CURRENT_IP}:19092
+--rpc-addr=0.0.0.0:33145
+--advertise-rpc-addr=\${CURRENT_IP}:33145
+--seeds=\${REDPANDA_SEEDS}
+`,
+    validateCommand: "curl -fsS http://127.0.0.1:9644/v1/status/ready",
+    health: "curl -fsS http://127.0.0.1:9644/v1/status/ready"
+  });
+}
+
+function opensearchClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "OpenSearch Cluster HA",
+    filePrefix: "cluster-ha",
+    summary: "Three OpenSearch nodes form a cluster-manager quorum with generated discovery seed hosts.",
+    haCount: 3,
+    includeDefEnv: false,
+    environment: (_def, nodes) => ({
+      "cluster.name": "octastack-opensearch",
+      "node.name": "${OCTASTACK_NODE_NAME}",
+      "network.host": "0.0.0.0",
+      "discovery.seed_hosts": nodes.map((node) => node.ip).join(","),
+      "cluster.initial_cluster_manager_nodes": nodes.map((node) => node.label).join(","),
+      "DISABLE_SECURITY_PLUGIN": "true",
+      "OPENSEARCH_JAVA_OPTS": "-Xms1g -Xmx1g",
+      "bootstrap.memory_lock": "true"
+    }),
+    ulimits: { memlock: "-1" },
+    validateCommand: "curl -fsS http://127.0.0.1:9200/_cluster/health?pretty",
+    health: "curl -fsS http://127.0.0.1:9200/_cluster/health"
+  });
+}
+
+function elasticsearchClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "Elasticsearch Cluster HA",
+    filePrefix: "cluster-ha",
+    summary: "Three Elasticsearch nodes form a discovery-backed cluster with generated initial master nodes and disabled demo security.",
+    haCount: 3,
+    includeDefEnv: false,
+    environment: (_def, nodes) => ({
+      "cluster.name": "octastack-elasticsearch",
+      "node.name": "${OCTASTACK_NODE_NAME}",
+      "network.host": "0.0.0.0",
+      "discovery.seed_hosts": nodes.map((node) => node.ip).join(","),
+      "cluster.initial_master_nodes": nodes.map((node) => node.label).join(","),
+      "xpack.security.enabled": "false",
+      "ES_JAVA_OPTS": "-Xms1g -Xmx1g",
+      "bootstrap.memory_lock": "true"
+    }),
+    ulimits: { memlock: "-1" },
+    validateCommand: "curl -fsS http://127.0.0.1:9200/_cluster/health?pretty",
+    health: "curl -fsS http://127.0.0.1:9200/_cluster/health"
+  });
+}
+
+function minioDistributedVariant() {
+  return singleRoleClusterVariant({
+    title: "MinIO Distributed Erasure Coding HA",
+    filePrefix: "distributed-erasure-ha",
+    summary: "Four MinIO members run distributed erasure coding with a generated endpoint list and shared root credentials.",
+    haCount: 4,
+    command: (_def, nodes) => `server --console-address ':9001' ${nodes.map((node) => `http://${node.ip}:9000/data`).join(" ")}`,
+    validateCommand: "curl -fsS http://127.0.0.1:9000/minio/health/live",
+    health: "curl -fsS http://127.0.0.1:9000/minio/health/live"
+  });
+}
+
+function valkeyClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "Valkey Cluster HA",
+    filePrefix: "cluster-ha",
+    summary: "Six Valkey members run native cluster mode as three primaries plus three replicas with generated cluster announce IPs.",
+    haCount: 6,
+    command: "valkey-server --bind 0.0.0.0 --protected-mode no --appendonly yes --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --cluster-announce-ip \${CURRENT_IP}",
+    postDeployCommand: (_def, nodes) => `
+set -euo pipefail
+${nodeDetectionScript("valkey-cluster-ha", nodes)}
+${waitForContainerCommand("octastack-valkey", "valkey-cli ping")}
+if [ "$NODE_INDEX" = "1" ]; then
+  sleep 15
+  docker exec octastack-valkey valkey-cli --cluster create ${nodes.map((node) => `${node.ip}:6379`).join(" ")} --cluster-replicas 1 --cluster-yes || true
+fi
+`,
+    validateCommand: "docker exec octastack-valkey valkey-cli cluster nodes",
+    health: "docker exec octastack-valkey valkey-cli ping"
+  });
+}
+
+function valkeySentinelVariant() {
+  return singleRoleClusterVariant({
+    title: "Valkey Sentinel HA",
+    filePrefix: "sentinel-ha",
+    summary: "Three Valkey members run primary/replica data nodes plus Sentinel quorum on every member.",
+    haCount: 3,
+    preComposeShell: `
+if [ "$NODE_INDEX" = "1" ]; then
+  REPLICAOF_LINE=""
+else
+  REPLICAOF_LINE="replicaof \${FIRST_NODE_IP} 6379"
+fi
+`,
+    preComposeFiles: `
+cat >/opt/octastack/valkey_sentinel_ha/valkey.conf <<EOF
+bind 0.0.0.0
+protected-mode no
+appendonly yes
+dir /data
+\${REPLICAOF_LINE}
+EOF
+cat >/opt/octastack/valkey_sentinel_ha/sentinel.conf <<EOF
+port 26379
+sentinel monitor valkey-ha \${FIRST_NODE_IP} 6379 2
+sentinel down-after-milliseconds valkey-ha 5000
+sentinel failover-timeout valkey-ha 60000
+sentinel parallel-syncs valkey-ha 1
+EOF
+`,
+    volumes: ["data:/data", "/opt/octastack/valkey_sentinel_ha/valkey.conf:/etc/valkey/valkey.conf:ro", "/opt/octastack/valkey_sentinel_ha/sentinel.conf:/etc/valkey/sentinel.conf:ro"],
+    command: "sh -lc 'valkey-server /etc/valkey/valkey.conf & exec valkey-server /etc/valkey/sentinel.conf --sentinel'",
+    validateCommand: "docker exec octastack-valkey valkey-cli -p 26379 sentinel master valkey-ha",
+    health: "docker exec octastack-valkey valkey-cli ping"
+  });
+}
+
+function zookeeperEnsembleVariant() {
+  return singleRoleClusterVariant({
+    title: "ZooKeeper Ensemble HA",
+    filePrefix: "ensemble-ha",
+    summary: "Three ZooKeeper members form an odd-number ensemble with generated server IDs and peer addresses.",
+    haCount: 3,
+    preComposeShell: "ZOO_MY_ID=$NODE_INDEX",
+    extraEnvText: (_def, nodes) => `ZOO_MY_ID=$ZOO_MY_ID\nZOO_SERVERS=${nodes.map((node, index) => `server.${index + 1}=${node.ip}:2888:3888;2181`).join(" ")}`,
+    environment: {
+      ZOO_MY_ID: "${ZOO_MY_ID}",
+      ZOO_SERVERS: "${ZOO_SERVERS}",
+      ZOO_4LW_COMMANDS_WHITELIST: "ruok,stat,srvr,mntr"
+    },
+    validateCommand: "docker exec octastack-zookeeper zkServer.sh status || true",
+    health: "docker exec octastack-zookeeper zkServer.sh status || true"
+  });
+}
+
+function vaultRaftVariant() {
+  return singleRoleClusterVariant({
+    title: "Vault Integrated Raft HA",
+    filePrefix: "raft-ha",
+    summary: "Three Vault members use integrated Raft storage with generated retry_join stanzas and IPC_LOCK enabled.",
+    haCount: 3,
+    capAdd: ["IPC_LOCK"],
+    preComposeFiles: (_def, nodes) => `
+cat >/opt/octastack/vault_integrated_raft_ha/vault.hcl <<HCL
+ui = true
+disable_mlock = false
+listener "tcp" {
+  address = "0.0.0.0:8200"
+  tls_disable = true
+}
+storage "raft" {
+  path = "/vault/file"
+${nodes.map((node) => `  retry_join { leader_api_addr = "http://${node.ip}:8200" }`).join("\n")}
+}
+api_addr = "http://\${CURRENT_IP}:8200"
+cluster_addr = "http://\${CURRENT_IP}:8201"
+HCL
+`,
+    volumes: ["data:/vault/file", "/opt/octastack/vault_integrated_raft_ha/vault.hcl:/vault/config/vault.hcl:ro"],
+    command: "server -config=/vault/config/vault.hcl",
+    environment: { VAULT_ADDR: "http://127.0.0.1:8200" },
+    validateCommand: "docker exec octastack-vault vault status || true",
+    health: "curl -fsS http://127.0.0.1:8200/v1/sys/health || true"
+  });
+}
+
+function statelessActiveActiveVariant(title, filePrefix, summary) {
+  return singleRoleClusterVariant({
+    title,
+    filePrefix,
+    summary,
+    haCount: 2,
+    validateCommand: `
+set -euo pipefail
+docker ps --filter name=octastack- --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'
+`,
+    health: "docker ps --format '{{.Names}} {{.Status}}' | grep octastack"
+  });
+}
+
+function victoriaMetricsClusterVariant() {
+  return roleBasedClusterVariant({
+    title: "VictoriaMetrics Cluster HA",
+    filePrefix: "cluster-ha",
+    summary: "VictoriaMetrics runs in cluster mode with three vmstorage nodes, two vmselect nodes, and two vminsert nodes.",
+    nodeGroups: [
+      { role: "vmstorage", labelPrefix: "victoriametrics-storage", vmNamePrefix: "victoriametrics-storage", count: 3, cores: 4, memory: 8192, diskGb: "200" },
+      { role: "vmselect", labelPrefix: "victoriametrics-select", vmNamePrefix: "victoriametrics-select", count: 2, cores: 2, memory: 4096, diskGb: "40" },
+      { role: "vminsert", labelPrefix: "victoriametrics-insert", vmNamePrefix: "victoriametrics-insert", count: 2, cores: 2, memory: 4096, diskGb: "40" }
+    ],
+    volumes: ["data:/storage"],
+    roles: {
+      vmstorage: { image: "victoriametrics/vmstorage:v1.103.0", command: "-retentionPeriod=30d -storageDataPath=/storage -httpListenAddr=:8482 -vminsertAddr=:8400 -vmselectAddr=:8401" },
+      vmselect: { image: "victoriametrics/vmselect:v1.103.0", command: (_def, nodes) => `-httpListenAddr=:8481 ${nodes.filter((node) => node.role === "vmstorage").map((node) => `-storageNode=${node.ip}:8401`).join(" ")}` },
+      vminsert: { image: "victoriametrics/vminsert:v1.103.0", command: (_def, nodes) => `-httpListenAddr=:8480 ${nodes.filter((node) => node.role === "vmstorage").map((node) => `-storageNode=${node.ip}:8400`).join(" ")}` }
+    },
+    validateCommand: "curl -fsS http://127.0.0.1:8482/health || curl -fsS http://127.0.0.1:8481/health || curl -fsS http://127.0.0.1:8480/health",
+    health: "curl -fsS http://127.0.0.1:8482/health || curl -fsS http://127.0.0.1:8481/health || curl -fsS http://127.0.0.1:8480/health"
+  });
+}
+
+function seaweedFsClusterVariant() {
+  return roleBasedClusterVariant({
+    title: "SeaweedFS Master Volume Filer HA",
+    filePrefix: "master-volume-filer-ha",
+    summary: "SeaweedFS runs three master nodes plus replicated volume and filer nodes with generated master peer addresses.",
+    nodeGroups: [
+      { role: "master", labelPrefix: "seaweed-master", vmNamePrefix: "seaweed-master", count: 3, cores: 2, memory: 4096, diskGb: "40" },
+      { role: "volume", labelPrefix: "seaweed-volume", vmNamePrefix: "seaweed-volume", count: 2, cores: 4, memory: 8192, diskGb: "300" },
+      { role: "filer", labelPrefix: "seaweed-filer", vmNamePrefix: "seaweed-filer", count: 2, cores: 2, memory: 4096, diskGb: "80" }
+    ],
+    volumes: ["data:/data"],
+    roles: {
+      master: { image: "chrislusf/seaweedfs:3.73", command: (_def, nodes) => `master -ip=\${CURRENT_IP} -port=9333 -mdir=/data/master -peers=${nodes.filter((node) => node.role === "master").map((node) => `${node.ip}:9333`).join(",")}` },
+      volume: { image: "chrislusf/seaweedfs:3.73", command: (_def, nodes) => `volume -ip=\${CURRENT_IP} -port=8080 -dir=/data/volume -mserver=${nodes.filter((node) => node.role === "master").map((node) => `${node.ip}:9333`).join(",")}` },
+      filer: { image: "chrislusf/seaweedfs:3.73", command: (_def, nodes) => `filer -ip=\${CURRENT_IP} -port=8888 -master=${nodes.filter((node) => node.role === "master").map((node) => `${node.ip}:9333`).join(",")}` }
+    },
+    validateCommand: "curl -fsS http://127.0.0.1:9333/cluster/status || curl -fsS http://127.0.0.1:8888/",
+    health: "curl -fsS http://127.0.0.1:9333/cluster/status || curl -fsS http://127.0.0.1:8888/"
+  });
+}
+
+function typesenseClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "Typesense Native Cluster HA",
+    filePrefix: "native-cluster-ha",
+    summary: "Three Typesense members run native clustering with a generated nodes file and per-node peering address.",
+    haCount: 3,
+    preComposeFiles: (_def, nodes) => `
+cat >/opt/octastack/typesense_native_cluster_ha/nodes <<'EOF'
+${nodes.map((node) => `${node.ip}:8107:8108`).join("\n")}
+EOF
+`,
+    volumes: ["data:/data", "/opt/octastack/typesense_native_cluster_ha/nodes:/data/nodes:ro"],
+    command: "--data-dir /data --api-key=change-me --enable-cors --peering-address \${CURRENT_IP} --peering-port 8107 --nodes=/data/nodes",
+    validateCommand: "curl -fsS http://127.0.0.1:8108/health",
+    health: "curl -fsS http://127.0.0.1:8108/health"
+  });
+}
+
+function weaviateClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "Weaviate Cluster HA",
+    filePrefix: "cluster-ha",
+    summary: "Three Weaviate members run with gossip and Raft join settings generated from the node IP plan.",
+    haCount: 3,
+    environment: (_def, nodes) => ({
+      QUERY_DEFAULTS_LIMIT: "25",
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true",
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate",
+      DEFAULT_VECTORIZER_MODULE: "none",
+      CLUSTER_HOSTNAME: "${CURRENT_IP}",
+      CLUSTER_GOSSIP_BIND_PORT: "7100",
+      CLUSTER_DATA_BIND_PORT: "7101",
+      RAFT_JOIN: nodes.map((node) => node.ip).join(",")
+    }),
+    validateCommand: "curl -fsS http://127.0.0.1:8080/v1/.well-known/ready",
+    health: "curl -fsS http://127.0.0.1:8080/v1/.well-known/ready"
+  });
+}
+
+function couchdbClusterVariant() {
+  return singleRoleClusterVariant({
+    title: "CouchDB Native Cluster HA",
+    filePrefix: "native-cluster-ha",
+    summary: "Three CouchDB members run native clustering with a shared cookie/secret and first-member cluster setup calls.",
+    haCount: 3,
+    environment: {
+      COUCHDB_USER: "admin",
+      COUCHDB_PASSWORD: "change-me",
+      COUCHDB_SECRET: "replace-with-long-random-secret",
+      ERL_FLAGS: "-setcookie replace-with-erlang-cookie",
+      NODENAME: "couchdb@${CURRENT_IP}"
+    },
+    postDeployCommand: (_def, nodes) => `
+set -euo pipefail
+${nodeDetectionScript("couchdb-native-cluster-ha", nodes)}
+${waitForContainerCommand("octastack-couchdb", "curl -fsS http://admin:change-me@127.0.0.1:5984/_up")}
+if [ "$NODE_INDEX" != "1" ]; then
+  log "cluster setup is driven by the first CouchDB member"
+  exit 0
+fi
+for member in ${nodes.map((node) => node.ip).join(" ")}; do
+  curl -fsS -X POST http://admin:change-me@127.0.0.1:5984/_cluster_setup \\
+    -H 'Content-Type: application/json' \\
+    --data-binary @- <<EOF || true
+{"action":"enable_cluster","bind_address":"0.0.0.0","username":"admin","password":"change-me","node_count":"${nodes.length}","remote_node":"$member","remote_current_user":"admin","remote_current_password":"change-me"}
+EOF
+  if [ "$member" != "${nodes[0].ip}" ]; then
+    curl -fsS -X POST http://admin:change-me@127.0.0.1:5984/_cluster_setup \\
+      -H 'Content-Type: application/json' \\
+      --data-binary @- <<EOF || true
+{"action":"add_node","host":"$member","port":5984,"username":"admin","password":"change-me"}
+EOF
+  fi
+done
+curl -fsS -X POST http://admin:change-me@127.0.0.1:5984/_cluster_setup -H 'Content-Type: application/json' -d '{"action":"finish_cluster"}' || true
+`,
+    validateCommand: "curl -fsS http://admin:change-me@127.0.0.1:5984/_membership",
+    health: "curl -fsS http://admin:change-me@127.0.0.1:5984/_up"
+  });
+}
+
+function simpleReplicatedContainerVariant(title, filePrefix, summary) {
+  return {
+    title,
+    filePrefix,
+    steps: containerHaSteps,
+    summary,
+    supportNote: summary
+  };
 }
 
 function catalogTarget(def, index) {
@@ -1401,7 +2402,7 @@ function catalogTarget(def, index) {
     label: `${tech}-single-01`,
     role: def.role ?? "app",
     vmName: `${tech}-single-01`,
-    ip: `10.31.${index}.50`,
+    ip: "10.0.0.50",
     cores: def.cores ?? 4,
     memory: def.memory ?? 8192,
     diskGb: def.diskGb ?? "80"
@@ -1415,21 +2416,57 @@ function catalogNodes(def, index) {
     label: `${tech}-${String(itemIndex + 1).padStart(2, "0")}`,
     role: def.role ?? "member",
     vmName: `${tech}-${String(itemIndex + 1).padStart(2, "0")}`,
-    ip: `10.31.${index}.${11 + itemIndex}`,
+    ip: `10.0.0.${11 + itemIndex}`,
     cores: def.haCores ?? def.cores ?? 4,
     memory: def.haMemory ?? def.memory ?? 8192,
     diskGb: def.haDiskGb ?? def.diskGb ?? "80"
   }));
 }
 
+function catalogVariantNodes(def, variant) {
+  const tech = slug(def.displayName).replaceAll("_", "-");
+  const groups = variant.nodeGroups ?? [
+    {
+      role: def.role ?? "member",
+      labelPrefix: tech,
+      vmNamePrefix: tech,
+      count: variant.haCount ?? def.haCount ?? 3
+    }
+  ];
+  return groups.flatMap((group) => Array.from({ length: group.count }, (_, itemIndex) => {
+    const ordinal = String(itemIndex + 1).padStart(2, "0");
+    const labelPrefix = group.labelPrefix ?? `${tech}-${group.role.replaceAll("_", "-")}`;
+    const vmNamePrefix = group.vmNamePrefix ?? labelPrefix;
+    return {
+      label: `${labelPrefix}-${ordinal}`,
+      role: group.role,
+      vmName: `${vmNamePrefix}-${ordinal}`,
+      ip: `10.0.0.${11 + itemIndex}`,
+      cores: group.cores ?? variant.haCores ?? def.haCores ?? def.cores ?? 4,
+      memory: group.memory ?? variant.haMemory ?? def.haMemory ?? def.memory ?? 8192,
+      diskGb: group.diskGb ?? variant.haDiskGb ?? def.haDiskGb ?? def.diskGb ?? "80"
+    };
+  }));
+}
+
 function catalogStack(def, index) {
   const target = catalogTarget(def, index);
-  const nodes = catalogNodes(def, index);
+  const haVariants = (def.haVariants ?? []).map((variant) => {
+    const nodes = catalogVariantNodes(def, variant);
+    return {
+      title: variant.title ?? `${def.displayName} HA`,
+      filePrefix: variant.filePrefix ?? "ha-cluster",
+      nodes,
+      get steps() { return variant.steps(def, this.nodes, variant); },
+      health: variant.health ?? def.haHealth ?? def.health,
+      supportNote: variant.supportNote ?? ""
+    };
+  });
   return {
     displayName: def.displayName,
     category: def.category,
     domain: def.domain ?? "apps.example.internal",
-    gateway: `10.31.${index}.1`,
+    gateway: "10.0.0.1",
     defaultCores: def.cores ?? 4,
     defaultMemory: def.memory ?? 8192,
     defaultDiskGb: def.diskGb ?? "80",
@@ -1440,18 +2477,90 @@ function catalogStack(def, index) {
     single: {
       filePrefix: def.singleFilePrefix ?? "single-node",
       target,
-      existingHost: `10.21.${index}.50`,
+      existingHost: "10.0.0.50",
       steps: containerSingleSteps(def),
       health: def.health
     },
-    ha: {
-      title: def.haTitle ?? `${def.displayName} HA`,
-      filePrefix: def.haFilePrefix ?? "ha-cluster",
-      runnerHost: `10.10.1.${index}`,
-      nodes,
-      steps: containerHaSteps(def, nodes),
-      health: def.haHealth ?? def.health
-    }
+    haVariants,
+    haUnsupportedReason: def.haUnsupportedReason
+  };
+}
+
+function catalogHaProfiles(def) {
+  const profiles = {
+    mysql: [mysqlGroupReplicationVariant()],
+    mariadb: [mariadbGaleraVariant()],
+    mongodb: [mongodbReplicaSetVariant()],
+    cassandra: [cassandraRingVariant()],
+    scylladb: [scyllaRingVariant()],
+    clickhouse: [clickHouseKeeperVariant()],
+    cockroachdb: [cockroachClusterVariant()],
+    yugabytedb: [yugabyteClusterVariant()],
+    couchdb: [couchdbClusterVariant()],
+    victoriametrics: [victoriaMetricsClusterVariant()],
+    opensearch: [opensearchClusterVariant()],
+    elasticsearch: [elasticsearchClusterVariant()],
+    minio: [minioDistributedVariant()],
+    etcd: [etcdClusterVariant()],
+    consul: [consulClusterVariant()],
+    nats: [natsJetStreamClusterVariant()],
+    redpanda: [redpandaClusterVariant()],
+    nginx: [statelessActiveActiveVariant("Nginx Active-Active Web HA", "active-active-ha", "Two Nginx nodes run the same stateless web tier behind an external load balancer or DNS load-sharing layer.")],
+    httpd: [statelessActiveActiveVariant("Apache HTTPD Active-Active Web HA", "active-active-ha", "Two Apache HTTPD nodes run the same stateless web tier behind an external load balancer or DNS load-sharing layer.")],
+    haproxy: [statelessActiveActiveVariant("HAProxy Active-Active Edge HA", "active-active-ha", "Two HAProxy nodes run the same edge configuration so upstream routing can fail over through external VIP, BGP, or DNS control.")],
+    traefik: [statelessActiveActiveVariant("Traefik Active-Active Ingress HA", "active-active-ha", "Two Traefik ingress nodes run stateless active-active routing and are intended to sit behind an external VIP, BGP, or DNS control layer.")],
+    vault: [vaultRaftVariant()],
+    rethinkdb: [rethinkdbClusterVariant()],
+    valkey: [valkeySentinelVariant(), valkeyClusterVariant()],
+    solr: [],
+    typesense: [typesenseClusterVariant()],
+    weaviate: [weaviateClusterVariant()],
+    zookeeper: [zookeeperEnsembleVariant()],
+    seaweedfs: [seaweedFsClusterVariant()]
+  };
+  return profiles[def.serviceName] ?? [];
+}
+
+function catalogHaUnsupportedReason(def) {
+  const reasons = {
+    timescaledb: "Not generated in this catalog scope; TimescaleDB HA should be built on the PostgreSQL Patroni pattern with extension/package hardening.",
+    neo4j: "Not generated for the community container profile; Neo4j clustering is an enterprise topology and not catalog-safe here.",
+    influxdb: "Not generated; the OSS InfluxDB v2 container profile does not provide a built-in clustered HA topology.",
+    questdb: "Not generated; this OSS single-node profile does not expose a catalog-safe native HA topology.",
+    pulsar: "Not generated from the standalone profile; production HA requires separate ZooKeeper, BookKeeper, broker, and proxy roles.",
+    artemis: "Not generated; live/backup or broker-cluster HA requires topology-specific storage and quorum decisions outside this generic container profile.",
+    jenkins: "Not generated; Jenkins controller active-active HA is not appropriate for this single-controller OSS profile.",
+    gitlab: "Not generated; GitLab CE HA requires a larger reference architecture with external PostgreSQL, Redis, Gitaly, Praefect, and load balancers.",
+    nexus: "Not generated; Nexus Repository HA is not available for this OSS-style single-node catalog profile.",
+    sonarqube: "Not generated; SonarQube HA requires Data Center style topology, not the community container profile.",
+    keycloak: "Not generated from the start-dev profile; production Keycloak HA requires external database/cache, TLS, and hostname hardening.",
+    loki: "Not generated from the local-config profile; Loki HA requires distributed read/write/backend or simple-scalable mode plus object storage.",
+    tempo: "Not generated from the local single-binary profile; Tempo HA requires distributed roles and object storage.",
+    mssql: "Not generated; SQL Server Always On requires domain, listener, licensing, and storage decisions outside this container example.",
+    "oracle-free": "Not generated; Oracle RAC/Data Guard style HA is not appropriate for the Oracle Free single-container profile.",
+    firebird: "Not generated; this Firebird container profile has no built-in catalog-safe HA clustering mode.",
+    arangodb: "Not generated from the single-server profile; ArangoDB HA requires agency, coordinator, and DB-server role separation.",
+    memcached: "Not generated; Memcached HA is client-side sharding/replication rather than a server-side clustered workflow.",
+    dragonflydb: "Not generated; cluster/replication behavior is version and deployment-mode sensitive for this generic image.",
+    solr: "Not generated from the standalone profile; SolrCloud HA requires an explicit ZooKeeper ensemble and collection bootstrap plan.",
+    meilisearch: "Not generated; this OSS single-node profile does not provide a built-in clustered HA topology.",
+    qdrant: "Not generated from the standalone profile; distributed Qdrant bootstrapping is version-sensitive and should be explicit per release.",
+    milvus: "Not generated from the standalone profile; Milvus HA requires external etcd, object storage, and message-bus services.",
+    chromadb: "Not generated; this ChromaDB profile does not provide a server-side clustered HA topology.",
+    grafana: "Not generated from the SQLite-backed profile; Grafana HA requires an external shared database and session/cache strategy.",
+    gitea: "Not generated from the single-node profile; Gitea HA requires external database, shared storage, and SSH/HTTP load balancing.",
+    drone: "Not generated; this Drone profile is tied to one server/data volume and does not express a catalog-safe HA topology.",
+    jaeger: "Not generated from the all-in-one profile; Jaeger HA requires collectors/query nodes plus external storage."
+  };
+  return reasons[def.serviceName] ?? "No built-in or catalog-safe HA topology is generated for this catalog profile.";
+}
+
+function withCatalogHa(def) {
+  const haVariants = def.haVariants ?? catalogHaProfiles(def);
+  return {
+    ...def,
+    haVariants,
+    haUnsupportedReason: haVariants.length ? undefined : def.haUnsupportedReason ?? catalogHaUnsupportedReason(def)
   };
 }
 
@@ -1514,7 +2623,7 @@ function catalogStacks() {
     { displayName: "Drone CI", category: "devops/drone", serviceName: "drone", image: "drone/drone:2", role: "ci", ports: ["8080:80"], env: { DRONE_GITEA_SERVER: "http://gitea.example.internal", DRONE_RPC_SECRET: "change-me", DRONE_SERVER_HOST: "drone.example.internal", DRONE_SERVER_PROTO: "http" }, volumes: ["data:/data"], health: "curl -fsS http://127.0.0.1:8080/healthz" },
     { displayName: "Jaeger", category: "observability/jaeger", serviceName: "jaeger", image: "jaegertracing/all-in-one:1.60", role: "traces", ports: ["16686:16686", "4317:4317"], env: { COLLECTOR_OTLP_ENABLED: "true" }, volumes: ["data:/badger"], health: "curl -fsS http://127.0.0.1:16686/" }
   ];
-  return definitions.map((definition, index) => catalogStack(definition, index + 80));
+  return definitions.map((definition, index) => catalogStack(withCatalogHa(definition), index + 80));
 }
 
 const stacks = [
@@ -1522,7 +2631,7 @@ const stacks = [
     displayName: "PostgreSQL",
     category: "databases/postgresql",
     domain: "db.example.internal",
-    gateway: "10.30.10.1",
+    gateway: "10.0.0.1",
     defaultCores: 4,
     defaultMemory: 8192,
     defaultDiskGb: "100",
@@ -1532,8 +2641,8 @@ const stacks = [
     ],
     single: {
       filePrefix: "single-node",
-      target: { label: "postgres-single-01", role: "postgres", vmName: "pg-single-01", ip: "10.30.10.50", cores: 4, memory: 8192, diskGb: "100" },
-      existingHost: "10.20.10.50",
+      target: { label: "postgres-single-01", role: "postgres", vmName: "pg-single-01", ip: "10.0.0.50", cores: 4, memory: 8192, diskGb: "100" },
+      existingHost: "10.0.0.50",
       install: pgSingleInstall(),
       get steps() { return legacyScriptSteps("PostgreSQL single-node", this.install); },
       health: "pg_isready -h 127.0.0.1 -p 5432 && sudo -u postgres psql -c 'SELECT version();'"
@@ -1541,27 +2650,26 @@ const stacks = [
     ha: {
       title: "PostgreSQL Patroni etcd HA",
       filePrefix: "ha-patroni-etcd",
-      runnerHost: "10.10.0.21",
       nodes: [
-        { label: "etcd-01", role: "etcd", vmName: "pg-etcd-01", ip: "10.30.10.11", cores: 2, memory: 4096, diskGb: "40" },
-        { label: "etcd-02", role: "etcd", vmName: "pg-etcd-02", ip: "10.30.10.12", cores: 2, memory: 4096, diskGb: "40" },
-        { label: "etcd-03", role: "etcd", vmName: "pg-etcd-03", ip: "10.30.10.13", cores: 2, memory: 4096, diskGb: "40" },
-        { label: "pg-01", role: "postgres", vmName: "pg-ha-01", ip: "10.30.10.21", cores: 4, memory: 8192, diskGb: "150" },
-        { label: "pg-02", role: "postgres", vmName: "pg-ha-02", ip: "10.30.10.22", cores: 4, memory: 8192, diskGb: "150" },
-        { label: "pg-03", role: "postgres", vmName: "pg-ha-03", ip: "10.30.10.23", cores: 4, memory: 8192, diskGb: "150" },
-        { label: "pg-lb-01", role: "load_balancer", vmName: "pg-lb-01", ip: "10.30.10.31", cores: 2, memory: 2048, diskGb: "30" },
-        { label: "pg-lb-02", role: "load_balancer", vmName: "pg-lb-02", ip: "10.30.10.32", cores: 2, memory: 2048, diskGb: "30" }
+        { label: "etcd-01", role: "etcd", vmName: "pg-etcd-01", ip: "10.0.0.11", cores: 2, memory: 4096, diskGb: "40" },
+        { label: "etcd-02", role: "etcd", vmName: "pg-etcd-02", ip: "10.0.0.12", cores: 2, memory: 4096, diskGb: "40" },
+        { label: "etcd-03", role: "etcd", vmName: "pg-etcd-03", ip: "10.0.0.13", cores: 2, memory: 4096, diskGb: "40" },
+        { label: "pg-01", role: "postgres", vmName: "pg-ha-01", ip: "10.0.0.21", cores: 4, memory: 8192, diskGb: "150" },
+        { label: "pg-02", role: "postgres", vmName: "pg-ha-02", ip: "10.0.0.22", cores: 4, memory: 8192, diskGb: "150" },
+        { label: "pg-03", role: "postgres", vmName: "pg-ha-03", ip: "10.0.0.23", cores: 4, memory: 8192, diskGb: "150" },
+        { label: "pg-lb-01", role: "load_balancer", vmName: "pg-lb-01", ip: "10.0.0.31", cores: 2, memory: 2048, diskGb: "30" },
+        { label: "pg-lb-02", role: "load_balancer", vmName: "pg-lb-02", ip: "10.0.0.32", cores: 2, memory: 2048, diskGb: "30" }
       ],
       get install() { return pgHaInstall(this.nodes); },
       get steps() { return legacyScriptSteps(this.title, this.install); },
-      health: "curl -fsS http://10.30.10.21:8008/health && curl -fsS http://10.30.10.31:5432 || true"
+      health: "curl -fsS http://10.0.0.21:8008/health && curl -fsS http://10.0.0.31:5432 || true"
     }
   },
   {
     displayName: "Redis",
     category: "cache/redis",
     domain: "cache.example.internal",
-    gateway: "10.30.20.1",
+    gateway: "10.0.64.1",
     defaultCores: 2,
     defaultMemory: 4096,
     defaultDiskGb: "40",
@@ -1571,31 +2679,47 @@ const stacks = [
     ],
     single: {
       filePrefix: "single-node",
-      target: { label: "redis-single-01", role: "redis", vmName: "redis-single-01", ip: "10.30.20.50", cores: 2, memory: 4096, diskGb: "40" },
-      existingHost: "10.20.20.50",
+      target: { label: "redis-single-01", role: "redis", vmName: "redis-single-01", ip: "10.0.64.50", cores: 2, memory: 4096, diskGb: "40" },
+      existingHost: "10.0.64.50",
       install: redisSingleInstall(),
       get steps() { return legacyScriptSteps("Redis single-node", this.install); },
       health: "redis-cli -h 127.0.0.1 -p 6379 PING"
     },
-    ha: {
-      title: "Redis Sentinel HA",
-      filePrefix: "sentinel-ha",
-      runnerHost: "10.10.0.22",
-      nodes: [
-        { label: "redis-01", role: "redis", vmName: "redis-ha-01", ip: "10.30.20.11", cores: 2, memory: 4096, diskGb: "50" },
-        { label: "redis-02", role: "redis", vmName: "redis-ha-02", ip: "10.30.20.12", cores: 2, memory: 4096, diskGb: "50" },
-        { label: "redis-03", role: "redis", vmName: "redis-ha-03", ip: "10.30.20.13", cores: 2, memory: 4096, diskGb: "50" }
-      ],
-      get install() { return redisHaInstall(this.nodes); },
-      get steps() { return legacyScriptSteps(this.title, this.install); },
-      health: "redis-cli -h 10.30.20.11 -p 26379 sentinel master redis-ha"
-    }
+    haVariants: [
+      {
+        title: "Redis Sentinel HA",
+        filePrefix: "sentinel-ha",
+        nodes: [
+          { label: "redis-01", role: "redis", vmName: "redis-ha-01", ip: "10.0.64.11", cores: 2, memory: 4096, diskGb: "50" },
+          { label: "redis-02", role: "redis", vmName: "redis-ha-02", ip: "10.0.64.12", cores: 2, memory: 4096, diskGb: "50" },
+          { label: "redis-03", role: "redis", vmName: "redis-ha-03", ip: "10.0.64.13", cores: 2, memory: 4096, diskGb: "50" }
+        ],
+        get install() { return redisHaInstall(this.nodes); },
+        get steps() { return legacyScriptSteps(this.title, this.install); },
+        health: "redis-cli -h 10.0.64.11 -p 26379 sentinel master redis-ha"
+      },
+      {
+        title: "Redis Cluster HA",
+        filePrefix: "cluster-ha",
+        nodes: [
+          { label: "redis-cluster-01", role: "redis", vmName: "redis-cluster-01", ip: "10.0.64.11", cores: 2, memory: 4096, diskGb: "50" },
+          { label: "redis-cluster-02", role: "redis", vmName: "redis-cluster-02", ip: "10.0.64.12", cores: 2, memory: 4096, diskGb: "50" },
+          { label: "redis-cluster-03", role: "redis", vmName: "redis-cluster-03", ip: "10.0.64.13", cores: 2, memory: 4096, diskGb: "50" },
+          { label: "redis-cluster-04", role: "redis", vmName: "redis-cluster-04", ip: "10.0.64.14", cores: 2, memory: 4096, diskGb: "50" },
+          { label: "redis-cluster-05", role: "redis", vmName: "redis-cluster-05", ip: "10.0.64.15", cores: 2, memory: 4096, diskGb: "50" },
+          { label: "redis-cluster-06", role: "redis", vmName: "redis-cluster-06", ip: "10.0.64.16", cores: 2, memory: 4096, diskGb: "50" }
+        ],
+        get install() { return redisClusterInstall(this.nodes); },
+        get steps() { return legacyScriptSteps(this.title, this.install); },
+        health: "redis-cli -h 10.0.64.11 -p 6379 cluster info"
+      }
+    ]
   },
   {
     displayName: "Kafka",
     category: "messaging/kafka",
     domain: "msg.example.internal",
-    gateway: "10.30.30.1",
+    gateway: "10.0.80.1",
     defaultCores: 4,
     defaultMemory: 8192,
     defaultDiskGb: "100",
@@ -1605,8 +2729,8 @@ const stacks = [
     ],
     single: {
       filePrefix: "kraft-single-node",
-      target: { label: "kafka-single-01", role: "broker", vmName: "kafka-single-01", ip: "10.30.30.50", cores: 4, memory: 8192, diskGb: "100" },
-      existingHost: "10.20.30.50",
+      target: { label: "kafka-single-01", role: "broker", vmName: "kafka-single-01", ip: "10.0.80.50", cores: 4, memory: 8192, diskGb: "100" },
+      existingHost: "10.0.80.50",
       install: kafkaSingleInstall(),
       get steps() { return legacyScriptSteps("Kafka single-node", this.install); },
       health: "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092"
@@ -1614,22 +2738,21 @@ const stacks = [
     ha: {
       title: "Kafka KRaft HA",
       filePrefix: "kraft-ha",
-      runnerHost: "10.10.0.23",
       nodes: [
-        { label: "kafka-01", role: "broker", vmName: "kafka-ha-01", ip: "10.30.30.11", cores: 4, memory: 8192, diskGb: "150" },
-        { label: "kafka-02", role: "broker", vmName: "kafka-ha-02", ip: "10.30.30.12", cores: 4, memory: 8192, diskGb: "150" },
-        { label: "kafka-03", role: "broker", vmName: "kafka-ha-03", ip: "10.30.30.13", cores: 4, memory: 8192, diskGb: "150" }
+        { label: "kafka-01", role: "broker", vmName: "kafka-ha-01", ip: "10.0.80.11", cores: 4, memory: 8192, diskGb: "150" },
+        { label: "kafka-02", role: "broker", vmName: "kafka-ha-02", ip: "10.0.80.12", cores: 4, memory: 8192, diskGb: "150" },
+        { label: "kafka-03", role: "broker", vmName: "kafka-ha-03", ip: "10.0.80.13", cores: 4, memory: 8192, diskGb: "150" }
       ],
       get install() { return kafkaHaInstall(this.nodes); },
       get steps() { return legacyScriptSteps(this.title, this.install); },
-      health: "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server 10.30.30.11:9092 describe --status"
+      health: "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server 10.0.80.11:9092 describe --status"
     }
   },
   {
     displayName: "RabbitMQ",
     category: "messaging/rabbitmq",
     domain: "msg.example.internal",
-    gateway: "10.30.40.1",
+    gateway: "10.0.81.1",
     defaultCores: 2,
     defaultMemory: 4096,
     defaultDiskGb: "60",
@@ -1639,8 +2762,8 @@ const stacks = [
     ],
     single: {
       filePrefix: "single-node",
-      target: { label: "rabbitmq-single-01", role: "rabbitmq", vmName: "rabbitmq-single-01", ip: "10.30.40.50", cores: 2, memory: 4096, diskGb: "60" },
-      existingHost: "10.20.40.50",
+      target: { label: "rabbitmq-single-01", role: "rabbitmq", vmName: "rabbitmq-single-01", ip: "10.0.81.50", cores: 2, memory: 4096, diskGb: "60" },
+      existingHost: "10.0.81.50",
       install: rabbitSingleInstall(),
       get steps() { return legacyScriptSteps("RabbitMQ single-node", this.install); },
       health: "sudo rabbitmq-diagnostics ping && sudo rabbitmqctl status"
@@ -1648,11 +2771,10 @@ const stacks = [
     ha: {
       title: "RabbitMQ Quorum HA",
       filePrefix: "quorum-ha",
-      runnerHost: "10.10.0.24",
       nodes: [
-        { label: "rabbitmq-01", role: "rabbitmq", vmName: "rabbitmq-ha-01", ip: "10.30.40.11", cores: 2, memory: 4096, diskGb: "80" },
-        { label: "rabbitmq-02", role: "rabbitmq", vmName: "rabbitmq-ha-02", ip: "10.30.40.12", cores: 2, memory: 4096, diskGb: "80" },
-        { label: "rabbitmq-03", role: "rabbitmq", vmName: "rabbitmq-ha-03", ip: "10.30.40.13", cores: 2, memory: 4096, diskGb: "80" }
+        { label: "rabbitmq-01", role: "rabbitmq", vmName: "rabbitmq-ha-01", ip: "10.0.81.11", cores: 2, memory: 4096, diskGb: "80" },
+        { label: "rabbitmq-02", role: "rabbitmq", vmName: "rabbitmq-ha-02", ip: "10.0.81.12", cores: 2, memory: 4096, diskGb: "80" },
+        { label: "rabbitmq-03", role: "rabbitmq", vmName: "rabbitmq-ha-03", ip: "10.0.81.13", cores: 2, memory: 4096, diskGb: "80" }
       ],
       get install() { return rabbitHaInstall(this.nodes); },
       get steps() { return legacyScriptSteps(this.title, this.install); },
@@ -1663,7 +2785,7 @@ const stacks = [
     displayName: "Vanilla Kubernetes",
     category: "kubernetes/vanilla",
     domain: "k8s.example.internal",
-    gateway: "10.30.50.1",
+    gateway: "10.0.96.1",
     defaultCores: 4,
     defaultMemory: 8192,
     defaultDiskGb: "80",
@@ -1673,8 +2795,8 @@ const stacks = [
     ],
     single: {
       filePrefix: "single-control-plane",
-      target: { label: "k8s-cp-single-01", role: "control_plane", vmName: "k8s-single-cp-01", ip: "10.30.50.50", cores: 4, memory: 8192, diskGb: "80" },
-      existingHost: "10.20.50.50",
+      target: { label: "k8s-cp-single-01", role: "control_plane", vmName: "k8s-single-cp-01", ip: "10.0.96.50", cores: 4, memory: 8192, diskGb: "80" },
+      existingHost: "10.0.96.50",
       install: vanillaSingleInstall(),
       get steps() { return legacyScriptSteps("Vanilla Kubernetes single-node", this.install); },
       health: "kubectl get nodes -o wide && kubectl get pods -A"
@@ -1682,13 +2804,12 @@ const stacks = [
     ha: {
       title: "Vanilla Kubernetes HA",
       filePrefix: "ha-control-plane",
-      runnerHost: "10.10.0.25",
       nodes: [
-        { label: "k8s-cp-01", role: "control_plane", vmName: "k8s-cp-01", ip: "10.30.50.11", cores: 4, memory: 8192, diskGb: "100" },
-        { label: "k8s-cp-02", role: "control_plane", vmName: "k8s-cp-02", ip: "10.30.50.12", cores: 4, memory: 8192, diskGb: "100" },
-        { label: "k8s-cp-03", role: "control_plane", vmName: "k8s-cp-03", ip: "10.30.50.13", cores: 4, memory: 8192, diskGb: "100" },
-        { label: "k8s-worker-01", role: "worker", vmName: "k8s-worker-01", ip: "10.30.50.21", cores: 4, memory: 8192, diskGb: "120" },
-        { label: "k8s-worker-02", role: "worker", vmName: "k8s-worker-02", ip: "10.30.50.22", cores: 4, memory: 8192, diskGb: "120" }
+        { label: "k8s-cp-01", role: "control_plane", vmName: "k8s-cp-01", ip: "10.0.96.11", cores: 4, memory: 8192, diskGb: "100" },
+        { label: "k8s-cp-02", role: "control_plane", vmName: "k8s-cp-02", ip: "10.0.96.12", cores: 4, memory: 8192, diskGb: "100" },
+        { label: "k8s-cp-03", role: "control_plane", vmName: "k8s-cp-03", ip: "10.0.96.13", cores: 4, memory: 8192, diskGb: "100" },
+        { label: "k8s-worker-01", role: "worker", vmName: "k8s-worker-01", ip: "10.0.96.21", cores: 4, memory: 8192, diskGb: "120" },
+        { label: "k8s-worker-02", role: "worker", vmName: "k8s-worker-02", ip: "10.0.96.22", cores: 4, memory: 8192, diskGb: "120" }
       ],
       get install() { return vanillaHaInstall(this.nodes); },
       get steps() { return legacyScriptSteps(this.title, this.install); },
@@ -1699,7 +2820,7 @@ const stacks = [
     displayName: "Rancher RKE2",
     category: "kubernetes/rancher-rke2",
     domain: "rancher.example.internal",
-    gateway: "10.30.60.1",
+    gateway: "10.0.97.1",
     defaultCores: 4,
     defaultMemory: 8192,
     defaultDiskGb: "100",
@@ -1709,8 +2830,8 @@ const stacks = [
     ],
     single: {
       filePrefix: "single-server",
-      target: { label: "rke2-single-01", role: "rke2_server", vmName: "rke2-single-01", ip: "10.30.60.50", cores: 4, memory: 8192, diskGb: "100" },
-      existingHost: "10.20.60.50",
+      target: { label: "rke2-single-01", role: "rke2_server", vmName: "rke2-single-01", ip: "10.0.97.50", cores: 4, memory: 8192, diskGb: "100" },
+      existingHost: "10.0.97.50",
       install: rke2SingleInstall(),
       get steps() { return legacyScriptSteps("Rancher RKE2 single-node", this.install); },
       health: "sudo /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide"
@@ -1718,13 +2839,12 @@ const stacks = [
     ha: {
       title: "Rancher RKE2 HA",
       filePrefix: "ha-server-agent",
-      runnerHost: "10.10.0.26",
       nodes: [
-        { label: "rke2-server-01", role: "rke2_server", vmName: "rke2-server-01", ip: "10.30.60.11", cores: 4, memory: 8192, diskGb: "120" },
-        { label: "rke2-server-02", role: "rke2_server", vmName: "rke2-server-02", ip: "10.30.60.12", cores: 4, memory: 8192, diskGb: "120" },
-        { label: "rke2-server-03", role: "rke2_server", vmName: "rke2-server-03", ip: "10.30.60.13", cores: 4, memory: 8192, diskGb: "120" },
-        { label: "rke2-agent-01", role: "rke2_agent", vmName: "rke2-agent-01", ip: "10.30.60.21", cores: 4, memory: 8192, diskGb: "120" },
-        { label: "rke2-agent-02", role: "rke2_agent", vmName: "rke2-agent-02", ip: "10.30.60.22", cores: 4, memory: 8192, diskGb: "120" }
+        { label: "rke2-server-01", role: "rke2_server", vmName: "rke2-server-01", ip: "10.0.97.11", cores: 4, memory: 8192, diskGb: "120" },
+        { label: "rke2-server-02", role: "rke2_server", vmName: "rke2-server-02", ip: "10.0.97.12", cores: 4, memory: 8192, diskGb: "120" },
+        { label: "rke2-server-03", role: "rke2_server", vmName: "rke2-server-03", ip: "10.0.97.13", cores: 4, memory: 8192, diskGb: "120" },
+        { label: "rke2-agent-01", role: "rke2_agent", vmName: "rke2-agent-01", ip: "10.0.97.21", cores: 4, memory: 8192, diskGb: "120" },
+        { label: "rke2-agent-02", role: "rke2_agent", vmName: "rke2-agent-02", ip: "10.0.97.22", cores: 4, memory: 8192, diskGb: "120" }
       ],
       get install() { return rke2HaInstall(this.nodes); },
       get steps() { return legacyScriptSteps(this.title, this.install); },
@@ -1735,7 +2855,7 @@ const stacks = [
     displayName: "Prometheus Grafana",
     category: "monitoring/prometheus-grafana",
     domain: "monitoring.example.internal",
-    gateway: "10.30.70.1",
+    gateway: "10.0.112.1",
     defaultCores: 2,
     defaultMemory: 4096,
     defaultDiskGb: "80",
@@ -1745,8 +2865,8 @@ const stacks = [
     ],
     single: {
       filePrefix: "single-node",
-      target: { label: "monitoring-single-01", role: "monitoring", vmName: "monitoring-single-01", ip: "10.30.70.50", cores: 2, memory: 4096, diskGb: "80" },
-      existingHost: "10.20.70.50",
+      target: { label: "monitoring-single-01", role: "monitoring", vmName: "monitoring-single-01", ip: "10.0.112.50", cores: 2, memory: 4096, diskGb: "80" },
+      existingHost: "10.0.112.50",
       install: monitoringSingleInstall(),
       get steps() { return legacyScriptSteps("Prometheus Grafana single-node", this.install); },
       health: "curl -fsS http://127.0.0.1:9090/-/ready && curl -fsS http://127.0.0.1:3000/api/health"
@@ -1754,23 +2874,24 @@ const stacks = [
     ha: {
       title: "Prometheus Grafana HA",
       filePrefix: "ha-stack",
-      runnerHost: "10.10.0.27",
       nodes: [
-        { label: "prometheus-01", role: "prometheus", vmName: "prometheus-01", ip: "10.30.70.11", cores: 4, memory: 8192, diskGb: "200" },
-        { label: "prometheus-02", role: "prometheus", vmName: "prometheus-02", ip: "10.30.70.12", cores: 4, memory: 8192, diskGb: "200" },
-        { label: "alertmanager-01", role: "alertmanager", vmName: "alertmanager-01", ip: "10.30.70.21", cores: 2, memory: 2048, diskGb: "40" },
-        { label: "alertmanager-02", role: "alertmanager", vmName: "alertmanager-02", ip: "10.30.70.22", cores: 2, memory: 2048, diskGb: "40" },
-        { label: "alertmanager-03", role: "alertmanager", vmName: "alertmanager-03", ip: "10.30.70.23", cores: 2, memory: 2048, diskGb: "40" },
-        { label: "grafana-01", role: "grafana", vmName: "grafana-01", ip: "10.30.70.31", cores: 2, memory: 4096, diskGb: "60" },
-        { label: "grafana-02", role: "grafana", vmName: "grafana-02", ip: "10.30.70.32", cores: 2, memory: 4096, diskGb: "60" }
+        { label: "prometheus-01", role: "prometheus", vmName: "prometheus-01", ip: "10.0.112.11", cores: 4, memory: 8192, diskGb: "200" },
+        { label: "prometheus-02", role: "prometheus", vmName: "prometheus-02", ip: "10.0.112.12", cores: 4, memory: 8192, diskGb: "200" },
+        { label: "alertmanager-01", role: "alertmanager", vmName: "alertmanager-01", ip: "10.0.112.21", cores: 2, memory: 2048, diskGb: "40" },
+        { label: "alertmanager-02", role: "alertmanager", vmName: "alertmanager-02", ip: "10.0.112.22", cores: 2, memory: 2048, diskGb: "40" },
+        { label: "alertmanager-03", role: "alertmanager", vmName: "alertmanager-03", ip: "10.0.112.23", cores: 2, memory: 2048, diskGb: "40" },
+        { label: "grafana-01", role: "grafana", vmName: "grafana-01", ip: "10.0.112.31", cores: 2, memory: 4096, diskGb: "60" },
+        { label: "grafana-02", role: "grafana", vmName: "grafana-02", ip: "10.0.112.32", cores: 2, memory: 4096, diskGb: "60" }
       ],
       get install() { return monitoringHaInstall(this.nodes); },
       get steps() { return legacyScriptSteps(this.title, this.install); },
-      health: "curl -fsS http://10.30.70.11:9090/-/ready && curl -fsS http://10.30.70.31:3000/api/health"
+      health: "curl -fsS http://10.0.112.11:9090/-/ready && curl -fsS http://10.0.112.31:3000/api/health"
     }
   },
   ...catalogStacks()
 ];
+
+applyNetworkPlan(stacks);
 
 function validateWorkflow(workflow, fileName) {
   const errors = [];
@@ -1898,24 +3019,28 @@ function workflowEntries() {
       name: `${stack.displayName} single-node existing`,
       description: `Install and validate ${stack.displayName} on an existing single host.`
     });
-    entries.push({
-      stack,
-      mode: "high-availability",
-      provisioning: "provisioned",
-      fileName: `${stack.ha.filePrefix}-provisioned.json`,
-      workflow: createHaProvisionedWorkflow(stack),
-      name: `${stack.ha.title} provisioned`,
-      description: `Provision ${stack.ha.title} nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.`
-    });
-    entries.push({
-      stack,
-      mode: "high-availability",
-      provisioning: "existing",
-      fileName: `${stack.ha.filePrefix}-existing.json`,
-      workflow: createHaExistingWorkflow(stack),
-      name: `${stack.ha.title} existing`,
-      description: `Bootstrap and validate ${stack.ha.title} from an existing automation runner and target inventory.`
-    });
+    for (const ha of stackHaVariants(stack)) {
+      entries.push({
+        stack,
+        ha,
+        mode: "high-availability",
+        provisioning: "provisioned",
+        fileName: `${ha.filePrefix}-provisioned.json`,
+        workflow: createHaProvisionedWorkflow(stack, ha),
+        name: `${ha.title} provisioned`,
+        description: `Provision ${ha.title} nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.`
+      });
+      entries.push({
+        stack,
+        ha,
+        mode: "high-availability",
+        provisioning: "existing",
+        fileName: `${ha.filePrefix}-existing.json`,
+        workflow: createHaExistingWorkflow(stack, ha),
+        name: `${ha.title} existing`,
+        description: `Bootstrap and validate ${ha.title} across existing member nodes with bash command steps.`
+      });
+    }
   }
   return entries;
 }
@@ -1944,12 +3069,55 @@ function makeReadme(entries) {
   lines.push("");
   lines.push("This repository contains ready-to-adapt JSON workflow packages for OctaStack automation imports. The examples follow the package, canonical graph, and validation rules documented in `NODES.md`.");
   lines.push("");
-  lines.push("The library is organized by operational domain, then by technology. Each technology includes both simple single-node examples and high-availability examples, and each pattern is available in provisioned and existing-infrastructure variants.");
+  lines.push("The library is organized by operational domain, then by technology. Every technology includes simple single-node examples. Technologies with a catalog-safe HA topology also include one or more high-availability variants, each available in provisioned and existing-infrastructure modes.");
   lines.push("");
   lines.push("## Provisioning modes");
   lines.push("");
   lines.push("- `*-provisioned.json`: starts with `proxmoxConfigNode`, provisions VMs through `provisionNode`, waits for reachability, then installs/configures the stack.");
-  lines.push("- `*-existing.json`: skips VM creation and starts from a `serverNode`. Single-node examples target the application host directly. HA examples target an automation runner that executes an explicit inventory against pre-existing nodes.");
+  lines.push("- `*-existing.json`: skips VM creation and starts from `serverNode`. Single-node examples target the application host directly. HA examples fan out to the existing member nodes and run bash command steps on each active node context.");
+  lines.push("");
+  lines.push("## IP address plan");
+  lines.push("");
+  lines.push(`All generated examples use the parent network \`${ROOT_NETWORK_CIDR}\`. Each top-level workflow category receives a block inside that parent network, and each stack receives one \`/24\` from its category block.`);
+  lines.push("");
+  lines.push("Host conventions inside each stack `/24`:");
+  lines.push("");
+  lines.push("- `.1`: gateway");
+  lines.push("- `.11-.49`: HA members, grouped by role in blocks of ten");
+  lines.push("- `.50`: single-node target; provisioned and existing variants reuse the same example address");
+  lines.push("");
+  lines.push("| Category | Category block |");
+  lines.push("| --- | --- |");
+  for (const block of CATEGORY_IP_BLOCKS) {
+    lines.push(`| ${block.category} | \`${block.cidr}\` |`);
+  }
+  lines.push("");
+  lines.push("| Category | Stack | Stack block | Gateway | Single-node IP | HA variants and member IPs |");
+  lines.push("| --- | --- | --- | --- | --- | --- |");
+  const uniqueStacks = [];
+  const seenStacks = new Set();
+  for (const entry of entries) {
+    if (seenStacks.has(entry.stack.category)) {
+      continue;
+    }
+    seenStacks.add(entry.stack.category);
+    uniqueStacks.push(entry.stack);
+  }
+  for (const stack of uniqueStacks) {
+    const haSummary = stackHaVariants(stack)
+      .map((ha) => `${ha.title}: ${ha.nodes.map((target) => `\`${target.label}:${target.ip}\``).join(", ")}`)
+      .join("<br>");
+    lines.push(`| ${topLevelCategory(stack.category)} | ${stack.displayName} | \`${stack.network.stackCidr}\` | \`${stack.network.gateway}\` | \`${stack.single.target.ip}\` | ${haSummary || stack.haUnsupportedReason || "Not generated; no suitable HA topology in this catalog scope."} |`);
+  }
+  lines.push("");
+  lines.push("## HA support matrix");
+  lines.push("");
+  lines.push("| Domain | Stack | HA workflow status | Variants |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const stack of stacks) {
+    const variants = stackHaVariants(stack);
+    lines.push(`| ${topLevelCategory(stack.category)} | ${stack.displayName} | ${variants.length ? "Generated" : "Not generated"} | ${variants.map((ha) => ha.title).join(", ") || stack.haUnsupportedReason || "No built-in or catalog-safe HA topology."} |`);
+  }
   lines.push("");
   lines.push("## Catalog");
   lines.push("");
@@ -1977,7 +3145,7 @@ function makeReadme(entries) {
   lines.push("- Template VM IDs default to `9000`; adjust `templateId`, CPU, memory, storage, network bridge, VLAN, and static IP values per environment.");
   lines.push("- All example credentials and secrets use obvious placeholders such as `change-me` and `replace-with-rke2-token`.");
   lines.push("- HA examples prefer odd-number quorum sets where relevant: 3 etcd nodes, 3 Redis Sentinel members, 3 Kafka KRaft voters, 3 RabbitMQ members, and 3 Kubernetes/RKE2 server nodes.");
-  lines.push("- Existing-infrastructure HA examples assume the automation runner already has SSH reachability to the target inventory and can run Ansible or shell orchestration.");
+  lines.push("- HA command steps are plain bash scripts that run on the active target node. They do not install external orchestration tools inside command nodes or wrap shell logic in generated orchestration files.");
   lines.push("- The scripts are intentionally explicit and readable. Treat them as production starting points, then harden package repositories, certificates, secrets, users, backups, firewalls, and storage classes for your environment.");
   lines.push("");
   lines.push("## Validation");

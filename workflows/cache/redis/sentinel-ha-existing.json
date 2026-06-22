@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T00:00:00Z",
   "workflow": {
     "name": "Redis Sentinel HA existing",
-    "description": "Bootstrap and validate Redis Sentinel HA from an existing automation runner and target inventory.",
+    "description": "Bootstrap and validate Redis Sentinel HA across existing member nodes with bash command steps.",
     "graphData": {
       "nodes": [
         {
@@ -39,23 +39,23 @@
           }
         },
         {
-          "id": "node_runner",
+          "id": "node_server_redis_01",
           "type": "serverNode",
           "position": {
             "x": 0,
             "y": 885
           },
           "data": {
-            "label": "Automation Runner",
-            "hostname": "10.10.0.22",
+            "label": "redis-01",
+            "hostname": "10.0.64.11",
             "targets": [
               {
-                "id": "target-runner",
+                "id": "target-0",
                 "source": "manual",
-                "host": "10.10.0.22",
-                "label": "Automation Runner",
-                "ip": "10.10.0.22",
-                "name": "automation-runner",
+                "host": "10.0.64.11",
+                "label": "redis-01",
+                "ip": "10.0.64.11",
+                "name": "redis-01",
                 "node": "",
                 "vmid": "",
                 "status": "existing",
@@ -65,14 +65,110 @@
           }
         },
         {
-          "id": "node_wait_runner",
+          "id": "node_wait_redis_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 885,
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait redis-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_redis_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
             "y": 885
           },
           "data": {
-            "label": "Wait for automation runner",
+            "label": "redis-02",
+            "hostname": "10.0.64.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.64.12",
+                "label": "redis-02",
+                "ip": "10.0.64.12",
+                "name": "redis-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_redis_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait redis-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_redis_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "redis-03",
+            "hostname": "10.0.64.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.64.13",
+                "label": "redis-03",
+                "ip": "10.0.64.13",
+                "name": "redis-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_redis_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait redis-03",
             "timeout": "20",
             "interval": "10",
             "probes": [
@@ -90,12 +186,12 @@
           "id": "node_step_1",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2300
+            "x": 885,
+            "y": 3600
           },
           "data": {
             "label": "Render Redis Sentinel HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/redis_sentinel_ha\ncat >/opt/octastack/redis_sentinel_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/redis-sentinel.ini <<'INVENTORY'\n[redis]\n10.30.20.11 node_name=redis-01\n10.30.20.12 node_name=redis-02\n10.30.20.13 node_name=redis-03\nINVENTORY\ncat >/tmp/redis-sentinel.yml <<'PLAYBOOK'\n- hosts: redis\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: redis-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /etc/redis/redis.conf\n        mode: \"0644\"\n        content: |\n          bind 0.0.0.0\n          protected-mode no\n          port 6379\n          appendonly yes\n          dir /var/lib/redis\n    - ansible.builtin.lineinfile:\n        path: /etc/redis/redis.conf\n        line: \"replicaof 10.30.20.11 6379\"\n      when: inventory_hostname != \"10.30.20.11\"\n    - ansible.builtin.copy:\n        dest: /etc/redis/sentinel.conf\n        mode: \"0644\"\n        content: |\n          port 26379\n          sentinel monitor redis-ha 10.30.20.11 6379 2\n          sentinel down-after-milliseconds redis-ha 5000\n          sentinel failover-timeout redis-ha 60000\n          sentinel parallel-syncs redis-ha 1\n    - ansible.builtin.service:\n        name: redis-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: redis-server /etc/redis/sentinel.conf --sentinel\n      async: 45\n      poll: 0\nPLAYBOOK\nansible-playbook -i /tmp/redis-sentinel.ini /tmp/redis-sentinel.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/redis_sentinel_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/redis_sentinel_ha\ncat >/opt/octastack/redis_sentinel_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[redis-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.64.11 10.0.64.12 10.0.64.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.64.11) NODE_NAME='redis-01'; NODE_ROLE='redis'; NODE_INDEX=1 ;;\n  10.0.64.12) NODE_NAME='redis-02'; NODE_ROLE='redis'; NODE_INDEX=2 ;;\n  10.0.64.13) NODE_NAME='redis-03'; NODE_ROLE='redis'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\nwait_for_tcp() {\n  host=\"$1\"\n  port=\"$2\"\n  timeout=\"${3:-180}\"\n  start=\"$(date +%s)\"\n  while ! timeout 2 bash -c \"cat < /dev/null > /dev/tcp/$host/$port\" >/dev/null 2>&1; do\n    now=\"$(date +%s)\"\n    if [ \"$((now - start))\" -ge \"$timeout\" ]; then\n      log \"timeout waiting for $host:$port\"\n      return 1\n    fi\n    sleep 5\n  done\n}\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y redis-server\ncat >/etc/redis/redis.conf <<EOF\nbind 0.0.0.0\nprotected-mode no\nport 6379\nappendonly yes\ndir /var/lib/redis\nEOF\nif [ \"$CURRENT_IP\" != \"10.0.64.11\" ]; then\n  log \"waiting for primary 10.0.64.11:6379\"\n  wait_for_tcp \"10.0.64.11\" 6379 180\n  echo \"replicaof 10.0.64.11 6379\" >>/etc/redis/redis.conf\nfi\ncat >/etc/redis/sentinel.conf <<EOF\nport 26379\nsentinel monitor redis-ha 10.0.64.11 6379 2\nsentinel down-after-milliseconds redis-ha 5000\nsentinel failover-timeout redis-ha 60000\nsentinel parallel-syncs redis-ha 1\nEOF\nsystemctl restart redis-server\nsystemctl enable redis-server\npkill -f 'redis-server .*sentinel.conf' || true\ninstall -d -m 0755 /var/log/redis\nnohup redis-server /etc/redis/sentinel.conf --sentinel >/var/log/redis/sentinel.log 2>&1 &\nlog \"redis and sentinel started\"\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/redis_sentinel_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -103,8 +199,8 @@
           "id": "node_step_2",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2705
+            "x": 885,
+            "y": 4005
           },
           "data": {
             "label": "Review Redis Sentinel HA installer",
@@ -116,8 +212,8 @@
           "id": "node_step_3",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3110
+            "x": 885,
+            "y": 4410
           },
           "data": {
             "label": "Execute Redis Sentinel HA installer",
@@ -129,8 +225,8 @@
           "id": "node_step_4",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3515
+            "x": 885,
+            "y": 4815
           },
           "data": {
             "label": "Collect Redis Sentinel HA runtime status",
@@ -142,12 +238,12 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 5000
+            "x": 885,
+            "y": 6200
           },
           "data": {
             "label": "Redis Sentinel HA health check",
-            "command": "redis-cli -h 10.30.20.11 -p 26379 sentinel master redis-ha",
+            "command": "redis-cli -h 10.0.64.11 -p 26379 sentinel master redis-ha",
             "sudo": false
           }
         },
@@ -155,8 +251,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 230,
-            "y": 5405
+            "x": 935,
+            "y": 6605
           },
           "data": {
             "label": "End"
@@ -165,9 +261,21 @@
       ],
       "edges": [
         {
-          "id": "edge_trigger_runner",
+          "id": "edge_trigger_redis_01",
           "source": "node_trigger",
-          "target": "node_runner",
+          "target": "node_server_redis_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_01_wait",
+          "source": "node_server_redis_01",
+          "target": "node_wait_redis_01",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -177,9 +285,21 @@
           }
         },
         {
-          "id": "edge_runner_wait",
-          "source": "node_runner",
-          "target": "node_wait_runner",
+          "id": "edge_trigger_redis_02",
+          "source": "node_trigger",
+          "target": "node_server_redis_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_redis_02_wait",
+          "source": "node_server_redis_02",
+          "target": "node_wait_redis_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -189,9 +309,21 @@
           }
         },
         {
-          "id": "edge_step_1",
-          "source": "node_wait_runner",
-          "target": "node_step_1",
+          "id": "edge_trigger_redis_03",
+          "source": "node_trigger",
+          "target": "node_server_redis_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_redis_03_wait",
+          "source": "node_server_redis_03",
+          "target": "node_wait_redis_03",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -228,6 +360,42 @@
           "id": "edge_step_4",
           "source": "node_step_3",
           "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_01_bootstrap",
+          "source": "node_wait_redis_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_02_bootstrap",
+          "source": "node_wait_redis_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_redis_03_bootstrap",
+          "source": "node_wait_redis_03",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,

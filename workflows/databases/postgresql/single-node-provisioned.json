@@ -101,15 +101,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.10.50/24",
-                "gw": "10.30.10.1",
+                "ipAddress": "10.0.0.50/24",
+                "gw": "10.0.0.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "db.example.internal"
               }
             ],
-            "ipAddress": "10.30.10.50/24",
-            "gw": "10.30.10.1",
+            "ipAddress": "10.0.0.50/24",
+            "gw": "10.0.0.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "db.example.internal"
@@ -146,7 +146,7 @@
           },
           "data": {
             "label": "Render PostgreSQL single-node installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/postgresql_single_node\ncat >/opt/octastack/postgresql_single_node/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nexport DEBIAN_FRONTEND=noninteractive\nsudo apt-get update\nsudo apt-get install -y postgresql postgresql-contrib\nsudo sed -i \"s/^#listen_addresses.*/listen_addresses = '*'/\" /etc/postgresql/*/main/postgresql.conf\nsudo tee -a /etc/postgresql/*/main/pg_hba.conf >/dev/null <<'EOF'\nhost all all 10.0.0.0/8 scram-sha-256\nEOF\nsudo systemctl enable --now postgresql\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='app_user'\" | grep -q 1 || sudo -u postgres psql -c \"CREATE ROLE app_user LOGIN PASSWORD 'change-me';\"\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_database WHERE datname='app_db'\" | grep -q 1 || sudo -u postgres createdb app_db -O app_user\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/postgresql_single_node/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/postgresql_single_node\ncat >/opt/octastack/postgresql_single_node/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nexport DEBIAN_FRONTEND=noninteractive\nsudo apt-get update\nsudo apt-get install -y postgresql postgresql-contrib\nsudo sed -i \"s/^#listen_addresses.*/listen_addresses = '*'/\" /etc/postgresql/*/main/postgresql.conf\nsudo tee -a /etc/postgresql/*/main/pg_hba.conf >/dev/null <<'EOF'\nhost all all 10.0.0.0/16 scram-sha-256\nEOF\nsudo systemctl enable --now postgresql\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='app_user'\" | grep -q 1 || sudo -u postgres psql -c \"CREATE ROLE app_user LOGIN PASSWORD 'change-me';\"\nsudo -u postgres psql -tc \"SELECT 1 FROM pg_database WHERE datname='app_db'\" | grep -q 1 || sudo -u postgres createdb app_db -O app_user\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/postgresql_single_node/install.sh\n",
             "sudo": true
           }
         },

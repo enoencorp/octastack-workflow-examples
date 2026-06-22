@@ -1,0 +1,488 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "MySQL Group Replication HA existing",
+    "description": "Bootstrap and validate MySQL Group Replication HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "MySQL Group Replication HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "mysql"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_mysql_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "mysql-01",
+            "hostname": "10.0.1.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.1.11",
+                "label": "mysql-01",
+                "ip": "10.0.1.11",
+                "name": "mysql-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_mysql_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait mysql-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_mysql_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "mysql-02",
+            "hostname": "10.0.1.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.1.12",
+                "label": "mysql-02",
+                "ip": "10.0.1.12",
+                "name": "mysql-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_mysql_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait mysql-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_mysql_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "mysql-03",
+            "hostname": "10.0.1.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.1.13",
+                "label": "mysql-03",
+                "ip": "10.0.1.13",
+                "name": "mysql-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_mysql_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait mysql-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare MySQL Group Replication HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render MySQL Group Replication HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[mysql_group_replication_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.1.11 10.0.1.12 10.0.1.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.1.11) NODE_NAME='mysql-01'; NODE_ROLE='mysql'; NODE_INDEX=1 ;;\n  10.0.1.12) NODE_NAME='mysql-02'; NODE_ROLE='mysql'; NODE_INDEX=2 ;;\n  10.0.1.13) NODE_NAME='mysql-03'; NODE_ROLE='mysql'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/mysql_group_replication_ha\ninstall -d -m 0750 /var/lib/octastack/mysql_group_replication_ha\ncat >/opt/octastack/mysql_group_replication_ha/.env <<EOF\nMYSQL_ROOT_PASSWORD=change-me\nMYSQL_DATABASE=app_db\nMYSQL_USER=app_user\nMYSQL_PASSWORD=change-me\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.1.11\nCLUSTER_PEERS=10.0.1.11,10.0.1.12,10.0.1.13\nSEED_IPS=10.0.1.11,10.0.1.12,10.0.1.13\nMYSQL_GROUP_SEEDS=10.0.1.11:33061,10.0.1.12:33061,10.0.1.13:33061\nEOF\nchmod 0600 /opt/octastack/mysql_group_replication_ha/.env\n\ncat >/opt/octastack/mysql_group_replication_ha/compose.yml <<'COMPOSE'\nservices:\n  mysql:\n    image: mysql:8.4\n    container_name: octastack-mysql\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    command: >\n      mysqld\n      --server-id=${OCTASTACK_NODE_INDEX}\n      --report-host=${CURRENT_IP}\n      --gtid-mode=ON\n      --enforce-gtid-consistency=ON\n      --binlog-checksum=NONE\n      --log-bin=mysql-bin\n      --log-slave-updates=ON\n      --binlog-format=ROW\n      --transaction-write-set-extraction=XXHASH64\n      --loose-group-replication-group-name=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\n      --loose-group-replication-start-on-boot=OFF\n      --loose-group-replication-local-address=${CURRENT_IP}:33061\n      --loose-group-replication-group-seeds=${MYSQL_GROUP_SEEDS}\n      --loose-group-replication-ip-allowlist=10.0.0.0/16\n    volumes:\n      - data:/var/lib/mysql\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy MySQL Group Replication HA node",
+            "command": "set -euo pipefail\nlog() { printf '[mysql_group_replication_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/mysql_group_replication_ha/compose.yml pull\ndocker compose -f /opt/octastack/mysql_group_replication_ha/compose.yml up -d\ndocker compose -f /opt/octastack/mysql_group_replication_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4815
+          },
+          "data": {
+            "label": "Initialize MySQL Group Replication HA node",
+            "command": "set -euo pipefail\n\nlog() { printf '[mysql-group-replication-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.1.11 10.0.1.12 10.0.1.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.1.11) NODE_NAME='mysql-01'; NODE_ROLE='mysql'; NODE_INDEX=1 ;;\n  10.0.1.12) NODE_NAME='mysql-02'; NODE_ROLE='mysql'; NODE_INDEX=2 ;;\n  10.0.1.13) NODE_NAME='mysql-03'; NODE_ROLE='mysql'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ncontainer_ready=0\nfor attempt in $(seq 1 60); do\n  if docker exec octastack-mysql sh -lc \"mysqladmin ping -uroot -pchange-me\" >/dev/null 2>&1; then\n    container_ready=1\n    break\n  fi\n  sleep 5\ndone\nif [ \"$container_ready\" = \"1\" ]; then\n  log \"container octastack-mysql is ready\"\nelse\ndocker logs octastack-mysql --tail=120 || true\necho \"container octastack-mysql did not become ready\" >&2\nexit 1\nfi\n\nif [ \"$NODE_INDEX\" = \"1\" ]; then\n  docker exec octastack-mysql mysql -uroot -pchange-me <<'SQL'\nSET SQL_LOG_BIN=0;\nCREATE USER IF NOT EXISTS 'repl'@'%' IDENTIFIED BY 'change-me';\nGRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';\nGRANT CONNECTION_ADMIN, BACKUP_ADMIN, GROUP_REPLICATION_STREAM ON *.* TO 'repl'@'%';\nFLUSH PRIVILEGES;\nSET SQL_LOG_BIN=1;\nINSTALL PLUGIN group_replication SONAME 'group_replication.so';\nSET GLOBAL group_replication_bootstrap_group=ON;\nSTART GROUP_REPLICATION USER='repl', PASSWORD='change-me';\nSET GLOBAL group_replication_bootstrap_group=OFF;\nSQL\nelse\n  sleep 20\n  docker exec octastack-mysql mysql -uroot -pchange-me <<'SQL'\nINSTALL PLUGIN group_replication SONAME 'group_replication.so';\nSTART GROUP_REPLICATION USER='repl', PASSWORD='change-me';\nSQL\nfi\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5220
+          },
+          "data": {
+            "label": "Document MySQL Group Replication HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/mysql_group_replication_ha-topology.md <<'EOF'\n# MySQL Group Replication HA\n\nMembers:\n- mysql-01: 10.0.1.11 (mysql)\n- mysql-02: 10.0.1.12 (mysql)\n- mysql-03: 10.0.1.13 (mysql)\n\nThree MySQL members run native Group Replication with GTID, row-based binary logging, and a deterministic primary bootstrap.\nEOF\ncat /tmp/mysql_group_replication_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5625
+          },
+          "data": {
+            "label": "Validate MySQL Group Replication HA node",
+            "command": "set -euo pipefail\ndocker exec octastack-mysql mysql -uroot -pchange-me -e \"SELECT MEMBER_HOST, MEMBER_STATE, MEMBER_ROLE FROM performance_schema.replication_group_members;\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 6200
+          },
+          "data": {
+            "label": "MySQL Group Replication HA health check",
+            "command": "docker exec octastack-mysql mysqladmin ping -uroot -pchange-me",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 935,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_mysql_01",
+          "source": "node_trigger",
+          "target": "node_server_mysql_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mysql_01_wait",
+          "source": "node_server_mysql_01",
+          "target": "node_wait_mysql_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_mysql_02",
+          "source": "node_trigger",
+          "target": "node_server_mysql_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_mysql_02_wait",
+          "source": "node_server_mysql_02",
+          "target": "node_wait_mysql_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_mysql_03",
+          "source": "node_trigger",
+          "target": "node_server_mysql_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_mysql_03_wait",
+          "source": "node_server_mysql_03",
+          "target": "node_wait_mysql_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mysql_01_bootstrap",
+          "source": "node_wait_mysql_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mysql_02_bootstrap",
+          "source": "node_wait_mysql_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mysql_03_bootstrap",
+          "source": "node_wait_mysql_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

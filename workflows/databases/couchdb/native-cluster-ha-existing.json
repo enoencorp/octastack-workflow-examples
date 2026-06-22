@@ -1,0 +1,488 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "CouchDB Native Cluster HA existing",
+    "description": "Bootstrap and validate CouchDB Native Cluster HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "CouchDB Native Cluster HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "couchdb"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_couchdb_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "couchdb-01",
+            "hostname": "10.0.11.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.11.11",
+                "label": "couchdb-01",
+                "ip": "10.0.11.11",
+                "name": "couchdb-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_couchdb_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait couchdb-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_couchdb_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "couchdb-02",
+            "hostname": "10.0.11.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.11.12",
+                "label": "couchdb-02",
+                "ip": "10.0.11.12",
+                "name": "couchdb-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_couchdb_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait couchdb-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_couchdb_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "couchdb-03",
+            "hostname": "10.0.11.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.11.13",
+                "label": "couchdb-03",
+                "ip": "10.0.11.13",
+                "name": "couchdb-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_couchdb_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait couchdb-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare CouchDB Native Cluster HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render CouchDB Native Cluster HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[couchdb_native_cluster_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.11.11 10.0.11.12 10.0.11.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.11.11) NODE_NAME='couchdb-01'; NODE_ROLE='couchdb'; NODE_INDEX=1 ;;\n  10.0.11.12) NODE_NAME='couchdb-02'; NODE_ROLE='couchdb'; NODE_INDEX=2 ;;\n  10.0.11.13) NODE_NAME='couchdb-03'; NODE_ROLE='couchdb'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/couchdb_native_cluster_ha\ninstall -d -m 0750 /var/lib/octastack/couchdb_native_cluster_ha\ncat >/opt/octastack/couchdb_native_cluster_ha/.env <<EOF\nCOUCHDB_USER=admin\nCOUCHDB_PASSWORD=change-me\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.11.11\nCLUSTER_PEERS=10.0.11.11,10.0.11.12,10.0.11.13\nSEED_IPS=10.0.11.11,10.0.11.12,10.0.11.13\n\nEOF\nchmod 0600 /opt/octastack/couchdb_native_cluster_ha/.env\n\ncat >/opt/octastack/couchdb_native_cluster_ha/compose.yml <<'COMPOSE'\nservices:\n  couchdb:\n    image: couchdb:3\n    container_name: octastack-couchdb\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    environment:\n      COUCHDB_USER: \"admin\"\n      COUCHDB_PASSWORD: \"change-me\"\n      COUCHDB_SECRET: \"replace-with-long-random-secret\"\n      ERL_FLAGS: \"-setcookie replace-with-erlang-cookie\"\n      NODENAME: \"couchdb@${CURRENT_IP}\"\n    volumes:\n      - data:/opt/couchdb/data\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy CouchDB Native Cluster HA node",
+            "command": "set -euo pipefail\nlog() { printf '[couchdb_native_cluster_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/couchdb_native_cluster_ha/compose.yml pull\ndocker compose -f /opt/octastack/couchdb_native_cluster_ha/compose.yml up -d\ndocker compose -f /opt/octastack/couchdb_native_cluster_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4815
+          },
+          "data": {
+            "label": "Initialize CouchDB Native Cluster HA node",
+            "command": "set -euo pipefail\n\nlog() { printf '[couchdb-native-cluster-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.11.11 10.0.11.12 10.0.11.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.11.11) NODE_NAME='couchdb-01'; NODE_ROLE='couchdb'; NODE_INDEX=1 ;;\n  10.0.11.12) NODE_NAME='couchdb-02'; NODE_ROLE='couchdb'; NODE_INDEX=2 ;;\n  10.0.11.13) NODE_NAME='couchdb-03'; NODE_ROLE='couchdb'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ncontainer_ready=0\nfor attempt in $(seq 1 60); do\n  if docker exec octastack-couchdb sh -lc \"curl -fsS http://admin:change-me@127.0.0.1:5984/_up\" >/dev/null 2>&1; then\n    container_ready=1\n    break\n  fi\n  sleep 5\ndone\nif [ \"$container_ready\" = \"1\" ]; then\n  log \"container octastack-couchdb is ready\"\nelse\ndocker logs octastack-couchdb --tail=120 || true\necho \"container octastack-couchdb did not become ready\" >&2\nexit 1\nfi\n\nif [ \"$NODE_INDEX\" != \"1\" ]; then\n  log \"cluster setup is driven by the first CouchDB member\"\n  exit 0\nfi\nfor member in 10.0.11.11 10.0.11.12 10.0.11.13; do\n  curl -fsS -X POST http://admin:change-me@127.0.0.1:5984/_cluster_setup \\\n    -H 'Content-Type: application/json' \\\n    --data-binary @- <<EOF || true\n{\"action\":\"enable_cluster\",\"bind_address\":\"0.0.0.0\",\"username\":\"admin\",\"password\":\"change-me\",\"node_count\":\"3\",\"remote_node\":\"$member\",\"remote_current_user\":\"admin\",\"remote_current_password\":\"change-me\"}\nEOF\n  if [ \"$member\" != \"10.0.11.11\" ]; then\n    curl -fsS -X POST http://admin:change-me@127.0.0.1:5984/_cluster_setup \\\n      -H 'Content-Type: application/json' \\\n      --data-binary @- <<EOF || true\n{\"action\":\"add_node\",\"host\":\"$member\",\"port\":5984,\"username\":\"admin\",\"password\":\"change-me\"}\nEOF\n  fi\ndone\ncurl -fsS -X POST http://admin:change-me@127.0.0.1:5984/_cluster_setup -H 'Content-Type: application/json' -d '{\"action\":\"finish_cluster\"}' || true\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5220
+          },
+          "data": {
+            "label": "Document CouchDB Native Cluster HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/couchdb_native_cluster_ha-topology.md <<'EOF'\n# CouchDB Native Cluster HA\n\nMembers:\n- couchdb-01: 10.0.11.11 (couchdb)\n- couchdb-02: 10.0.11.12 (couchdb)\n- couchdb-03: 10.0.11.13 (couchdb)\n\nThree CouchDB members run native clustering with a shared cookie/secret and first-member cluster setup calls.\nEOF\ncat /tmp/couchdb_native_cluster_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5625
+          },
+          "data": {
+            "label": "Validate CouchDB Native Cluster HA node",
+            "command": "curl -fsS http://admin:change-me@127.0.0.1:5984/_membership\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 6200
+          },
+          "data": {
+            "label": "CouchDB Native Cluster HA health check",
+            "command": "curl -fsS http://admin:change-me@127.0.0.1:5984/_up",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 935,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_couchdb_01",
+          "source": "node_trigger",
+          "target": "node_server_couchdb_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_couchdb_01_wait",
+          "source": "node_server_couchdb_01",
+          "target": "node_wait_couchdb_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_couchdb_02",
+          "source": "node_trigger",
+          "target": "node_server_couchdb_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_couchdb_02_wait",
+          "source": "node_server_couchdb_02",
+          "target": "node_wait_couchdb_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_couchdb_03",
+          "source": "node_trigger",
+          "target": "node_server_couchdb_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_couchdb_03_wait",
+          "source": "node_server_couchdb_03",
+          "target": "node_wait_couchdb_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_couchdb_01_bootstrap",
+          "source": "node_wait_couchdb_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_couchdb_02_bootstrap",
+          "source": "node_wait_couchdb_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_couchdb_03_bootstrap",
+          "source": "node_wait_couchdb_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

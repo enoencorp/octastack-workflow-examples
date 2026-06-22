@@ -47,14 +47,14 @@
           },
           "data": {
             "label": "Vanilla Kubernetes Host",
-            "hostname": "10.20.50.50",
+            "hostname": "10.0.96.50",
             "targets": [
               {
                 "id": "target-0",
                 "source": "manual",
-                "host": "10.20.50.50",
+                "host": "10.0.96.50",
                 "label": "Vanilla Kubernetes Host",
-                "ip": "10.20.50.50",
+                "ip": "10.0.96.50",
                 "name": "vanilla-kubernetes-host",
                 "node": "",
                 "vmid": "",

@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T00:00:00Z",
   "workflow": {
     "name": "Prometheus Grafana HA existing",
-    "description": "Bootstrap and validate Prometheus Grafana HA from an existing automation runner and target inventory.",
+    "description": "Bootstrap and validate Prometheus Grafana HA across existing member nodes with bash command steps.",
     "graphData": {
       "nodes": [
         {
@@ -39,23 +39,23 @@
           }
         },
         {
-          "id": "node_runner",
+          "id": "node_server_prometheus_01",
           "type": "serverNode",
           "position": {
             "x": 0,
             "y": 885
           },
           "data": {
-            "label": "Automation Runner",
-            "hostname": "10.10.0.27",
+            "label": "prometheus-01",
+            "hostname": "10.0.112.11",
             "targets": [
               {
-                "id": "target-runner",
+                "id": "target-0",
                 "source": "manual",
-                "host": "10.10.0.27",
-                "label": "Automation Runner",
-                "ip": "10.10.0.27",
-                "name": "automation-runner",
+                "host": "10.0.112.11",
+                "label": "prometheus-01",
+                "ip": "10.0.112.11",
+                "name": "prometheus-01",
                 "node": "",
                 "vmid": "",
                 "status": "existing",
@@ -65,14 +65,302 @@
           }
         },
         {
-          "id": "node_wait_runner",
+          "id": "node_wait_prometheus_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 885,
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait prometheus-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_prometheus_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
             "y": 885
           },
           "data": {
-            "label": "Wait for automation runner",
+            "label": "prometheus-02",
+            "hostname": "10.0.112.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.112.12",
+                "label": "prometheus-02",
+                "ip": "10.0.112.12",
+                "name": "prometheus-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_prometheus_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait prometheus-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_alertmanager_01",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "alertmanager-01",
+            "hostname": "10.0.112.21",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.112.21",
+                "label": "alertmanager-01",
+                "ip": "10.0.112.21",
+                "name": "alertmanager-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_alertmanager_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait alertmanager-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_alertmanager_02",
+          "type": "serverNode",
+          "position": {
+            "x": 2115,
+            "y": 885
+          },
+          "data": {
+            "label": "alertmanager-02",
+            "hostname": "10.0.112.22",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.112.22",
+                "label": "alertmanager-02",
+                "ip": "10.0.112.22",
+                "name": "alertmanager-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_alertmanager_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2115,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait alertmanager-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_alertmanager_03",
+          "type": "serverNode",
+          "position": {
+            "x": 2820,
+            "y": 885
+          },
+          "data": {
+            "label": "alertmanager-03",
+            "hostname": "10.0.112.23",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.112.23",
+                "label": "alertmanager-03",
+                "ip": "10.0.112.23",
+                "name": "alertmanager-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_alertmanager_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2820,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait alertmanager-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_grafana_01",
+          "type": "serverNode",
+          "position": {
+            "x": 3525,
+            "y": 885
+          },
+          "data": {
+            "label": "grafana-01",
+            "hostname": "10.0.112.31",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.112.31",
+                "label": "grafana-01",
+                "ip": "10.0.112.31",
+                "name": "grafana-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_grafana_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 3525,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait grafana-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_grafana_02",
+          "type": "serverNode",
+          "position": {
+            "x": 4230,
+            "y": 885
+          },
+          "data": {
+            "label": "grafana-02",
+            "hostname": "10.0.112.32",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.112.32",
+                "label": "grafana-02",
+                "ip": "10.0.112.32",
+                "name": "grafana-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_grafana_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 4230,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait grafana-02",
             "timeout": "20",
             "interval": "10",
             "probes": [
@@ -90,12 +378,12 @@
           "id": "node_step_1",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2300
+            "x": 2295,
+            "y": 3600
           },
           "data": {
             "label": "Render Prometheus Grafana HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/prometheus_grafana_ha\ncat >/opt/octastack/prometheus_grafana_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/monitoring-ha.ini <<'INVENTORY'\n[prometheus]\n10.30.70.11 node_name=prometheus-01\n10.30.70.12 node_name=prometheus-02\n\n[alertmanager]\n10.30.70.21 node_name=alertmanager-01\n10.30.70.22 node_name=alertmanager-02\n10.30.70.23 node_name=alertmanager-03\n\n[grafana]\n10.30.70.31 node_name=grafana-01\n10.30.70.32 node_name=grafana-02\nINVENTORY\ncat >/tmp/monitoring-ha.yml <<'PLAYBOOK'\n- hosts: prometheus\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [prometheus, prometheus-node-exporter]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: \"{{ item }}\"\n        state: restarted\n        enabled: true\n      loop: [prometheus, prometheus-node-exporter]\n\n- hosts: alertmanager\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: prometheus-alertmanager\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/prometheus/alertmanager.yml\n        mode: \"0644\"\n        content: |\n          global:\n            resolve_timeout: 5m\n          route:\n            receiver: default\n          receivers:\n            - name: default\n    - ansible.builtin.service:\n        name: prometheus-alertmanager\n        state: restarted\n        enabled: true\n\n- hosts: grafana\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: grafana\n        state: present\n    - ansible.builtin.service:\n        name: grafana-server\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/prometheus_grafana_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/prometheus_grafana_ha\ncat >/opt/octastack/prometheus_grafana_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[monitoring-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.112.11 10.0.112.12 10.0.112.21 10.0.112.22 10.0.112.23 10.0.112.31 10.0.112.32 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.112.11) NODE_NAME='prometheus-01'; NODE_ROLE='prometheus'; NODE_INDEX=1 ;;\n  10.0.112.12) NODE_NAME='prometheus-02'; NODE_ROLE='prometheus'; NODE_INDEX=2 ;;\n  10.0.112.21) NODE_NAME='alertmanager-01'; NODE_ROLE='alertmanager'; NODE_INDEX=3 ;;\n  10.0.112.22) NODE_NAME='alertmanager-02'; NODE_ROLE='alertmanager'; NODE_INDEX=4 ;;\n  10.0.112.23) NODE_NAME='alertmanager-03'; NODE_ROLE='alertmanager'; NODE_INDEX=5 ;;\n  10.0.112.31) NODE_NAME='grafana-01'; NODE_ROLE='grafana'; NODE_INDEX=6 ;;\n  10.0.112.32) NODE_NAME='grafana-02'; NODE_ROLE='grafana'; NODE_INDEX=7 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\napt-get update\nif [ \"$NODE_ROLE\" = \"prometheus\" ]; then\n  log \"installing Prometheus node\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y prometheus prometheus-node-exporter\n  systemctl restart prometheus prometheus-node-exporter\n  systemctl enable prometheus prometheus-node-exporter\nelif [ \"$NODE_ROLE\" = \"alertmanager\" ]; then\n  log \"installing Alertmanager node\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y prometheus-alertmanager\n  install -d -m 0755 /etc/prometheus\n  cat >/etc/prometheus/alertmanager.yml <<'EOF'\nglobal:\n  resolve_timeout: 5m\nroute:\n  receiver: default\nreceivers:\n  - name: default\nEOF\n  systemctl restart prometheus-alertmanager\n  systemctl enable prometheus-alertmanager\nelif [ \"$NODE_ROLE\" = \"grafana\" ]; then\n  log \"installing Grafana node\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y grafana\n  systemctl restart grafana-server\n  systemctl enable grafana-server\nelse\n  log \"no monitoring action for role $NODE_ROLE\"\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/prometheus_grafana_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -103,8 +391,8 @@
           "id": "node_step_2",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2705
+            "x": 2295,
+            "y": 4005
           },
           "data": {
             "label": "Review Prometheus Grafana HA installer",
@@ -116,8 +404,8 @@
           "id": "node_step_3",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3110
+            "x": 2295,
+            "y": 4410
           },
           "data": {
             "label": "Execute Prometheus Grafana HA installer",
@@ -129,8 +417,8 @@
           "id": "node_step_4",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3515
+            "x": 2295,
+            "y": 4815
           },
           "data": {
             "label": "Collect Prometheus Grafana HA runtime status",
@@ -142,12 +430,12 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 5000
+            "x": 2295,
+            "y": 6200
           },
           "data": {
             "label": "Prometheus Grafana HA health check",
-            "command": "curl -fsS http://10.30.70.11:9090/-/ready && curl -fsS http://10.30.70.31:3000/api/health",
+            "command": "curl -fsS http://10.0.112.11:9090/-/ready && curl -fsS http://10.0.112.31:3000/api/health",
             "sudo": false
           }
         },
@@ -155,8 +443,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 230,
-            "y": 5405
+            "x": 2345,
+            "y": 6605
           },
           "data": {
             "label": "End"
@@ -165,9 +453,21 @@
       ],
       "edges": [
         {
-          "id": "edge_trigger_runner",
+          "id": "edge_trigger_prometheus_01",
           "source": "node_trigger",
-          "target": "node_runner",
+          "target": "node_server_prometheus_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_prometheus_01_wait",
+          "source": "node_server_prometheus_01",
+          "target": "node_wait_prometheus_01",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -177,9 +477,21 @@
           }
         },
         {
-          "id": "edge_runner_wait",
-          "source": "node_runner",
-          "target": "node_wait_runner",
+          "id": "edge_trigger_prometheus_02",
+          "source": "node_trigger",
+          "target": "node_server_prometheus_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_prometheus_02_wait",
+          "source": "node_server_prometheus_02",
+          "target": "node_wait_prometheus_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -189,9 +501,117 @@
           }
         },
         {
-          "id": "edge_step_1",
-          "source": "node_wait_runner",
-          "target": "node_step_1",
+          "id": "edge_trigger_alertmanager_01",
+          "source": "node_trigger",
+          "target": "node_server_alertmanager_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_alertmanager_01_wait",
+          "source": "node_server_alertmanager_01",
+          "target": "node_wait_alertmanager_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_alertmanager_02",
+          "source": "node_trigger",
+          "target": "node_server_alertmanager_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_alertmanager_02_wait",
+          "source": "node_server_alertmanager_02",
+          "target": "node_wait_alertmanager_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_alertmanager_03",
+          "source": "node_trigger",
+          "target": "node_server_alertmanager_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 5,
+          "data": {
+            "mode": "parallel",
+            "order": 5
+          }
+        },
+        {
+          "id": "edge_alertmanager_03_wait",
+          "source": "node_server_alertmanager_03",
+          "target": "node_wait_alertmanager_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_grafana_01",
+          "source": "node_trigger",
+          "target": "node_server_grafana_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 6,
+          "data": {
+            "mode": "parallel",
+            "order": 6
+          }
+        },
+        {
+          "id": "edge_grafana_01_wait",
+          "source": "node_server_grafana_01",
+          "target": "node_wait_grafana_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_grafana_02",
+          "source": "node_trigger",
+          "target": "node_server_grafana_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 7,
+          "data": {
+            "mode": "parallel",
+            "order": 7
+          }
+        },
+        {
+          "id": "edge_grafana_02_wait",
+          "source": "node_server_grafana_02",
+          "target": "node_wait_grafana_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -228,6 +648,90 @@
           "id": "edge_step_4",
           "source": "node_step_3",
           "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_prometheus_01_bootstrap",
+          "source": "node_wait_prometheus_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_prometheus_02_bootstrap",
+          "source": "node_wait_prometheus_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_alertmanager_01_bootstrap",
+          "source": "node_wait_alertmanager_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_alertmanager_02_bootstrap",
+          "source": "node_wait_alertmanager_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_alertmanager_03_bootstrap",
+          "source": "node_wait_alertmanager_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_grafana_01_bootstrap",
+          "source": "node_wait_grafana_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_grafana_02_bootstrap",
+          "source": "node_wait_grafana_02",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,

@@ -1,0 +1,547 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "MinIO Distributed Erasure Coding HA existing",
+    "description": "Bootstrap and validate MinIO Distributed Erasure Coding HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "MinIO Distributed Erasure Coding HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "minio"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_minio_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "minio-01",
+            "hostname": "10.0.144.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.144.11",
+                "label": "minio-01",
+                "ip": "10.0.144.11",
+                "name": "minio-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_minio_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait minio-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_minio_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "minio-02",
+            "hostname": "10.0.144.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.144.12",
+                "label": "minio-02",
+                "ip": "10.0.144.12",
+                "name": "minio-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_minio_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait minio-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_minio_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "minio-03",
+            "hostname": "10.0.144.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.144.13",
+                "label": "minio-03",
+                "ip": "10.0.144.13",
+                "name": "minio-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_minio_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait minio-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_minio_04",
+          "type": "serverNode",
+          "position": {
+            "x": 2115,
+            "y": 885
+          },
+          "data": {
+            "label": "minio-04",
+            "hostname": "10.0.144.14",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.144.14",
+                "label": "minio-04",
+                "ip": "10.0.144.14",
+                "name": "minio-04",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_minio_04",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2115,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait minio-04",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1238,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare MinIO Distributed Erasure Coding HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1238,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render MinIO Distributed Erasure Coding HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[minio_distributed_erasure_coding_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.144.11 10.0.144.12 10.0.144.13 10.0.144.14 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.144.11) NODE_NAME='minio-01'; NODE_ROLE='minio'; NODE_INDEX=1 ;;\n  10.0.144.12) NODE_NAME='minio-02'; NODE_ROLE='minio'; NODE_INDEX=2 ;;\n  10.0.144.13) NODE_NAME='minio-03'; NODE_ROLE='minio'; NODE_INDEX=3 ;;\n  10.0.144.14) NODE_NAME='minio-04'; NODE_ROLE='minio'; NODE_INDEX=4 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/minio_distributed_erasure_coding_ha\ninstall -d -m 0750 /var/lib/octastack/minio_distributed_erasure_coding_ha\ncat >/opt/octastack/minio_distributed_erasure_coding_ha/.env <<EOF\nMINIO_ROOT_USER=admin\nMINIO_ROOT_PASSWORD=change-me-123456\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.144.11\nCLUSTER_PEERS=10.0.144.11,10.0.144.12,10.0.144.13,10.0.144.14\nSEED_IPS=10.0.144.11,10.0.144.12,10.0.144.13\n\nEOF\nchmod 0600 /opt/octastack/minio_distributed_erasure_coding_ha/.env\n\ncat >/opt/octastack/minio_distributed_erasure_coding_ha/compose.yml <<'COMPOSE'\nservices:\n  minio:\n    image: minio/minio:RELEASE.2024-08-29T01-40-52Z\n    container_name: octastack-minio\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    command: >\n      server --console-address ':9001' http://10.0.144.11:9000/data http://10.0.144.12:9000/data http://10.0.144.13:9000/data http://10.0.144.14:9000/data\n    volumes:\n      - data:/data\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1238,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy MinIO Distributed Erasure Coding HA node",
+            "command": "set -euo pipefail\nlog() { printf '[minio_distributed_erasure_coding_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/minio_distributed_erasure_coding_ha/compose.yml pull\ndocker compose -f /opt/octastack/minio_distributed_erasure_coding_ha/compose.yml up -d\ndocker compose -f /opt/octastack/minio_distributed_erasure_coding_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1238,
+            "y": 4815
+          },
+          "data": {
+            "label": "Document MinIO Distributed Erasure Coding HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/minio_distributed_erasure_coding_ha-topology.md <<'EOF'\n# MinIO Distributed Erasure Coding HA\n\nMembers:\n- minio-01: 10.0.144.11 (minio)\n- minio-02: 10.0.144.12 (minio)\n- minio-03: 10.0.144.13 (minio)\n- minio-04: 10.0.144.14 (minio)\n\nFour MinIO members run distributed erasure coding with a generated endpoint list and shared root credentials.\nEOF\ncat /tmp/minio_distributed_erasure_coding_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1238,
+            "y": 5220
+          },
+          "data": {
+            "label": "Validate MinIO Distributed Erasure Coding HA node",
+            "command": "curl -fsS http://127.0.0.1:9000/minio/health/live\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1238,
+            "y": 6200
+          },
+          "data": {
+            "label": "MinIO Distributed Erasure Coding HA health check",
+            "command": "curl -fsS http://127.0.0.1:9000/minio/health/live",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 1288,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_minio_01",
+          "source": "node_trigger",
+          "target": "node_server_minio_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_minio_01_wait",
+          "source": "node_server_minio_01",
+          "target": "node_wait_minio_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_minio_02",
+          "source": "node_trigger",
+          "target": "node_server_minio_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_minio_02_wait",
+          "source": "node_server_minio_02",
+          "target": "node_wait_minio_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_minio_03",
+          "source": "node_trigger",
+          "target": "node_server_minio_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_minio_03_wait",
+          "source": "node_server_minio_03",
+          "target": "node_wait_minio_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_minio_04",
+          "source": "node_trigger",
+          "target": "node_server_minio_04",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_minio_04_wait",
+          "source": "node_server_minio_04",
+          "target": "node_wait_minio_04",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_minio_01_bootstrap",
+          "source": "node_wait_minio_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_minio_02_bootstrap",
+          "source": "node_wait_minio_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_minio_03_bootstrap",
+          "source": "node_wait_minio_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_minio_04_bootstrap",
+          "source": "node_wait_minio_04",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_5",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

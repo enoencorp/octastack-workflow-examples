@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T00:00:00Z",
   "workflow": {
     "name": "Kafka KRaft HA existing",
-    "description": "Bootstrap and validate Kafka KRaft HA from an existing automation runner and target inventory.",
+    "description": "Bootstrap and validate Kafka KRaft HA across existing member nodes with bash command steps.",
     "graphData": {
       "nodes": [
         {
@@ -39,23 +39,23 @@
           }
         },
         {
-          "id": "node_runner",
+          "id": "node_server_kafka_01",
           "type": "serverNode",
           "position": {
             "x": 0,
             "y": 885
           },
           "data": {
-            "label": "Automation Runner",
-            "hostname": "10.10.0.23",
+            "label": "kafka-01",
+            "hostname": "10.0.80.11",
             "targets": [
               {
-                "id": "target-runner",
+                "id": "target-0",
                 "source": "manual",
-                "host": "10.10.0.23",
-                "label": "Automation Runner",
-                "ip": "10.10.0.23",
-                "name": "automation-runner",
+                "host": "10.0.80.11",
+                "label": "kafka-01",
+                "ip": "10.0.80.11",
+                "name": "kafka-01",
                 "node": "",
                 "vmid": "",
                 "status": "existing",
@@ -65,14 +65,110 @@
           }
         },
         {
-          "id": "node_wait_runner",
+          "id": "node_wait_kafka_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 885,
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait kafka-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_kafka_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
             "y": 885
           },
           "data": {
-            "label": "Wait for automation runner",
+            "label": "kafka-02",
+            "hostname": "10.0.80.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.80.12",
+                "label": "kafka-02",
+                "ip": "10.0.80.12",
+                "name": "kafka-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_kafka_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait kafka-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_kafka_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "kafka-03",
+            "hostname": "10.0.80.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.80.13",
+                "label": "kafka-03",
+                "ip": "10.0.80.13",
+                "name": "kafka-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_kafka_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait kafka-03",
             "timeout": "20",
             "interval": "10",
             "probes": [
@@ -90,12 +186,12 @@
           "id": "node_step_1",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2300
+            "x": 885,
+            "y": 3600
           },
           "data": {
             "label": "Render Kafka KRaft HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/kafka_kraft_ha\ncat >/opt/octastack/kafka_kraft_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/kafka-kraft.ini <<'INVENTORY'\n[brokers]\n10.30.30.11 node_id=1 node_name=kafka-01\n10.30.30.12 node_id=2 node_name=kafka-02\n10.30.30.13 node_id=3 node_name=kafka-03\nINVENTORY\ncat >/tmp/kafka-kraft.yml <<'PLAYBOOK'\n- hosts: brokers\n  become: true\n  vars:\n    kafka_version: \"3.7.0\"\n    cluster_id: \"MkU3OEVBNTcwNTJENDM2Qk\"\n    controllers: \"1@10.30.30.11:9093,2@10.30.30.12:9093,3@10.30.30.13:9093\"\n  tasks:\n    - ansible.builtin.apt:\n        name: [openjdk-17-jre-headless, curl, tar]\n        state: present\n        update_cache: true\n    - ansible.builtin.user:\n        name: kafka\n        system: true\n        create_home: true\n        home: /opt/kafka\n    - ansible.builtin.shell: |\n        curl -fsSL https://archive.apache.org/dist/kafka/{{ kafka_version }}/kafka_2.13-{{ kafka_version }}.tgz -o /tmp/kafka.tgz\n        tar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\n        chown -R kafka:kafka /opt/kafka\n    - ansible.builtin.copy:\n        dest: /opt/kafka/config/kraft/server.properties\n        owner: kafka\n        group: kafka\n        mode: \"0644\"\n        content: |\n          process.roles=broker,controller\n          node.id={{ node_id }}\n          controller.quorum.voters={{ controllers }}\n          listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093\n          advertised.listeners=PLAINTEXT://{{ inventory_hostname }}:9092\n          controller.listener.names=CONTROLLER\n          listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT\n          log.dirs=/var/lib/kafka\n          offsets.topic.replication.factor=3\n          transaction.state.log.replication.factor=3\n          transaction.state.log.min.isr=2\n          min.insync.replicas=2\n    - ansible.builtin.shell: /opt/kafka/bin/kafka-storage.sh format -t {{ cluster_id }} -c /opt/kafka/config/kraft/server.properties --ignore-formatted\n      become_user: kafka\n    - ansible.builtin.copy:\n        dest: /etc/systemd/system/kafka.service\n        mode: \"0644\"\n        content: |\n          [Unit]\n          Description=Apache Kafka KRaft\n          After=network-online.target\n          [Service]\n          User=kafka\n          ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\n          Restart=always\n          [Install]\n          WantedBy=multi-user.target\n    - ansible.builtin.systemd:\n        name: kafka\n        state: restarted\n        enabled: true\n        daemon_reload: true\nPLAYBOOK\nansible-playbook -i /tmp/kafka-kraft.ini /tmp/kafka-kraft.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/kafka_kraft_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/kafka_kraft_ha\ncat >/opt/octastack/kafka_kraft_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[kafka-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.80.11 10.0.80.12 10.0.80.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.80.11) NODE_NAME='kafka-01'; NODE_ROLE='broker'; NODE_INDEX=1 ;;\n  10.0.80.12) NODE_NAME='kafka-02'; NODE_ROLE='broker'; NODE_INDEX=2 ;;\n  10.0.80.13) NODE_NAME='kafka-03'; NODE_ROLE='broker'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\nKAFKA_VERSION=\"3.7.0\"\nKAFKA_CLUSTER_ID=\"MkU3OEVBNTcwNTJENDM2Qk\"\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jre-headless curl tar\nuseradd -r -m -U -d /opt/kafka kafka || true\ncurl -fsSL \"https://archive.apache.org/dist/kafka/$KAFKA_VERSION/kafka_2.13-$KAFKA_VERSION.tgz\" -o /tmp/kafka.tgz\ntar -xzf /tmp/kafka.tgz --strip-components=1 -C /opt/kafka\nchown -R kafka:kafka /opt/kafka\ninstall -d -o kafka -g kafka -m 0750 /var/lib/kafka\ncat >/opt/kafka/config/kraft/server.properties <<EOF\nprocess.roles=broker,controller\nnode.id=$NODE_INDEX\ncontroller.quorum.voters=1@10.0.80.11:9093,2@10.0.80.12:9093,3@10.0.80.13:9093\nlisteners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093\nadvertised.listeners=PLAINTEXT://$CURRENT_IP:9092\ncontroller.listener.names=CONTROLLER\nlistener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT\nlog.dirs=/var/lib/kafka\noffsets.topic.replication.factor=3\ntransaction.state.log.replication.factor=3\ntransaction.state.log.min.isr=2\nmin.insync.replicas=2\nEOF\nchown kafka:kafka /opt/kafka/config/kraft/server.properties\nsudo -u kafka /opt/kafka/bin/kafka-storage.sh format -t \"$KAFKA_CLUSTER_ID\" -c /opt/kafka/config/kraft/server.properties --ignore-formatted\ncat >/etc/systemd/system/kafka.service <<'EOF'\n[Unit]\nDescription=Apache Kafka KRaft\nAfter=network-online.target\n[Service]\nUser=kafka\nExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties\nRestart=always\n[Install]\nWantedBy=multi-user.target\nEOF\nsystemctl daemon-reload\nsystemctl restart kafka\nsystemctl enable kafka\nlog \"kafka broker/controller started\"\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/kafka_kraft_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -103,8 +199,8 @@
           "id": "node_step_2",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2705
+            "x": 885,
+            "y": 4005
           },
           "data": {
             "label": "Review Kafka KRaft HA installer",
@@ -116,8 +212,8 @@
           "id": "node_step_3",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3110
+            "x": 885,
+            "y": 4410
           },
           "data": {
             "label": "Execute Kafka KRaft HA installer",
@@ -129,8 +225,8 @@
           "id": "node_step_4",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3515
+            "x": 885,
+            "y": 4815
           },
           "data": {
             "label": "Collect Kafka KRaft HA runtime status",
@@ -142,12 +238,12 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 5000
+            "x": 885,
+            "y": 6200
           },
           "data": {
             "label": "Kafka KRaft HA health check",
-            "command": "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server 10.30.30.11:9092 describe --status",
+            "command": "/opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server 10.0.80.11:9092 describe --status",
             "sudo": false
           }
         },
@@ -155,8 +251,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 230,
-            "y": 5405
+            "x": 935,
+            "y": 6605
           },
           "data": {
             "label": "End"
@@ -165,9 +261,21 @@
       ],
       "edges": [
         {
-          "id": "edge_trigger_runner",
+          "id": "edge_trigger_kafka_01",
           "source": "node_trigger",
-          "target": "node_runner",
+          "target": "node_server_kafka_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_01_wait",
+          "source": "node_server_kafka_01",
+          "target": "node_wait_kafka_01",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -177,9 +285,21 @@
           }
         },
         {
-          "id": "edge_runner_wait",
-          "source": "node_runner",
-          "target": "node_wait_runner",
+          "id": "edge_trigger_kafka_02",
+          "source": "node_trigger",
+          "target": "node_server_kafka_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_kafka_02_wait",
+          "source": "node_server_kafka_02",
+          "target": "node_wait_kafka_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -189,9 +309,21 @@
           }
         },
         {
-          "id": "edge_step_1",
-          "source": "node_wait_runner",
-          "target": "node_step_1",
+          "id": "edge_trigger_kafka_03",
+          "source": "node_trigger",
+          "target": "node_server_kafka_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_kafka_03_wait",
+          "source": "node_server_kafka_03",
+          "target": "node_wait_kafka_03",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -228,6 +360,42 @@
           "id": "edge_step_4",
           "source": "node_step_3",
           "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_01_bootstrap",
+          "source": "node_wait_kafka_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_02_bootstrap",
+          "source": "node_wait_kafka_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_kafka_03_bootstrap",
+          "source": "node_wait_kafka_03",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,

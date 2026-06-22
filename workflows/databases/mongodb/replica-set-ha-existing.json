@@ -1,0 +1,488 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "MongoDB Replica Set HA existing",
+    "description": "Bootstrap and validate MongoDB Replica Set HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "MongoDB Replica Set HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "mongodb"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_mongodb_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "mongodb-01",
+            "hostname": "10.0.3.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.3.11",
+                "label": "mongodb-01",
+                "ip": "10.0.3.11",
+                "name": "mongodb-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_mongodb_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait mongodb-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_mongodb_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "mongodb-02",
+            "hostname": "10.0.3.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.3.12",
+                "label": "mongodb-02",
+                "ip": "10.0.3.12",
+                "name": "mongodb-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_mongodb_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait mongodb-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_mongodb_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "mongodb-03",
+            "hostname": "10.0.3.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.3.13",
+                "label": "mongodb-03",
+                "ip": "10.0.3.13",
+                "name": "mongodb-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_mongodb_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait mongodb-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare MongoDB Replica Set HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render MongoDB Replica Set HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[mongodb_replica_set_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.3.11 10.0.3.12 10.0.3.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.3.11) NODE_NAME='mongodb-01'; NODE_ROLE='mongodb'; NODE_INDEX=1 ;;\n  10.0.3.12) NODE_NAME='mongodb-02'; NODE_ROLE='mongodb'; NODE_INDEX=2 ;;\n  10.0.3.13) NODE_NAME='mongodb-03'; NODE_ROLE='mongodb'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/mongodb_replica_set_ha\ninstall -d -m 0750 /var/lib/octastack/mongodb_replica_set_ha\ncat >/opt/octastack/mongodb_replica_set_ha/.env <<EOF\nMONGO_INITDB_ROOT_USERNAME=root\nMONGO_INITDB_ROOT_PASSWORD=change-me\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.3.11\nCLUSTER_PEERS=10.0.3.11,10.0.3.12,10.0.3.13\nSEED_IPS=10.0.3.11,10.0.3.12,10.0.3.13\n\nEOF\nchmod 0600 /opt/octastack/mongodb_replica_set_ha/.env\n\ninstall -m 0400 /dev/stdin /opt/octastack/mongodb_replica_set_ha/keyfile <<'KEY'\noctastack-mongodb-replica-set-shared-key-change-me\nKEY\n\ncat >/opt/octastack/mongodb_replica_set_ha/compose.yml <<'COMPOSE'\nservices:\n  mongodb:\n    image: mongo:7\n    container_name: octastack-mongodb\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    command: >\n      mongod --replSet rs0 --bind_ip_all --keyFile /etc/mongo-keyfile\n    volumes:\n      - data:/data/db\n      - /opt/octastack/mongodb_replica_set_ha/keyfile:/etc/mongo-keyfile:ro\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy MongoDB Replica Set HA node",
+            "command": "set -euo pipefail\nlog() { printf '[mongodb_replica_set_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/mongodb_replica_set_ha/compose.yml pull\ndocker compose -f /opt/octastack/mongodb_replica_set_ha/compose.yml up -d\ndocker compose -f /opt/octastack/mongodb_replica_set_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4815
+          },
+          "data": {
+            "label": "Initialize MongoDB Replica Set HA node",
+            "command": "set -euo pipefail\n\nlog() { printf '[mongodb-replica-set-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.3.11 10.0.3.12 10.0.3.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.3.11) NODE_NAME='mongodb-01'; NODE_ROLE='mongodb'; NODE_INDEX=1 ;;\n  10.0.3.12) NODE_NAME='mongodb-02'; NODE_ROLE='mongodb'; NODE_INDEX=2 ;;\n  10.0.3.13) NODE_NAME='mongodb-03'; NODE_ROLE='mongodb'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ncontainer_ready=0\nfor attempt in $(seq 1 60); do\n  if docker exec octastack-mongodb sh -lc \"mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'\" >/dev/null 2>&1; then\n    container_ready=1\n    break\n  fi\n  sleep 5\ndone\nif [ \"$container_ready\" = \"1\" ]; then\n  log \"container octastack-mongodb is ready\"\nelse\ndocker logs octastack-mongodb --tail=120 || true\necho \"container octastack-mongodb did not become ready\" >&2\nexit 1\nfi\n\nif [ \"$NODE_INDEX\" != \"1\" ]; then\n  log \"replica set initiation is handled by the first member\"\n  exit 0\nfi\ndocker exec octastack-mongodb mongosh -u root -p change-me --authenticationDatabase admin <<'JS'\nrs.initiate({\n  _id: \"rs0\",\n  members: [\n    { _id: 0, host: \"10.0.3.11:27017\" },\n    { _id: 1, host: \"10.0.3.12:27017\" },\n    { _id: 2, host: \"10.0.3.13:27017\" }\n  ]\n});\nJS\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5220
+          },
+          "data": {
+            "label": "Document MongoDB Replica Set HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/mongodb_replica_set_ha-topology.md <<'EOF'\n# MongoDB Replica Set HA\n\nMembers:\n- mongodb-01: 10.0.3.11 (mongodb)\n- mongodb-02: 10.0.3.12 (mongodb)\n- mongodb-03: 10.0.3.13 (mongodb)\n\nThree MongoDB members form a replica set with a shared keyfile, deterministic member list, and first-member initiation.\nEOF\ncat /tmp/mongodb_replica_set_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_6",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5625
+          },
+          "data": {
+            "label": "Validate MongoDB Replica Set HA node",
+            "command": "docker exec octastack-mongodb mongosh -u root -p change-me --authenticationDatabase admin --quiet --eval 'rs.status().members.map(m => `${m.name} ${m.stateStr}`).join(\"\\n\")'\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 6200
+          },
+          "data": {
+            "label": "MongoDB Replica Set HA health check",
+            "command": "docker exec octastack-mongodb mongosh -u root -p change-me --authenticationDatabase admin --quiet --eval 'db.adminCommand({ ping: 1 })'",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 935,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_mongodb_01",
+          "source": "node_trigger",
+          "target": "node_server_mongodb_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mongodb_01_wait",
+          "source": "node_server_mongodb_01",
+          "target": "node_wait_mongodb_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_mongodb_02",
+          "source": "node_trigger",
+          "target": "node_server_mongodb_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_mongodb_02_wait",
+          "source": "node_server_mongodb_02",
+          "target": "node_wait_mongodb_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_mongodb_03",
+          "source": "node_trigger",
+          "target": "node_server_mongodb_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_mongodb_03_wait",
+          "source": "node_server_mongodb_03",
+          "target": "node_wait_mongodb_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_6",
+          "source": "node_step_5",
+          "target": "node_step_6",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mongodb_01_bootstrap",
+          "source": "node_wait_mongodb_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mongodb_02_bootstrap",
+          "source": "node_wait_mongodb_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mongodb_03_bootstrap",
+          "source": "node_wait_mongodb_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_6",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

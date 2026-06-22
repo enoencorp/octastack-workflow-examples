@@ -101,15 +101,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.40.11/24",
-                "gw": "10.30.40.1",
+                "ipAddress": "10.0.81.11/24",
+                "gw": "10.0.81.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "msg.example.internal"
               }
             ],
-            "ipAddress": "10.30.40.11/24",
-            "gw": "10.30.40.1",
+            "ipAddress": "10.0.81.11/24",
+            "gw": "10.0.81.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "msg.example.internal"
@@ -188,15 +188,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.40.12/24",
-                "gw": "10.30.40.1",
+                "ipAddress": "10.0.81.12/24",
+                "gw": "10.0.81.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "msg.example.internal"
               }
             ],
-            "ipAddress": "10.30.40.12/24",
-            "gw": "10.30.40.1",
+            "ipAddress": "10.0.81.12/24",
+            "gw": "10.0.81.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "msg.example.internal"
@@ -275,15 +275,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.40.13/24",
-                "gw": "10.30.40.1",
+                "ipAddress": "10.0.81.13/24",
+                "gw": "10.0.81.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "msg.example.internal"
               }
             ],
-            "ipAddress": "10.30.40.13/24",
-            "gw": "10.30.40.1",
+            "ipAddress": "10.0.81.13/24",
+            "gw": "10.0.81.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "msg.example.internal"
@@ -320,7 +320,7 @@
           },
           "data": {
             "label": "Render RabbitMQ Quorum HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rabbitmq_quorum_ha\ncat >/opt/octastack/rabbitmq_quorum_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rabbitmq-ha.ini <<'INVENTORY'\n[rabbitmq]\n10.30.40.11 node_name=rabbitmq-01\n10.30.40.12 node_name=rabbitmq-02\n10.30.40.13 node_name=rabbitmq-03\nINVENTORY\ncat >/tmp/rabbitmq-ha.yml <<'PLAYBOOK'\n- hosts: rabbitmq\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: rabbitmq-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /var/lib/rabbitmq/.erlang.cookie\n        owner: rabbitmq\n        group: rabbitmq\n        mode: \"0400\"\n        content: \"OCTASTACKRABBITMQCOOKIE\"\n    - ansible.builtin.service:\n        name: rabbitmq-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: rabbitmq-plugins enable rabbitmq_management\n    - ansible.builtin.shell: |\n        rabbitmqctl stop_app\n        rabbitmqctl reset\n        rabbitmqctl join_cluster rabbit@10.30.40.11\n        rabbitmqctl start_app\n      when: inventory_hostname != \"10.30.40.11\"\n    - ansible.builtin.shell: |\n        rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n        rabbitmqctl add_user app_user change-me || true\n        rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\n      when: inventory_hostname == \"10.30.40.11\"\nPLAYBOOK\nansible-playbook -i /tmp/rabbitmq-ha.ini /tmp/rabbitmq-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rabbitmq_quorum_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rabbitmq_quorum_ha\ncat >/opt/octastack/rabbitmq_quorum_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[rabbitmq-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.81.11 10.0.81.12 10.0.81.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.81.11) NODE_NAME='rabbitmq-01'; NODE_ROLE='rabbitmq'; NODE_INDEX=1 ;;\n  10.0.81.12) NODE_NAME='rabbitmq-02'; NODE_ROLE='rabbitmq'; NODE_INDEX=2 ;;\n  10.0.81.13) NODE_NAME='rabbitmq-03'; NODE_ROLE='rabbitmq'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\nwait_for_tcp() {\n  host=\"$1\"\n  port=\"$2\"\n  timeout=\"${3:-180}\"\n  start=\"$(date +%s)\"\n  while ! timeout 2 bash -c \"cat < /dev/null > /dev/tcp/$host/$port\" >/dev/null 2>&1; do\n    now=\"$(date +%s)\"\n    if [ \"$((now - start))\" -ge \"$timeout\" ]; then\n      log \"timeout waiting for $host:$port\"\n      return 1\n    fi\n    sleep 5\n  done\n}\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y rabbitmq-server\nprintf '%s' 'OCTASTACKRABBITMQCOOKIE' >/var/lib/rabbitmq/.erlang.cookie\nchown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie\nchmod 0400 /var/lib/rabbitmq/.erlang.cookie\nsystemctl restart rabbitmq-server\nsystemctl enable rabbitmq-server\nrabbitmq-plugins enable rabbitmq_management\nif [ \"$CURRENT_IP\" != \"10.0.81.11\" ]; then\n  log \"waiting for primary RabbitMQ 10.0.81.11:5672\"\n  wait_for_tcp \"10.0.81.11\" 5672 180\n  rabbitmqctl stop_app\n  rabbitmqctl reset\n  rabbitmqctl join_cluster rabbit@10.0.81.11\n  rabbitmqctl start_app\nelse\n  rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n  rabbitmqctl add_user app_user change-me || true\n  rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\nfi\nlog \"rabbitmq member configured\"\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rabbitmq_quorum_ha/install.sh\n",
             "sudo": true
           }
         },

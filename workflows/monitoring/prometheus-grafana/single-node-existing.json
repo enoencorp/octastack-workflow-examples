@@ -47,14 +47,14 @@
           },
           "data": {
             "label": "Prometheus Grafana Host",
-            "hostname": "10.20.70.50",
+            "hostname": "10.0.112.50",
             "targets": [
               {
                 "id": "target-0",
                 "source": "manual",
-                "host": "10.20.70.50",
+                "host": "10.0.112.50",
                 "label": "Prometheus Grafana Host",
-                "ip": "10.20.70.50",
+                "ip": "10.0.112.50",
                 "name": "prometheus-grafana-host",
                 "node": "",
                 "vmid": "",

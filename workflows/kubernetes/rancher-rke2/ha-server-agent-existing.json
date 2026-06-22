@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T00:00:00Z",
   "workflow": {
     "name": "Rancher RKE2 HA existing",
-    "description": "Bootstrap and validate Rancher RKE2 HA from an existing automation runner and target inventory.",
+    "description": "Bootstrap and validate Rancher RKE2 HA across existing member nodes with bash command steps.",
     "graphData": {
       "nodes": [
         {
@@ -39,23 +39,23 @@
           }
         },
         {
-          "id": "node_runner",
+          "id": "node_server_rke2_server_01",
           "type": "serverNode",
           "position": {
             "x": 0,
             "y": 885
           },
           "data": {
-            "label": "Automation Runner",
-            "hostname": "10.10.0.26",
+            "label": "rke2-server-01",
+            "hostname": "10.0.97.11",
             "targets": [
               {
-                "id": "target-runner",
+                "id": "target-0",
                 "source": "manual",
-                "host": "10.10.0.26",
-                "label": "Automation Runner",
-                "ip": "10.10.0.26",
-                "name": "automation-runner",
+                "host": "10.0.97.11",
+                "label": "rke2-server-01",
+                "ip": "10.0.97.11",
+                "name": "rke2-server-01",
                 "node": "",
                 "vmid": "",
                 "status": "existing",
@@ -65,14 +65,206 @@
           }
         },
         {
-          "id": "node_wait_runner",
+          "id": "node_wait_rke2_server_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 885,
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rke2-server-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_rke2_server_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
             "y": 885
           },
           "data": {
-            "label": "Wait for automation runner",
+            "label": "rke2-server-02",
+            "hostname": "10.0.97.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.97.12",
+                "label": "rke2-server-02",
+                "ip": "10.0.97.12",
+                "name": "rke2-server-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_rke2_server_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rke2-server-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_rke2_server_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "rke2-server-03",
+            "hostname": "10.0.97.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.97.13",
+                "label": "rke2-server-03",
+                "ip": "10.0.97.13",
+                "name": "rke2-server-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_rke2_server_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rke2-server-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_rke2_agent_01",
+          "type": "serverNode",
+          "position": {
+            "x": 2115,
+            "y": 885
+          },
+          "data": {
+            "label": "rke2-agent-01",
+            "hostname": "10.0.97.21",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.97.21",
+                "label": "rke2-agent-01",
+                "ip": "10.0.97.21",
+                "name": "rke2-agent-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_rke2_agent_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2115,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rke2-agent-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_rke2_agent_02",
+          "type": "serverNode",
+          "position": {
+            "x": 2820,
+            "y": 885
+          },
+          "data": {
+            "label": "rke2-agent-02",
+            "hostname": "10.0.97.22",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.97.22",
+                "label": "rke2-agent-02",
+                "ip": "10.0.97.22",
+                "name": "rke2-agent-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_rke2_agent_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2820,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rke2-agent-02",
             "timeout": "20",
             "interval": "10",
             "probes": [
@@ -90,12 +282,12 @@
           "id": "node_step_1",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2300
+            "x": 1590,
+            "y": 3600
           },
           "data": {
             "label": "Render Rancher RKE2 HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rancher_rke2_ha\ncat >/opt/octastack/rancher_rke2_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rke2-rancher-ha.ini <<'INVENTORY'\n[rke2_server]\n10.30.60.11 node_name=rke2-server-01\n10.30.60.12 node_name=rke2-server-02\n10.30.60.13 node_name=rke2-server-03\n\n[rke2_agent]\n10.30.60.21 node_name=rke2-agent-01\n10.30.60.22 node_name=rke2-agent-02\nINVENTORY\ncat >/tmp/rke2-rancher-ha.yml <<'PLAYBOOK'\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_server:!rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n        systemctl enable --now rke2-server\n\n- hosts: rke2_agent\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        mkdir -p /etc/rancher/rke2\n        echo \"server: https://10.30.60.11:9345\" > /etc/rancher/rke2/config.yaml\n        echo \"token: replace-with-rke2-token\" >> /etc/rancher/rke2/config.yaml\n        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent sh -\n        systemctl enable --now rke2-agent\n\n- hosts: rke2_server[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        export KUBECONFIG=/etc/rancher/rke2/rke2.yaml\n        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\n        kubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\n        helm repo add jetstack https://charts.jetstack.io\n        helm repo add rancher-latest https://releases.rancher.com/server-charts/latest\n        helm repo update\n        helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\n        helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\nPLAYBOOK\nansible-playbook -i /tmp/rke2-rancher-ha.ini /tmp/rke2-rancher-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rancher_rke2_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rancher_rke2_ha\ncat >/opt/octastack/rancher_rke2_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[rke2-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.97.11 10.0.97.12 10.0.97.13 10.0.97.21 10.0.97.22 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.97.11) NODE_NAME='rke2-server-01'; NODE_ROLE='rke2_server'; NODE_INDEX=1 ;;\n  10.0.97.12) NODE_NAME='rke2-server-02'; NODE_ROLE='rke2_server'; NODE_INDEX=2 ;;\n  10.0.97.13) NODE_NAME='rke2-server-03'; NODE_ROLE='rke2_server'; NODE_INDEX=3 ;;\n  10.0.97.21) NODE_NAME='rke2-agent-01'; NODE_ROLE='rke2_agent'; NODE_INDEX=4 ;;\n  10.0.97.22) NODE_NAME='rke2-agent-02'; NODE_ROLE='rke2_agent'; NODE_INDEX=5 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\nwait_for_tcp() {\n  host=\"$1\"\n  port=\"$2\"\n  timeout=\"${3:-180}\"\n  start=\"$(date +%s)\"\n  while ! timeout 2 bash -c \"cat < /dev/null > /dev/tcp/$host/$port\" >/dev/null 2>&1; do\n    now=\"$(date +%s)\"\n    if [ \"$((now - start))\" -ge \"$timeout\" ]; then\n      log \"timeout waiting for $host:$port\"\n      return 1\n    fi\n    sleep 5\n  done\n}\n\nif [ \"$CURRENT_IP\" = \"10.0.97.11\" ]; then\n  log \"installing first RKE2 server\"\n  curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n  systemctl enable --now rke2-server\n  export KUBECONFIG=/etc/rancher/rke2/rke2.yaml\n  curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash\n  kubectl create namespace cattle-system --dry-run=client -o yaml | kubectl apply -f -\n  helm repo add jetstack https://charts.jetstack.io\n  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest\n  helm repo update\n  helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true\n  helm upgrade --install rancher rancher-latest/rancher --namespace cattle-system --set hostname=rancher.example.internal --set bootstrapPassword=change-me\nelif [ \"$NODE_ROLE\" = \"rke2_server\" ]; then\n  log \"joining RKE2 server to 10.0.97.11\"\n  wait_for_tcp \"10.0.97.11\" 9345 300\n  mkdir -p /etc/rancher/rke2\n  {\n    echo \"server: https://10.0.97.11:9345\"\n    echo \"token: replace-with-rke2-token\"\n  } >/etc/rancher/rke2/config.yaml\n  curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=server sh -\n  systemctl enable --now rke2-server\nelse\n  log \"joining RKE2 agent to 10.0.97.11\"\n  wait_for_tcp \"10.0.97.11\" 9345 300\n  mkdir -p /etc/rancher/rke2\n  {\n    echo \"server: https://10.0.97.11:9345\"\n    echo \"token: replace-with-rke2-token\"\n  } >/etc/rancher/rke2/config.yaml\n  curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE=agent sh -\n  systemctl enable --now rke2-agent\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rancher_rke2_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -103,8 +295,8 @@
           "id": "node_step_2",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2705
+            "x": 1590,
+            "y": 4005
           },
           "data": {
             "label": "Review Rancher RKE2 HA installer",
@@ -116,8 +308,8 @@
           "id": "node_step_3",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3110
+            "x": 1590,
+            "y": 4410
           },
           "data": {
             "label": "Execute Rancher RKE2 HA installer",
@@ -129,8 +321,8 @@
           "id": "node_step_4",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3515
+            "x": 1590,
+            "y": 4815
           },
           "data": {
             "label": "Collect Rancher RKE2 HA runtime status",
@@ -142,8 +334,8 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 5000
+            "x": 1590,
+            "y": 6200
           },
           "data": {
             "label": "Rancher RKE2 HA health check",
@@ -155,8 +347,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 230,
-            "y": 5405
+            "x": 1640,
+            "y": 6605
           },
           "data": {
             "label": "End"
@@ -165,9 +357,21 @@
       ],
       "edges": [
         {
-          "id": "edge_trigger_runner",
+          "id": "edge_trigger_rke2_server_01",
           "source": "node_trigger",
-          "target": "node_runner",
+          "target": "node_server_rke2_server_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rke2_server_01_wait",
+          "source": "node_server_rke2_server_01",
+          "target": "node_wait_rke2_server_01",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -177,9 +381,21 @@
           }
         },
         {
-          "id": "edge_runner_wait",
-          "source": "node_runner",
-          "target": "node_wait_runner",
+          "id": "edge_trigger_rke2_server_02",
+          "source": "node_trigger",
+          "target": "node_server_rke2_server_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_rke2_server_02_wait",
+          "source": "node_server_rke2_server_02",
+          "target": "node_wait_rke2_server_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -189,9 +405,69 @@
           }
         },
         {
-          "id": "edge_step_1",
-          "source": "node_wait_runner",
-          "target": "node_step_1",
+          "id": "edge_trigger_rke2_server_03",
+          "source": "node_trigger",
+          "target": "node_server_rke2_server_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_rke2_server_03_wait",
+          "source": "node_server_rke2_server_03",
+          "target": "node_wait_rke2_server_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_rke2_agent_01",
+          "source": "node_trigger",
+          "target": "node_server_rke2_agent_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_rke2_agent_01_wait",
+          "source": "node_server_rke2_agent_01",
+          "target": "node_wait_rke2_agent_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_rke2_agent_02",
+          "source": "node_trigger",
+          "target": "node_server_rke2_agent_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 5,
+          "data": {
+            "mode": "parallel",
+            "order": 5
+          }
+        },
+        {
+          "id": "edge_rke2_agent_02_wait",
+          "source": "node_server_rke2_agent_02",
+          "target": "node_wait_rke2_agent_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -228,6 +504,66 @@
           "id": "edge_step_4",
           "source": "node_step_3",
           "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rke2_server_01_bootstrap",
+          "source": "node_wait_rke2_server_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rke2_server_02_bootstrap",
+          "source": "node_wait_rke2_server_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rke2_server_03_bootstrap",
+          "source": "node_wait_rke2_server_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rke2_agent_01_bootstrap",
+          "source": "node_wait_rke2_agent_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rke2_agent_02_bootstrap",
+          "source": "node_wait_rke2_agent_02",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,

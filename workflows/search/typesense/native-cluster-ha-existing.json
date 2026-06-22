@@ -1,0 +1,463 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Typesense Native Cluster HA existing",
+    "description": "Bootstrap and validate Typesense Native Cluster HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "Typesense Native Cluster HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "typesense"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_typesense_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "typesense-01",
+            "hostname": "10.0.132.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.132.11",
+                "label": "typesense-01",
+                "ip": "10.0.132.11",
+                "name": "typesense-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_typesense_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait typesense-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_typesense_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "typesense-02",
+            "hostname": "10.0.132.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.132.12",
+                "label": "typesense-02",
+                "ip": "10.0.132.12",
+                "name": "typesense-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_typesense_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait typesense-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_typesense_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "typesense-03",
+            "hostname": "10.0.132.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.132.13",
+                "label": "typesense-03",
+                "ip": "10.0.132.13",
+                "name": "typesense-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_typesense_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait typesense-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare Typesense Native Cluster HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render Typesense Native Cluster HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[typesense_native_cluster_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.132.11 10.0.132.12 10.0.132.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.132.11) NODE_NAME='typesense-01'; NODE_ROLE='search'; NODE_INDEX=1 ;;\n  10.0.132.12) NODE_NAME='typesense-02'; NODE_ROLE='search'; NODE_INDEX=2 ;;\n  10.0.132.13) NODE_NAME='typesense-03'; NODE_ROLE='search'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/typesense_native_cluster_ha\ninstall -d -m 0750 /var/lib/octastack/typesense_native_cluster_ha\ncat >/opt/octastack/typesense_native_cluster_ha/.env <<EOF\nOCTASTACK_SERVICE=Typesense\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.132.11\nCLUSTER_PEERS=10.0.132.11,10.0.132.12,10.0.132.13\nSEED_IPS=10.0.132.11,10.0.132.12,10.0.132.13\n\nEOF\nchmod 0600 /opt/octastack/typesense_native_cluster_ha/.env\n\ncat >/opt/octastack/typesense_native_cluster_ha/nodes <<'EOF'\n10.0.132.11:8107:8108\n10.0.132.12:8107:8108\n10.0.132.13:8107:8108\nEOF\n\ncat >/opt/octastack/typesense_native_cluster_ha/compose.yml <<'COMPOSE'\nservices:\n  typesense:\n    image: typesense/typesense:27.1\n    container_name: octastack-typesense\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    command: >\n      --data-dir /data --api-key=change-me --enable-cors --peering-address ${CURRENT_IP} --peering-port 8107 --nodes=/data/nodes\n    volumes:\n      - data:/data\n      - /opt/octastack/typesense_native_cluster_ha/nodes:/data/nodes:ro\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy Typesense Native Cluster HA node",
+            "command": "set -euo pipefail\nlog() { printf '[typesense_native_cluster_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/typesense_native_cluster_ha/compose.yml pull\ndocker compose -f /opt/octastack/typesense_native_cluster_ha/compose.yml up -d\ndocker compose -f /opt/octastack/typesense_native_cluster_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4815
+          },
+          "data": {
+            "label": "Document Typesense Native Cluster HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/typesense_native_cluster_ha-topology.md <<'EOF'\n# Typesense Native Cluster HA\n\nMembers:\n- typesense-01: 10.0.132.11 (search)\n- typesense-02: 10.0.132.12 (search)\n- typesense-03: 10.0.132.13 (search)\n\nThree Typesense members run native clustering with a generated nodes file and per-node peering address.\nEOF\ncat /tmp/typesense_native_cluster_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5220
+          },
+          "data": {
+            "label": "Validate Typesense Native Cluster HA node",
+            "command": "curl -fsS http://127.0.0.1:8108/health\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 6200
+          },
+          "data": {
+            "label": "Typesense Native Cluster HA health check",
+            "command": "curl -fsS http://127.0.0.1:8108/health",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 935,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_typesense_01",
+          "source": "node_trigger",
+          "target": "node_server_typesense_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_typesense_01_wait",
+          "source": "node_server_typesense_01",
+          "target": "node_wait_typesense_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_typesense_02",
+          "source": "node_trigger",
+          "target": "node_server_typesense_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_typesense_02_wait",
+          "source": "node_server_typesense_02",
+          "target": "node_wait_typesense_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_typesense_03",
+          "source": "node_trigger",
+          "target": "node_server_typesense_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_typesense_03_wait",
+          "source": "node_server_typesense_03",
+          "target": "node_wait_typesense_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_typesense_01_bootstrap",
+          "source": "node_wait_typesense_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_typesense_02_bootstrap",
+          "source": "node_wait_typesense_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_typesense_03_bootstrap",
+          "source": "node_wait_typesense_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_5",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

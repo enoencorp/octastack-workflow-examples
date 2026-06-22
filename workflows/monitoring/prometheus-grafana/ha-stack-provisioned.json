@@ -101,15 +101,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.70.11/24",
-                "gw": "10.30.70.1",
+                "ipAddress": "10.0.112.11/24",
+                "gw": "10.0.112.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "monitoring.example.internal"
               }
             ],
-            "ipAddress": "10.30.70.11/24",
-            "gw": "10.30.70.1",
+            "ipAddress": "10.0.112.11/24",
+            "gw": "10.0.112.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "monitoring.example.internal"
@@ -188,15 +188,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.70.12/24",
-                "gw": "10.30.70.1",
+                "ipAddress": "10.0.112.12/24",
+                "gw": "10.0.112.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "monitoring.example.internal"
               }
             ],
-            "ipAddress": "10.30.70.12/24",
-            "gw": "10.30.70.1",
+            "ipAddress": "10.0.112.12/24",
+            "gw": "10.0.112.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "monitoring.example.internal"
@@ -275,15 +275,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.70.21/24",
-                "gw": "10.30.70.1",
+                "ipAddress": "10.0.112.21/24",
+                "gw": "10.0.112.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "monitoring.example.internal"
               }
             ],
-            "ipAddress": "10.30.70.21/24",
-            "gw": "10.30.70.1",
+            "ipAddress": "10.0.112.21/24",
+            "gw": "10.0.112.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "monitoring.example.internal"
@@ -362,15 +362,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.70.22/24",
-                "gw": "10.30.70.1",
+                "ipAddress": "10.0.112.22/24",
+                "gw": "10.0.112.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "monitoring.example.internal"
               }
             ],
-            "ipAddress": "10.30.70.22/24",
-            "gw": "10.30.70.1",
+            "ipAddress": "10.0.112.22/24",
+            "gw": "10.0.112.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "monitoring.example.internal"
@@ -449,15 +449,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.70.23/24",
-                "gw": "10.30.70.1",
+                "ipAddress": "10.0.112.23/24",
+                "gw": "10.0.112.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "monitoring.example.internal"
               }
             ],
-            "ipAddress": "10.30.70.23/24",
-            "gw": "10.30.70.1",
+            "ipAddress": "10.0.112.23/24",
+            "gw": "10.0.112.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "monitoring.example.internal"
@@ -536,15 +536,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.70.31/24",
-                "gw": "10.30.70.1",
+                "ipAddress": "10.0.112.31/24",
+                "gw": "10.0.112.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "monitoring.example.internal"
               }
             ],
-            "ipAddress": "10.30.70.31/24",
-            "gw": "10.30.70.1",
+            "ipAddress": "10.0.112.31/24",
+            "gw": "10.0.112.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "monitoring.example.internal"
@@ -623,15 +623,15 @@
                 "rateLimitMbps": "",
                 "macAddress": "",
                 "queues": "",
-                "ipAddress": "10.30.70.32/24",
-                "gw": "10.30.70.1",
+                "ipAddress": "10.0.112.32/24",
+                "gw": "10.0.112.1",
                 "dns1": "1.1.1.1",
                 "dns2": "8.8.8.8",
                 "domain": "monitoring.example.internal"
               }
             ],
-            "ipAddress": "10.30.70.32/24",
-            "gw": "10.30.70.1",
+            "ipAddress": "10.0.112.32/24",
+            "gw": "10.0.112.1",
             "dns1": "1.1.1.1",
             "dns2": "8.8.8.8",
             "domain": "monitoring.example.internal"
@@ -668,7 +668,7 @@
           },
           "data": {
             "label": "Render Prometheus Grafana HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/prometheus_grafana_ha\ncat >/opt/octastack/prometheus_grafana_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/monitoring-ha.ini <<'INVENTORY'\n[prometheus]\n10.30.70.11 node_name=prometheus-01\n10.30.70.12 node_name=prometheus-02\n\n[alertmanager]\n10.30.70.21 node_name=alertmanager-01\n10.30.70.22 node_name=alertmanager-02\n10.30.70.23 node_name=alertmanager-03\n\n[grafana]\n10.30.70.31 node_name=grafana-01\n10.30.70.32 node_name=grafana-02\nINVENTORY\ncat >/tmp/monitoring-ha.yml <<'PLAYBOOK'\n- hosts: prometheus\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: [prometheus, prometheus-node-exporter]\n        state: present\n        update_cache: true\n    - ansible.builtin.service:\n        name: \"{{ item }}\"\n        state: restarted\n        enabled: true\n      loop: [prometheus, prometheus-node-exporter]\n\n- hosts: alertmanager\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: prometheus-alertmanager\n        state: present\n    - ansible.builtin.copy:\n        dest: /etc/prometheus/alertmanager.yml\n        mode: \"0644\"\n        content: |\n          global:\n            resolve_timeout: 5m\n          route:\n            receiver: default\n          receivers:\n            - name: default\n    - ansible.builtin.service:\n        name: prometheus-alertmanager\n        state: restarted\n        enabled: true\n\n- hosts: grafana\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: grafana\n        state: present\n    - ansible.builtin.service:\n        name: grafana-server\n        state: restarted\n        enabled: true\nPLAYBOOK\nansible-playbook -i /tmp/monitoring-ha.ini /tmp/monitoring-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/prometheus_grafana_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/prometheus_grafana_ha\ncat >/opt/octastack/prometheus_grafana_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[monitoring-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.112.11 10.0.112.12 10.0.112.21 10.0.112.22 10.0.112.23 10.0.112.31 10.0.112.32 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.112.11) NODE_NAME='prometheus-01'; NODE_ROLE='prometheus'; NODE_INDEX=1 ;;\n  10.0.112.12) NODE_NAME='prometheus-02'; NODE_ROLE='prometheus'; NODE_INDEX=2 ;;\n  10.0.112.21) NODE_NAME='alertmanager-01'; NODE_ROLE='alertmanager'; NODE_INDEX=3 ;;\n  10.0.112.22) NODE_NAME='alertmanager-02'; NODE_ROLE='alertmanager'; NODE_INDEX=4 ;;\n  10.0.112.23) NODE_NAME='alertmanager-03'; NODE_ROLE='alertmanager'; NODE_INDEX=5 ;;\n  10.0.112.31) NODE_NAME='grafana-01'; NODE_ROLE='grafana'; NODE_INDEX=6 ;;\n  10.0.112.32) NODE_NAME='grafana-02'; NODE_ROLE='grafana'; NODE_INDEX=7 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\napt-get update\nif [ \"$NODE_ROLE\" = \"prometheus\" ]; then\n  log \"installing Prometheus node\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y prometheus prometheus-node-exporter\n  systemctl restart prometheus prometheus-node-exporter\n  systemctl enable prometheus prometheus-node-exporter\nelif [ \"$NODE_ROLE\" = \"alertmanager\" ]; then\n  log \"installing Alertmanager node\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y prometheus-alertmanager\n  install -d -m 0755 /etc/prometheus\n  cat >/etc/prometheus/alertmanager.yml <<'EOF'\nglobal:\n  resolve_timeout: 5m\nroute:\n  receiver: default\nreceivers:\n  - name: default\nEOF\n  systemctl restart prometheus-alertmanager\n  systemctl enable prometheus-alertmanager\nelif [ \"$NODE_ROLE\" = \"grafana\" ]; then\n  log \"installing Grafana node\"\n  DEBIAN_FRONTEND=noninteractive apt-get install -y grafana\n  systemctl restart grafana-server\n  systemctl enable grafana-server\nelse\n  log \"no monitoring action for role $NODE_ROLE\"\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/prometheus_grafana_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -720,7 +720,7 @@
           },
           "data": {
             "label": "Prometheus Grafana HA health check",
-            "command": "curl -fsS http://10.30.70.11:9090/-/ready && curl -fsS http://10.30.70.31:3000/api/health",
+            "command": "curl -fsS http://10.0.112.11:9090/-/ready && curl -fsS http://10.0.112.31:3000/api/health",
             "sudo": false
           }
         },

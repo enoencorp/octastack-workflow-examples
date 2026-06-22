@@ -47,14 +47,14 @@
           },
           "data": {
             "label": "Redis Host",
-            "hostname": "10.20.20.50",
+            "hostname": "10.0.64.50",
             "targets": [
               {
                 "id": "target-0",
                 "source": "manual",
-                "host": "10.20.20.50",
+                "host": "10.0.64.50",
                 "label": "Redis Host",
-                "ip": "10.20.20.50",
+                "ip": "10.0.64.50",
                 "name": "redis-host",
                 "node": "",
                 "vmid": "",

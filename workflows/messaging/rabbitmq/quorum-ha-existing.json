@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T00:00:00Z",
   "workflow": {
     "name": "RabbitMQ Quorum HA existing",
-    "description": "Bootstrap and validate RabbitMQ Quorum HA from an existing automation runner and target inventory.",
+    "description": "Bootstrap and validate RabbitMQ Quorum HA across existing member nodes with bash command steps.",
     "graphData": {
       "nodes": [
         {
@@ -39,23 +39,23 @@
           }
         },
         {
-          "id": "node_runner",
+          "id": "node_server_rabbitmq_01",
           "type": "serverNode",
           "position": {
             "x": 0,
             "y": 885
           },
           "data": {
-            "label": "Automation Runner",
-            "hostname": "10.10.0.24",
+            "label": "rabbitmq-01",
+            "hostname": "10.0.81.11",
             "targets": [
               {
-                "id": "target-runner",
+                "id": "target-0",
                 "source": "manual",
-                "host": "10.10.0.24",
-                "label": "Automation Runner",
-                "ip": "10.10.0.24",
-                "name": "automation-runner",
+                "host": "10.0.81.11",
+                "label": "rabbitmq-01",
+                "ip": "10.0.81.11",
+                "name": "rabbitmq-01",
                 "node": "",
                 "vmid": "",
                 "status": "existing",
@@ -65,14 +65,110 @@
           }
         },
         {
-          "id": "node_wait_runner",
+          "id": "node_wait_rabbitmq_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 885,
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rabbitmq-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_rabbitmq_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
             "y": 885
           },
           "data": {
-            "label": "Wait for automation runner",
+            "label": "rabbitmq-02",
+            "hostname": "10.0.81.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.81.12",
+                "label": "rabbitmq-02",
+                "ip": "10.0.81.12",
+                "name": "rabbitmq-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_rabbitmq_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rabbitmq-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_rabbitmq_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "rabbitmq-03",
+            "hostname": "10.0.81.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.81.13",
+                "label": "rabbitmq-03",
+                "ip": "10.0.81.13",
+                "name": "rabbitmq-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_rabbitmq_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait rabbitmq-03",
             "timeout": "20",
             "interval": "10",
             "probes": [
@@ -90,12 +186,12 @@
           "id": "node_step_1",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2300
+            "x": 885,
+            "y": 3600
           },
           "data": {
             "label": "Render RabbitMQ Quorum HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rabbitmq_quorum_ha\ncat >/opt/octastack/rabbitmq_quorum_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/rabbitmq-ha.ini <<'INVENTORY'\n[rabbitmq]\n10.30.40.11 node_name=rabbitmq-01\n10.30.40.12 node_name=rabbitmq-02\n10.30.40.13 node_name=rabbitmq-03\nINVENTORY\ncat >/tmp/rabbitmq-ha.yml <<'PLAYBOOK'\n- hosts: rabbitmq\n  become: true\n  tasks:\n    - ansible.builtin.apt:\n        name: rabbitmq-server\n        state: present\n        update_cache: true\n    - ansible.builtin.copy:\n        dest: /var/lib/rabbitmq/.erlang.cookie\n        owner: rabbitmq\n        group: rabbitmq\n        mode: \"0400\"\n        content: \"OCTASTACKRABBITMQCOOKIE\"\n    - ansible.builtin.service:\n        name: rabbitmq-server\n        state: restarted\n        enabled: true\n    - ansible.builtin.shell: rabbitmq-plugins enable rabbitmq_management\n    - ansible.builtin.shell: |\n        rabbitmqctl stop_app\n        rabbitmqctl reset\n        rabbitmqctl join_cluster rabbit@10.30.40.11\n        rabbitmqctl start_app\n      when: inventory_hostname != \"10.30.40.11\"\n    - ansible.builtin.shell: |\n        rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n        rabbitmqctl add_user app_user change-me || true\n        rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\n      when: inventory_hostname == \"10.30.40.11\"\nPLAYBOOK\nansible-playbook -i /tmp/rabbitmq-ha.ini /tmp/rabbitmq-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rabbitmq_quorum_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/rabbitmq_quorum_ha\ncat >/opt/octastack/rabbitmq_quorum_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[rabbitmq-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.81.11 10.0.81.12 10.0.81.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.81.11) NODE_NAME='rabbitmq-01'; NODE_ROLE='rabbitmq'; NODE_INDEX=1 ;;\n  10.0.81.12) NODE_NAME='rabbitmq-02'; NODE_ROLE='rabbitmq'; NODE_INDEX=2 ;;\n  10.0.81.13) NODE_NAME='rabbitmq-03'; NODE_ROLE='rabbitmq'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\nwait_for_tcp() {\n  host=\"$1\"\n  port=\"$2\"\n  timeout=\"${3:-180}\"\n  start=\"$(date +%s)\"\n  while ! timeout 2 bash -c \"cat < /dev/null > /dev/tcp/$host/$port\" >/dev/null 2>&1; do\n    now=\"$(date +%s)\"\n    if [ \"$((now - start))\" -ge \"$timeout\" ]; then\n      log \"timeout waiting for $host:$port\"\n      return 1\n    fi\n    sleep 5\n  done\n}\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y rabbitmq-server\nprintf '%s' 'OCTASTACKRABBITMQCOOKIE' >/var/lib/rabbitmq/.erlang.cookie\nchown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie\nchmod 0400 /var/lib/rabbitmq/.erlang.cookie\nsystemctl restart rabbitmq-server\nsystemctl enable rabbitmq-server\nrabbitmq-plugins enable rabbitmq_management\nif [ \"$CURRENT_IP\" != \"10.0.81.11\" ]; then\n  log \"waiting for primary RabbitMQ 10.0.81.11:5672\"\n  wait_for_tcp \"10.0.81.11\" 5672 180\n  rabbitmqctl stop_app\n  rabbitmqctl reset\n  rabbitmqctl join_cluster rabbit@10.0.81.11\n  rabbitmqctl start_app\nelse\n  rabbitmqctl set_policy ha-quorum \"^ha\\.\" '{\"queue-type\":\"quorum\"}' --apply-to queues\n  rabbitmqctl add_user app_user change-me || true\n  rabbitmqctl set_permissions -p / app_user \".*\" \".*\" \".*\"\nfi\nlog \"rabbitmq member configured\"\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/rabbitmq_quorum_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -103,8 +199,8 @@
           "id": "node_step_2",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2705
+            "x": 885,
+            "y": 4005
           },
           "data": {
             "label": "Review RabbitMQ Quorum HA installer",
@@ -116,8 +212,8 @@
           "id": "node_step_3",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3110
+            "x": 885,
+            "y": 4410
           },
           "data": {
             "label": "Execute RabbitMQ Quorum HA installer",
@@ -129,8 +225,8 @@
           "id": "node_step_4",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3515
+            "x": 885,
+            "y": 4815
           },
           "data": {
             "label": "Collect RabbitMQ Quorum HA runtime status",
@@ -142,8 +238,8 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 5000
+            "x": 885,
+            "y": 6200
           },
           "data": {
             "label": "RabbitMQ Quorum HA health check",
@@ -155,8 +251,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 230,
-            "y": 5405
+            "x": 935,
+            "y": 6605
           },
           "data": {
             "label": "End"
@@ -165,9 +261,21 @@
       ],
       "edges": [
         {
-          "id": "edge_trigger_runner",
+          "id": "edge_trigger_rabbitmq_01",
           "source": "node_trigger",
-          "target": "node_runner",
+          "target": "node_server_rabbitmq_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rabbitmq_01_wait",
+          "source": "node_server_rabbitmq_01",
+          "target": "node_wait_rabbitmq_01",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -177,9 +285,21 @@
           }
         },
         {
-          "id": "edge_runner_wait",
-          "source": "node_runner",
-          "target": "node_wait_runner",
+          "id": "edge_trigger_rabbitmq_02",
+          "source": "node_trigger",
+          "target": "node_server_rabbitmq_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_rabbitmq_02_wait",
+          "source": "node_server_rabbitmq_02",
+          "target": "node_wait_rabbitmq_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -189,9 +309,21 @@
           }
         },
         {
-          "id": "edge_step_1",
-          "source": "node_wait_runner",
-          "target": "node_step_1",
+          "id": "edge_trigger_rabbitmq_03",
+          "source": "node_trigger",
+          "target": "node_server_rabbitmq_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_rabbitmq_03_wait",
+          "source": "node_server_rabbitmq_03",
+          "target": "node_wait_rabbitmq_03",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -228,6 +360,42 @@
           "id": "edge_step_4",
           "source": "node_step_3",
           "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rabbitmq_01_bootstrap",
+          "source": "node_wait_rabbitmq_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rabbitmq_02_bootstrap",
+          "source": "node_wait_rabbitmq_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_rabbitmq_03_bootstrap",
+          "source": "node_wait_rabbitmq_03",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,

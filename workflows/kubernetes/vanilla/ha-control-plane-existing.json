@@ -4,7 +4,7 @@
   "exportedAt": "2026-06-19T00:00:00Z",
   "workflow": {
     "name": "Vanilla Kubernetes HA existing",
-    "description": "Bootstrap and validate Vanilla Kubernetes HA from an existing automation runner and target inventory.",
+    "description": "Bootstrap and validate Vanilla Kubernetes HA across existing member nodes with bash command steps.",
     "graphData": {
       "nodes": [
         {
@@ -39,23 +39,23 @@
           }
         },
         {
-          "id": "node_runner",
+          "id": "node_server_k8s_cp_01",
           "type": "serverNode",
           "position": {
             "x": 0,
             "y": 885
           },
           "data": {
-            "label": "Automation Runner",
-            "hostname": "10.10.0.25",
+            "label": "k8s-cp-01",
+            "hostname": "10.0.96.11",
             "targets": [
               {
-                "id": "target-runner",
+                "id": "target-0",
                 "source": "manual",
-                "host": "10.10.0.25",
-                "label": "Automation Runner",
-                "ip": "10.10.0.25",
-                "name": "automation-runner",
+                "host": "10.0.96.11",
+                "label": "k8s-cp-01",
+                "ip": "10.0.96.11",
+                "name": "k8s-cp-01",
                 "node": "",
                 "vmid": "",
                 "status": "existing",
@@ -65,14 +65,206 @@
           }
         },
         {
-          "id": "node_wait_runner",
+          "id": "node_wait_k8s_cp_01",
           "type": "waitUntilUpNode",
           "position": {
-            "x": 885,
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait k8s-cp-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_k8s_cp_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
             "y": 885
           },
           "data": {
-            "label": "Wait for automation runner",
+            "label": "k8s-cp-02",
+            "hostname": "10.0.96.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.96.12",
+                "label": "k8s-cp-02",
+                "ip": "10.0.96.12",
+                "name": "k8s-cp-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_k8s_cp_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait k8s-cp-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_k8s_cp_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "k8s-cp-03",
+            "hostname": "10.0.96.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.96.13",
+                "label": "k8s-cp-03",
+                "ip": "10.0.96.13",
+                "name": "k8s-cp-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_k8s_cp_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait k8s-cp-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_k8s_worker_01",
+          "type": "serverNode",
+          "position": {
+            "x": 2115,
+            "y": 885
+          },
+          "data": {
+            "label": "k8s-worker-01",
+            "hostname": "10.0.96.21",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.96.21",
+                "label": "k8s-worker-01",
+                "ip": "10.0.96.21",
+                "name": "k8s-worker-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_k8s_worker_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2115,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait k8s-worker-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_k8s_worker_02",
+          "type": "serverNode",
+          "position": {
+            "x": 2820,
+            "y": 885
+          },
+          "data": {
+            "label": "k8s-worker-02",
+            "hostname": "10.0.96.22",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.96.22",
+                "label": "k8s-worker-02",
+                "ip": "10.0.96.22",
+                "name": "k8s-worker-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_k8s_worker_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2820,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait k8s-worker-02",
             "timeout": "20",
             "interval": "10",
             "probes": [
@@ -90,12 +282,12 @@
           "id": "node_step_1",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2300
+            "x": 1590,
+            "y": 3600
           },
           "data": {
             "label": "Render Vanilla Kubernetes HA installer",
-            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/vanilla_kubernetes_ha\ncat >/opt/octastack/vanilla_kubernetes_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\nsudo apt-get update\nsudo apt-get install -y ansible sshpass\ncat >/tmp/vanilla-k8s-ha.ini <<'INVENTORY'\n[control_plane]\n10.30.50.11 node_name=k8s-cp-01\n10.30.50.12 node_name=k8s-cp-02\n10.30.50.13 node_name=k8s-cp-03\n\n[worker]\n10.30.50.21 node_name=k8s-worker-01\n10.30.50.22 node_name=k8s-worker-02\nINVENTORY\ncat >/tmp/vanilla-k8s-ha.yml <<'PLAYBOOK'\n- hosts: all\n  become: true\n  tasks:\n    - ansible.builtin.shell: |\n        swapoff -a\n        modprobe br_netfilter\n        sysctl -w net.bridge.bridge-nf-call-iptables=1\n        apt-get update\n        apt-get install -y containerd apt-transport-https ca-certificates curl gpg\n        systemctl enable --now containerd\n    - ansible.builtin.shell: |\n        mkdir -p /etc/apt/keyrings\n        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\n        echo \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" > /etc/apt/sources.list.d/kubernetes.list\n        apt-get update\n        apt-get install -y kubelet kubeadm kubectl\n\n- hosts: control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.shell: kubeadm init --control-plane-endpoint \"10.30.50.10:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n    - ansible.builtin.shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\n\n- hosts: control_plane:!control_plane[0]\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join additional control plane nodes using the kubeadm join command printed by the first control plane.\"\n\n- hosts: worker\n  become: true\n  tasks:\n    - ansible.builtin.debug:\n        msg: \"Join worker nodes using the kubeadm join command printed by the first control plane.\"\nPLAYBOOK\nansible-playbook -i /tmp/vanilla-k8s-ha.ini /tmp/vanilla-k8s-ha.yml\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/vanilla_kubernetes_ha/install.sh\n",
+            "command": "set -euo pipefail\ninstall -d -m 0750 /opt/octastack/vanilla_kubernetes_ha\ncat >/opt/octastack/vanilla_kubernetes_ha/install.sh <<'OCTASTACK_INSTALLER'\nset -euo pipefail\n\nlog() { printf '[vanilla-k8s-ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.96.11 10.0.96.12 10.0.96.13 10.0.96.21 10.0.96.22 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.96.11) NODE_NAME='k8s-cp-01'; NODE_ROLE='control_plane'; NODE_INDEX=1 ;;\n  10.0.96.12) NODE_NAME='k8s-cp-02'; NODE_ROLE='control_plane'; NODE_INDEX=2 ;;\n  10.0.96.13) NODE_NAME='k8s-cp-03'; NODE_ROLE='control_plane'; NODE_INDEX=3 ;;\n  10.0.96.21) NODE_NAME='k8s-worker-01'; NODE_ROLE='worker'; NODE_INDEX=4 ;;\n  10.0.96.22) NODE_NAME='k8s-worker-02'; NODE_ROLE='worker'; NODE_INDEX=5 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https ca-certificates curl gpg containerd\nswapoff -a\nmodprobe br_netfilter\nsysctl -w net.bridge.bridge-nf-call-iptables=1\nsystemctl enable --now containerd\nmkdir -p /etc/apt/keyrings\ncurl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg\necho \"deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /\" >/etc/apt/sources.list.d/kubernetes.list\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y kubelet kubeadm kubectl\nif [ \"$CURRENT_IP\" = \"10.0.96.11\" ]; then\n  log \"initializing first control plane\"\n  kubeadm init --control-plane-endpoint \"10.0.96.11:6443\" --upload-certs --pod-network-cidr=192.168.0.0/16\n  kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml\nelif [ \"$NODE_ROLE\" = \"control_plane\" ]; then\n  log \"join this control plane with the kubeadm join command printed by k8s-cp-01\"\nelse\n  log \"join this worker with the kubeadm join command printed by k8s-cp-01\"\nfi\n\nOCTASTACK_INSTALLER\nchmod 0750 /opt/octastack/vanilla_kubernetes_ha/install.sh\n",
             "sudo": true
           }
         },
@@ -103,8 +295,8 @@
           "id": "node_step_2",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 2705
+            "x": 1590,
+            "y": 4005
           },
           "data": {
             "label": "Review Vanilla Kubernetes HA installer",
@@ -116,8 +308,8 @@
           "id": "node_step_3",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3110
+            "x": 1590,
+            "y": 4410
           },
           "data": {
             "label": "Execute Vanilla Kubernetes HA installer",
@@ -129,8 +321,8 @@
           "id": "node_step_4",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 3515
+            "x": 1590,
+            "y": 4815
           },
           "data": {
             "label": "Collect Vanilla Kubernetes HA runtime status",
@@ -142,8 +334,8 @@
           "id": "node_health",
           "type": "configCommandNode",
           "position": {
-            "x": 180,
-            "y": 5000
+            "x": 1590,
+            "y": 6200
           },
           "data": {
             "label": "Vanilla Kubernetes HA health check",
@@ -155,8 +347,8 @@
           "id": "node_end",
           "type": "endNode",
           "position": {
-            "x": 230,
-            "y": 5405
+            "x": 1640,
+            "y": 6605
           },
           "data": {
             "label": "End"
@@ -165,9 +357,21 @@
       ],
       "edges": [
         {
-          "id": "edge_trigger_runner",
+          "id": "edge_trigger_k8s_cp_01",
           "source": "node_trigger",
-          "target": "node_runner",
+          "target": "node_server_k8s_cp_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_01_wait",
+          "source": "node_server_k8s_cp_01",
+          "target": "node_wait_k8s_cp_01",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -177,9 +381,21 @@
           }
         },
         {
-          "id": "edge_runner_wait",
-          "source": "node_runner",
-          "target": "node_wait_runner",
+          "id": "edge_trigger_k8s_cp_02",
+          "source": "node_trigger",
+          "target": "node_server_k8s_cp_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_k8s_cp_02_wait",
+          "source": "node_server_k8s_cp_02",
+          "target": "node_wait_k8s_cp_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -189,9 +405,69 @@
           }
         },
         {
-          "id": "edge_step_1",
-          "source": "node_wait_runner",
-          "target": "node_step_1",
+          "id": "edge_trigger_k8s_cp_03",
+          "source": "node_trigger",
+          "target": "node_server_k8s_cp_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_k8s_cp_03_wait",
+          "source": "node_server_k8s_cp_03",
+          "target": "node_wait_k8s_cp_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_k8s_worker_01",
+          "source": "node_trigger",
+          "target": "node_server_k8s_worker_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 4,
+          "data": {
+            "mode": "parallel",
+            "order": 4
+          }
+        },
+        {
+          "id": "edge_k8s_worker_01_wait",
+          "source": "node_server_k8s_worker_01",
+          "target": "node_wait_k8s_worker_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_k8s_worker_02",
+          "source": "node_trigger",
+          "target": "node_server_k8s_worker_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 5,
+          "data": {
+            "mode": "parallel",
+            "order": 5
+          }
+        },
+        {
+          "id": "edge_k8s_worker_02_wait",
+          "source": "node_server_k8s_worker_02",
+          "target": "node_wait_k8s_worker_02",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,
@@ -228,6 +504,66 @@
           "id": "edge_step_4",
           "source": "node_step_3",
           "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_01_bootstrap",
+          "source": "node_wait_k8s_cp_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_02_bootstrap",
+          "source": "node_wait_k8s_cp_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_cp_03_bootstrap",
+          "source": "node_wait_k8s_cp_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_worker_01_bootstrap",
+          "source": "node_wait_k8s_worker_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_k8s_worker_02_bootstrap",
+          "source": "node_wait_k8s_worker_02",
+          "target": "node_step_1",
           "type": "workflowEdge",
           "mode": "sequential",
           "order": 1,

@@ -47,14 +47,14 @@
           },
           "data": {
             "label": "RabbitMQ Host",
-            "hostname": "10.20.40.50",
+            "hostname": "10.0.81.50",
             "targets": [
               {
                 "id": "target-0",
                 "source": "manual",
-                "host": "10.20.40.50",
+                "host": "10.0.81.50",
                 "label": "RabbitMQ Host",
-                "ip": "10.20.40.50",
+                "ip": "10.0.81.50",
                 "name": "rabbitmq-host",
                 "node": "",
                 "vmid": "",

@@ -1,0 +1,604 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "MariaDB Galera HA provisioned",
+    "description": "Provision MariaDB Galera HA nodes on Proxmox, wait for reachability, then bootstrap and validate the HA stack.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "MariaDB Galera HA provisioned",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "mariadb"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_context",
+          "type": "proxmoxConfigNode",
+          "position": {
+            "x": 105,
+            "y": 465
+          },
+          "data": {
+            "label": "Cluster Context",
+            "profileId": "replace-with-proxmox-profile-id"
+          }
+        },
+        {
+          "id": "node_provision_mariadb_01",
+          "type": "provisionNode",
+          "position": {
+            "x": 855,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision mariadb-01",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "mariadb-01",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "MARIADB",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.2.11/24",
+                "gw": "10.0.2.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.2.11/24",
+            "gw": "10.0.2.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_mariadb_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 855,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait mariadb-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_mariadb_02",
+          "type": "provisionNode",
+          "position": {
+            "x": 1560,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision mariadb-02",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "mariadb-02",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "MARIADB",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.2.12/24",
+                "gw": "10.0.2.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.2.12/24",
+            "gw": "10.0.2.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_mariadb_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1560,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait mariadb-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_provision_mariadb_03",
+          "type": "provisionNode",
+          "position": {
+            "x": 2265,
+            "y": 405
+          },
+          "data": {
+            "label": "Provision mariadb-03",
+            "node": "pve1",
+            "templateId": "9000",
+            "instanceName": "mariadb-03",
+            "vmId": "",
+            "autoVmid": true,
+            "environment": "PROD",
+            "serverType": "MARIADB",
+            "cores": "4",
+            "memory": "8192",
+            "machine": "q35",
+            "ostype": "l26",
+            "bios": "seabios",
+            "onboot": true,
+            "agent": true,
+            "targetStorage": "local-lvm",
+            "cloudInitStorage": "local-lvm",
+            "cicustom": "",
+            "disks": [
+              {
+                "id": "disk-0",
+                "slot": "scsi1",
+                "bus": "scsi",
+                "storage": "local-lvm",
+                "sizeGb": "80",
+                "cache": "",
+                "iothread": true,
+                "discard": true,
+                "ssd": true,
+                "backup": true
+              }
+            ],
+            "networks": [
+              {
+                "id": "net-0",
+                "slot": "net0",
+                "model": "virtio",
+                "bridge": "vmbr0",
+                "vlanTag": "",
+                "firewall": true,
+                "rateLimitMbps": "",
+                "macAddress": "",
+                "queues": "",
+                "ipAddress": "10.0.2.13/24",
+                "gw": "10.0.2.1",
+                "dns1": "1.1.1.1",
+                "dns2": "8.8.8.8",
+                "domain": "apps.example.internal"
+              }
+            ],
+            "ipAddress": "10.0.2.13/24",
+            "gw": "10.0.2.1",
+            "dns1": "1.1.1.1",
+            "dns2": "8.8.8.8",
+            "domain": "apps.example.internal"
+          }
+        },
+        {
+          "id": "node_wait_mariadb_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 2265,
+            "y": 3600
+          },
+          "data": {
+            "label": "Wait mariadb-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5000
+          },
+          "data": {
+            "label": "Prepare MariaDB Galera HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5405
+          },
+          "data": {
+            "label": "Render MariaDB Galera HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[mariadb_galera_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.2.11 10.0.2.12 10.0.2.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.2.11) NODE_NAME='mariadb-01'; NODE_ROLE='mariadb'; NODE_INDEX=1 ;;\n  10.0.2.12) NODE_NAME='mariadb-02'; NODE_ROLE='mariadb'; NODE_INDEX=2 ;;\n  10.0.2.13) NODE_NAME='mariadb-03'; NODE_ROLE='mariadb'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\nif [ \"$NODE_INDEX\" = \"1\" ]; then\n  GALERA_BOOTSTRAP=\"--wsrep-new-cluster\"\nelse\n  GALERA_BOOTSTRAP=\"\"\nfi\n\ninstall -d -m 0750 /opt/octastack/mariadb_galera_ha\ninstall -d -m 0750 /var/lib/octastack/mariadb_galera_ha\ncat >/opt/octastack/mariadb_galera_ha/.env <<EOF\nMARIADB_ROOT_PASSWORD=change-me\nMARIADB_DATABASE=app_db\nMARIADB_USER=app_user\nMARIADB_PASSWORD=change-me\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.2.11\nCLUSTER_PEERS=10.0.2.11,10.0.2.12,10.0.2.13\nSEED_IPS=10.0.2.11,10.0.2.12,10.0.2.13\nGALERA_BOOTSTRAP=$GALERA_BOOTSTRAP\nGALERA_CLUSTER_ADDRESS=gcomm://10.0.2.11,10.0.2.12,10.0.2.13\nEOF\nchmod 0600 /opt/octastack/mariadb_galera_ha/.env\n\ncat >/opt/octastack/mariadb_galera_ha/compose.yml <<'COMPOSE'\nservices:\n  mariadb:\n    image: mariadb:11.4\n    container_name: octastack-mariadb\n    restart: unless-stopped\n    network_mode: host\n    env_file:\n      - .env\n    command: >\n      mariadbd\n      --bind-address=0.0.0.0\n      --binlog-format=ROW\n      --default-storage-engine=InnoDB\n      --innodb-autoinc-lock-mode=2\n      --wsrep-on=ON\n      --wsrep-provider=/usr/lib/galera/libgalera_smm.so\n      --wsrep-cluster-name=octastack-mariadb\n      --wsrep-cluster-address=${GALERA_CLUSTER_ADDRESS}\n      --wsrep-node-address=${CURRENT_IP}\n      --wsrep-node-name=${OCTASTACK_NODE_NAME}\n      ${GALERA_BOOTSTRAP}\n    volumes:\n      - data:/var/lib/mysql\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 5810
+          },
+          "data": {
+            "label": "Deploy MariaDB Galera HA node",
+            "command": "set -euo pipefail\nlog() { printf '[mariadb_galera_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/mariadb_galera_ha/compose.yml pull\ndocker compose -f /opt/octastack/mariadb_galera_ha/compose.yml up -d\ndocker compose -f /opt/octastack/mariadb_galera_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 6215
+          },
+          "data": {
+            "label": "Document MariaDB Galera HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/mariadb_galera_ha-topology.md <<'EOF'\n# MariaDB Galera HA\n\nMembers:\n- mariadb-01: 10.0.2.11 (mariadb)\n- mariadb-02: 10.0.2.12 (mariadb)\n- mariadb-03: 10.0.2.13 (mariadb)\n\nThree MariaDB members form a synchronous Galera cluster with one deterministic bootstrap member and two joining members.\nEOF\ncat /tmp/mariadb_galera_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 6620
+          },
+          "data": {
+            "label": "Validate MariaDB Galera HA node",
+            "command": "set -euo pipefail\ndocker exec octastack-mariadb mariadb -uroot -pchange-me -e \"SHOW STATUS LIKE 'wsrep_cluster_size'; SHOW STATUS LIKE 'wsrep_local_state_comment';\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 1740,
+            "y": 7025
+          },
+          "data": {
+            "label": "MariaDB Galera HA health check",
+            "command": "docker exec octastack-mariadb mariadb-admin ping -uroot -pchange-me",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 1790,
+            "y": 7430
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_context",
+          "source": "node_trigger",
+          "target": "node_context",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_mariadb_01",
+          "source": "node_context",
+          "target": "node_provision_mariadb_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mariadb_01_wait",
+          "source": "node_provision_mariadb_01",
+          "target": "node_wait_mariadb_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_mariadb_02",
+          "source": "node_context",
+          "target": "node_provision_mariadb_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_mariadb_02_wait",
+          "source": "node_provision_mariadb_02",
+          "target": "node_wait_mariadb_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_context_mariadb_03",
+          "source": "node_context",
+          "target": "node_provision_mariadb_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_mariadb_03_wait",
+          "source": "node_provision_mariadb_03",
+          "target": "node_wait_mariadb_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mariadb_01_bootstrap",
+          "source": "node_wait_mariadb_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mariadb_02_bootstrap",
+          "source": "node_wait_mariadb_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_mariadb_03_bootstrap",
+          "source": "node_wait_mariadb_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_5",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}

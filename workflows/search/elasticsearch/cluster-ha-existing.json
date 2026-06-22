@@ -1,0 +1,463 @@
+{
+  "kind": "octastack.workflow.package",
+  "version": 1,
+  "exportedAt": "2026-06-19T00:00:00Z",
+  "workflow": {
+    "name": "Elasticsearch Cluster HA existing",
+    "description": "Bootstrap and validate Elasticsearch Cluster HA across existing member nodes with bash command steps.",
+    "graphData": {
+      "nodes": [
+        {
+          "id": "node_trigger",
+          "type": "triggerNode",
+          "position": {
+            "x": 45,
+            "y": 75
+          },
+          "data": {
+            "label": "Elasticsearch Cluster HA existing",
+            "triggerType": "manual",
+            "enabled": true,
+            "variables": [
+              {
+                "id": "var-0",
+                "key": "environment",
+                "source": "payload.environment",
+                "value": "production"
+              },
+              {
+                "id": "var-1",
+                "key": "service_name",
+                "source": "payload.service_name",
+                "value": "elasticsearch"
+              }
+            ],
+            "webhookPath": "",
+            "secretRef": "",
+            "cronExpr": "",
+            "timezone": "UTC"
+          }
+        },
+        {
+          "id": "node_server_elasticsearch_01",
+          "type": "serverNode",
+          "position": {
+            "x": 0,
+            "y": 885
+          },
+          "data": {
+            "label": "elasticsearch-01",
+            "hostname": "10.0.129.11",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.129.11",
+                "label": "elasticsearch-01",
+                "ip": "10.0.129.11",
+                "name": "elasticsearch-01",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_elasticsearch_01",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 0,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait elasticsearch-01",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_elasticsearch_02",
+          "type": "serverNode",
+          "position": {
+            "x": 705,
+            "y": 885
+          },
+          "data": {
+            "label": "elasticsearch-02",
+            "hostname": "10.0.129.12",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.129.12",
+                "label": "elasticsearch-02",
+                "ip": "10.0.129.12",
+                "name": "elasticsearch-02",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_elasticsearch_02",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 705,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait elasticsearch-02",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_server_elasticsearch_03",
+          "type": "serverNode",
+          "position": {
+            "x": 1410,
+            "y": 885
+          },
+          "data": {
+            "label": "elasticsearch-03",
+            "hostname": "10.0.129.13",
+            "targets": [
+              {
+                "id": "target-0",
+                "source": "manual",
+                "host": "10.0.129.13",
+                "label": "elasticsearch-03",
+                "ip": "10.0.129.13",
+                "name": "elasticsearch-03",
+                "node": "",
+                "vmid": "",
+                "status": "existing",
+                "type": "manual"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_wait_elasticsearch_03",
+          "type": "waitUntilUpNode",
+          "position": {
+            "x": 1410,
+            "y": 2300
+          },
+          "data": {
+            "label": "Wait elasticsearch-03",
+            "timeout": "20",
+            "interval": "10",
+            "probes": [
+              {
+                "id": "probe-0",
+                "type": "ssh",
+                "host": "",
+                "port": "22",
+                "label": "SSH reachability"
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_step_1",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 3600
+          },
+          "data": {
+            "label": "Prepare Elasticsearch Cluster HA node runtime",
+            "command": "set -euo pipefail\nlog() { printf '[container-runtime] %s\\n' \"$*\"; }\nif command -v docker >/dev/null 2>&1; then\n  log \"docker is already installed\"\n  docker --version\n  exit 0\nfi\nif command -v apt-get >/dev/null 2>&1; then\n  log \"installing docker with apt\"\n  apt-get update\n  DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin\nelif command -v dnf >/dev/null 2>&1; then\n  log \"installing docker with dnf\"\n  dnf install -y docker docker-compose-plugin\nelif command -v yum >/dev/null 2>&1; then\n  log \"installing docker with yum\"\n  yum install -y docker docker-compose-plugin\nelse\n  echo \"Unsupported package manager. Install Docker manually.\" >&2\n  exit 1\nfi\nsystemctl enable --now docker\ndocker version\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_2",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4005
+          },
+          "data": {
+            "label": "Render Elasticsearch Cluster HA node configuration",
+            "command": "set -euo pipefail\n\nlog() { printf '[elasticsearch_cluster_ha] %s\\n' \"$*\"; }\ndetect_current_ip() {\n  for candidate in $(hostname -I 2>/dev/null); do\n    case \" 10.0.129.11 10.0.129.12 10.0.129.13 \" in\n      *\" $candidate \"*) printf '%s' \"$candidate\"; return 0 ;;\n    esac\n  done\n  ip -o -4 addr show scope global 2>/dev/null | awk '{split($4,a,\"/\"); print a[1]; exit}'\n}\nCURRENT_IP=\"${OCTASTACK_NODE_IP:-$(detect_current_ip)}\"\nNODE_NAME=\"$(hostname -s)\"\nNODE_ROLE=\"unknown\"\nNODE_INDEX=0\ncase \"$CURRENT_IP\" in\n  10.0.129.11) NODE_NAME='elasticsearch-01'; NODE_ROLE='elasticsearch'; NODE_INDEX=1 ;;\n  10.0.129.12) NODE_NAME='elasticsearch-02'; NODE_ROLE='elasticsearch'; NODE_INDEX=2 ;;\n  10.0.129.13) NODE_NAME='elasticsearch-03'; NODE_ROLE='elasticsearch'; NODE_INDEX=3 ;;\nesac\nif [ \"$NODE_ROLE\" = \"unknown\" ]; then\n  log \"unable to match current host IP ($CURRENT_IP) to the generated topology\"\n  exit 1\nfi\nlog \"running on $NODE_NAME ($CURRENT_IP, role=$NODE_ROLE)\"\n\ninstall -d -m 0750 /opt/octastack/elasticsearch_cluster_ha\ninstall -d -m 0750 /var/lib/octastack/elasticsearch_cluster_ha\ncat >/opt/octastack/elasticsearch_cluster_ha/.env <<EOF\nOCTASTACK_SERVICE=Elasticsearch\nOCTASTACK_NODE_NAME=$NODE_NAME\nOCTASTACK_NODE_ROLE=$NODE_ROLE\nOCTASTACK_NODE_INDEX=$NODE_INDEX\nCURRENT_IP=$CURRENT_IP\nFIRST_NODE_IP=10.0.129.11\nCLUSTER_PEERS=10.0.129.11,10.0.129.12,10.0.129.13\nSEED_IPS=10.0.129.11,10.0.129.12,10.0.129.13\n\nEOF\nchmod 0600 /opt/octastack/elasticsearch_cluster_ha/.env\n\ncat >/opt/octastack/elasticsearch_cluster_ha/compose.yml <<'COMPOSE'\nservices:\n  elasticsearch:\n    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0\n    container_name: octastack-elasticsearch\n    restart: unless-stopped\n    network_mode: host\n    ulimits:\n      memlock: -1\n    env_file:\n      - .env\n    environment:\n      cluster.name: \"octastack-elasticsearch\"\n      node.name: \"${OCTASTACK_NODE_NAME}\"\n      network.host: \"0.0.0.0\"\n      discovery.seed_hosts: \"10.0.129.11,10.0.129.12,10.0.129.13\"\n      cluster.initial_master_nodes: \"elasticsearch-01,elasticsearch-02,elasticsearch-03\"\n      xpack.security.enabled: \"false\"\n      ES_JAVA_OPTS: \"-Xms1g -Xmx1g\"\n      bootstrap.memory_lock: \"true\"\n    volumes:\n      - data:/usr/share/elasticsearch/data\nvolumes:\n  data: {}\nCOMPOSE\nlog \"configuration rendered\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_3",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4410
+          },
+          "data": {
+            "label": "Deploy Elasticsearch Cluster HA node",
+            "command": "set -euo pipefail\nlog() { printf '[elasticsearch_cluster_ha] %s\\n' \"$*\"; }\ndocker compose -f /opt/octastack/elasticsearch_cluster_ha/compose.yml pull\ndocker compose -f /opt/octastack/elasticsearch_cluster_ha/compose.yml up -d\ndocker compose -f /opt/octastack/elasticsearch_cluster_ha/compose.yml ps\n      log \"node deployment complete\"\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_4",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 4815
+          },
+          "data": {
+            "label": "Document Elasticsearch Cluster HA topology",
+            "command": "set -euo pipefail\ncat >/tmp/elasticsearch_cluster_ha-topology.md <<'EOF'\n# Elasticsearch Cluster HA\n\nMembers:\n- elasticsearch-01: 10.0.129.11 (elasticsearch)\n- elasticsearch-02: 10.0.129.12 (elasticsearch)\n- elasticsearch-03: 10.0.129.13 (elasticsearch)\n\nThree Elasticsearch nodes form a discovery-backed cluster with generated initial master nodes and disabled demo security.\nEOF\ncat /tmp/elasticsearch_cluster_ha-topology.md\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_step_5",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 5220
+          },
+          "data": {
+            "label": "Validate Elasticsearch Cluster HA node",
+            "command": "curl -fsS http://127.0.0.1:9200/_cluster/health?pretty\n",
+            "sudo": true
+          }
+        },
+        {
+          "id": "node_health",
+          "type": "configCommandNode",
+          "position": {
+            "x": 885,
+            "y": 6200
+          },
+          "data": {
+            "label": "Elasticsearch Cluster HA health check",
+            "command": "curl -fsS http://127.0.0.1:9200/_cluster/health",
+            "sudo": false
+          }
+        },
+        {
+          "id": "node_end",
+          "type": "endNode",
+          "position": {
+            "x": 935,
+            "y": 6605
+          },
+          "data": {
+            "label": "End"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_trigger_elasticsearch_01",
+          "source": "node_trigger",
+          "target": "node_server_elasticsearch_01",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 1,
+          "data": {
+            "mode": "parallel",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_elasticsearch_01_wait",
+          "source": "node_server_elasticsearch_01",
+          "target": "node_wait_elasticsearch_01",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_elasticsearch_02",
+          "source": "node_trigger",
+          "target": "node_server_elasticsearch_02",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 2,
+          "data": {
+            "mode": "parallel",
+            "order": 2
+          }
+        },
+        {
+          "id": "edge_elasticsearch_02_wait",
+          "source": "node_server_elasticsearch_02",
+          "target": "node_wait_elasticsearch_02",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_trigger_elasticsearch_03",
+          "source": "node_trigger",
+          "target": "node_server_elasticsearch_03",
+          "type": "workflowEdge",
+          "mode": "parallel",
+          "order": 3,
+          "data": {
+            "mode": "parallel",
+            "order": 3
+          }
+        },
+        {
+          "id": "edge_elasticsearch_03_wait",
+          "source": "node_server_elasticsearch_03",
+          "target": "node_wait_elasticsearch_03",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_2",
+          "source": "node_step_1",
+          "target": "node_step_2",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_3",
+          "source": "node_step_2",
+          "target": "node_step_3",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_4",
+          "source": "node_step_3",
+          "target": "node_step_4",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_step_5",
+          "source": "node_step_4",
+          "target": "node_step_5",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_elasticsearch_01_bootstrap",
+          "source": "node_wait_elasticsearch_01",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_elasticsearch_02_bootstrap",
+          "source": "node_wait_elasticsearch_02",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_elasticsearch_03_bootstrap",
+          "source": "node_wait_elasticsearch_03",
+          "target": "node_step_1",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_bootstrap_health",
+          "source": "node_step_5",
+          "target": "node_health",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        },
+        {
+          "id": "edge_health_end",
+          "source": "node_health",
+          "target": "node_end",
+          "type": "workflowEdge",
+          "mode": "sequential",
+          "order": 1,
+          "data": {
+            "mode": "sequential",
+            "order": 1
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "templates": [],
+    "customNodes": []
+  }
+}
